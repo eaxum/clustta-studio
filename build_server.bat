@@ -1,0 +1,1 @@
+go build -ldflags "-X clustta/internal/constants.website=http://127.0.0.1:5174" -o ./tmp/server.exe ./cmd/server

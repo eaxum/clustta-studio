@@ -1,0 +1,1 @@
+go build -ldflags "-X clustta/internal/constants.host=http://127.0.0.1:5000" -o ./tmp/studio_server.exe ./cmd/studio_server

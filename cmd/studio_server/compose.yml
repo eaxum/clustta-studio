@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  # The Go app service
+  app:
+    image: eaxum/clustta:latest # You can build locally or use your image tag
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=PathPrefix(`/clustta`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.middlewares.app-strip.stripprefix.prefixes=/clustta"
+      - "traefik.http.routers.app.middlewares=app-strip"
+      - "traefik.http.services.app.loadbalancer.server.port=7774"
+      # - "traefik.http.routers.app.rule=Host(`yourdomain.com`)" # Replace with your domain
+      # - "traefik.http.services.app.loadbalancer.server.port=8080" # The port exposed by your app
+
+      #use tls
+      # - traefik.http.routers.app.tls=true
+      # - traefik.http.routers.app.entrypoints=websecure
+      # - traefik.http.routers.app.tls.certresolver=myresolver
+    networks:
+      - web
+    env_file:
+      - ${ENV_FILE:-./.env}
+    volumes:
+      - ${DATA_FOLDER:?}:/var/data/
+      - ${PROJECTS_FOLDER:?}:/var/projects/
+    restart: always
+
+  # Traefik 3 reverse proxy
+  traefik:
+    image: traefik:v3.1
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true" # Enable Traefik dashboard, disable for production
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+      #certs
+      # - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      # - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      # - "--certificatesresolvers.myresolver.acme.email=mail@example.com"
+      # - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80" # Traefik listens on port 80 for HTTP traffic
+      - "8080:8080" # Traefik dashboard (optional)
+      # - "443:443"
+    networks:
+      - web
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Allow Traefik to access Docker internals
+      #certs
+      # - ./letsencrypt:/letsencrypt
+    restart: always
+
+networks:
+  web:
+    external: false
