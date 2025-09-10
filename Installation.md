@@ -165,24 +165,6 @@ This is the private instance of any Clustta studio server. All the studio projec
 
 When a client attempts to reach this server, it first accesses the global server which then routes it to this machine's IP address.
 
-### Building and pushing the Docker image
-For simplicity, we can deploy using a docker container from the built GO application:
-
-Build the docker image and tag it with the appropriate version
-```bash
-docker build -f .\cmd\studio_server\Dockerfile -t registry_name/clustta:latest -t registry_name/clustta:x.x.xx .
-```
-
-Login to docker hub
-```bash
-docker login -u registry_name -p password
-```
-
-Push the tagged image so it's accessible from any machine on deployment
-```bash
-docker push registry_name/clustta:latest
-```
-
 
 
 
