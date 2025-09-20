@@ -1,8 +1,24 @@
 
+# The different components
+
+For any clustta client to work, there are three crucial parts
+1. [The Global/Private Authentication server](https://github.com/eaxum/clustta-server)
+2. The Studio server (This)
+3. [The Client application](https://github.com/eaxum/clustta-client)
+
+Make reference to the other repositories for specific guides to each.
+
+
+
+## The Studio Server (This repository)
+This is the private instance of any Clustta studio server. All the studio projects are stored here and the machine's IP is registered on the Clustta Global server.
+When a client attempts to reach this server, it first accesses the global server which then routes it to this machine's IP address.
+
+If you are authenticating against your own private server, the client will access it directly using the IP address/url you provide. See [The Private Authentication server](https://github.com/eaxum/clustta-private-auth)
+
+<br>
+
 # Quick install: Setting up Clustta studio on your machine
-
-This is the private instance of any Clustta studio server. All the studio projects are stored here and the machine's IP is registered on the Clustta Global server
-
 
 If docker isnt already installed, install docker and all of it's necessary dependencies on the new machine. Copy and paste the following script into the termial. It will:
 - Update system packages
@@ -37,7 +53,7 @@ CLUSTTA_SERVER_URL=http://host-ip/clustta
 ```
 `server-user-name` : the username to the host machine.
 
-`StudioKey` : the key generated earlier in [Getting a StudioKey](#getting-a-studiokey).
+`StudioKey` : the key generated in [Creating and accessing a studio](#creating-and-accessing-a-studio)
 
 `StudioName` : The registered studio name exactly as formatted on creation.
 
@@ -65,7 +81,17 @@ sudo chmod a+w ./projects/
 ```
 
 <br>
+<br>
+<br>
 
+# Creating and accessing a studio
+When setting up a studio, if your users will be authenticating against Clustta's global database, get the `StudioKey` by logging in to the client application and clicking the 'Create Studio' button.
+
+Follow the propmts on the UI to complete the setup
+
+<br>
+<br>
+<br>
 
 # Development: Setting up and running the environment
 
@@ -127,45 +153,6 @@ Ensure that the development server from `clustta-server` is already running else
 
 You will need a `StudioKey` for the `studio` to run successfully. See [Getting a StudioKey](#getting-a-studiokey-for-development).
 <br>
-
-# The different components
-
-For any clustta client to work, there are three crucial parts
-1. [The Global/Authentication server](https://github.com/eaxum/clustta-server)
-2. The Studio server (This)
-3. [The Client application](https://github.com/eaxum/clustta-client)
-
-Make reference to the other repositories for specific guides to each.
-
-### Getting a StudioKey(Global)
-When registering a studio, get the `StudioKey` by running the binary providing two arguments:
-- The `clusta.db` path
-- The `StudioName` (The studio must have been registered from the dashboard beforehand and must match the exact format - casing and spacing).
-
-```bash
-./studio-key /path/to/clustta.db StudioName
-```
-
-### Getting a StudioKey for Development
-When registering a studio for development, get the `StudioKey` by running the go file at `cmd\studio_key\main.go` providing two arguments:
-- The `clusta.db` path
-- The `StudioName` (The studio must have been registered from the dashboard beforehand and must match the exact format - casing and spacing).
-
-```bash
-go run ./cmd/studio_key ./data/clustta.db StudioName
-```
-
-This will print the `StudioKey` to the terminal. Copy and save it for use in [Setting up the variables](#setting-up-the-variables).
-
-### Local studio config
-After getting a studio key, you need to update the `server_name` and `studio_api_key` in the `studio_config.json`.
-
-## The Studio Server (This repository)
-This is the private instance of any Clustta studio server. All the studio projects are stored here and the machine's IP is registered on the Clustta Global server.
-
-When a client attempts to reach this server, it first accesses the global server which then routes it to this machine's IP address.
-
-
 
 
 

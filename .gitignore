@@ -16,7 +16,7 @@ data/
 projects/
 .env
 config.json
-studio_config.json
+# studio_config.json
 cmd/studio_server/letsencrypt
 
 .task
@@ -37,3 +37,4 @@ build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 newData*
 clustta.pkg
 internal/LICENSE
+user_projects/

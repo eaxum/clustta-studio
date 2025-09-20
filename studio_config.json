@@ -1,0 +1,10 @@
+{
+  "host": "0.0.0.0",
+  "port": "7774",
+  "projects_dir": "./user_projects/projects",
+  "shared_projects_dir": "./user_projects/shared_projects",
+  "server_url": "",
+  "server_alt_url": "",
+  "server_name": "Studio",
+  "studio_api_key": "8OVOXE1DSRD50OSK19NJK61741FPLDM04Z5EL0BO61SPKWKKHR1GAE18RJYWK4KA" 
+}
