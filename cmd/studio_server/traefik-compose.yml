@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  # Traefik 3 reverse proxy
+  traefik:
+    image: traefik:v3.1
+    command:
+      - "--api=true"
+      - "--api.insecure=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=eaxumng@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.transport.respondingtimeouts.readtimeout=5000s"
+      - "--entrypoints.web.transport.respondingtimeouts.writetimeout=5000s"
+      - "--entrypoints.websecure.transport.respondingtimeouts.readtimeout=5000s"
+      - "--entrypoints.websecure.transport.respondingtimeouts.writetimeout=5000s"
+      - "--entrypoints.websecure.http3=false"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    networks:
+      - web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    restart: always
+
+networks:
+  web:
+    name: web

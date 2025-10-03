@@ -32,6 +32,19 @@ If docker isnt already installed, install docker and all of it's necessary depen
 sudo apt update && sudo apt upgrade -y && sudo apt install -y apt-transport-https ca-certificates curl software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && sudo apt update && sudo apt install -y docker-ce && sudo systemctl enable docker && sudo usermod -aG docker $USER && mkdir -p ~/.docker/cli-plugins/ && curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o ~/.docker/cli-plugins/docker-compose && chmod +x ~/.docker/cli-plugins/docker-compose && sudo apt autoremove -y && echo 
 ```
 
+## Give permissions to Docker
+After the script completes
+
+1. **Add your user to the docker group** (if not already done):
+   ```bash
+   sudo usermod -aG docker $USER
+   ```
+
+2. **Log out and log back in** for the group membership to take effect, or run:
+   ```bash
+   newgrp docker
+   ```
+
 After the script completes, you must log out and log back in for Docker group membership to take effect.
 
 ### Setting up the variables
@@ -79,6 +92,12 @@ docker compose up -d
 ```bash
 sudo chmod a+w ./projects/
 ```
+
+<br>
+
+
+## Docker Compose Version Warning
+If you see warnings about obsolete `version` attribute in docker-compose.yml files, you can safely ignore them or remove the version line entirely. Modern Docker Compose automatically detects the appropriate version.
 
 <br>
 <br>
