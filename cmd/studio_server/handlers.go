@@ -29,6 +29,10 @@ type PingResponse struct {
 	Status string `json:"status"`
 }
 
+type StudioKeyResponse struct {
+	StudioKey string `json:"studio_key"`
+}
+
 func PingHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -38,6 +42,18 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	response := PingResponse{Status: "active"}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetStudioKeyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	response := StudioKeyResponse{StudioKey: CONFIG.StudioAPIKey}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 
