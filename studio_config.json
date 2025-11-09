@@ -4,7 +4,8 @@
   "projects_dir": "./user_projects/projects",
   "shared_projects_dir": "./user_projects/shared_projects",
   "server_url": "",
-  "server_alt_url": "",
-  "server_name": "Ichigo",
-  "studio_api_key": "JNR99266F5Z18XO9C5NBZQUIW0N11FGRQIGNHWP1WRSCZYCORNL9GISTLFDZHK2G" 
+  "server_alt_url": "http://192.168.0.116:7774",
+  "server_name": "Adnil",
+  "studio_api_key": "PI5MTG7BZTPG780G0MB09ZA9VDACWL7KC3W59NAU26I9585BT7QF39A37QPQJND8" 
 }
+
