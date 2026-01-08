@@ -79,7 +79,10 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /projects", GetProjectsHandler)
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins: []string{
+			"https://app.clustta.com",
+			"http://localhost:1420",
+		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData"},
 		AllowCredentials: true,
