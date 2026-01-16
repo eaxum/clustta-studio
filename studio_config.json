@@ -1,11 +1,10 @@
 {
-  "host": "0.0.0.0",
+  "host": "127.0.0.1",
   "port": "",
-  "projects_dir": "./user_projects/projects",
-  "shared_projects_dir": "./user_projects/shared_projects",
+  "projects_dir": "./data/projects",
+  "shared_projects_dir": "./data/shared_projects",
   "server_url": "",
-  "server_alt_url": "http://192.168.0.116:7774",
-  "server_name": "Adnil",
-  "studio_api_key": "PI5MTG7BZTPG780G0MB09ZA9VDACWL7KC3W59NAU26I9585BT7QF39A37QPQJND8" 
+  "server_alt_url": "http://192.168.0.116",
+  "server_name": "Baby",
+  "studio_api_key": "PR0QR9E9892955K4ALULOUHALZPATGE4WX5I89LBFARPU4UQ6KF6R9NSXNJU7LWX" 
 }
-

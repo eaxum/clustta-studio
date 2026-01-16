@@ -24,6 +24,20 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+type ConflictInfo struct {
+	Type       string `json:"type"`        // "entity" or "task"
+	LocalId    string `json:"local_id"`    // ID client tried to push
+	ExistingId string `json:"existing_id"` // ID that already exists on server
+	Name       string `json:"name"`        // The conflicting name
+	ParentId   string `json:"parent_id"`   // Parent entity ID (or entity_id for tasks)
+	Extension  string `json:"extension"`   // For tasks only
+}
+
+type WriteResult struct {
+	Success   bool           `json:"success"`
+	Conflicts []ConflictInfo `json:"conflicts,omitempty"`
+}
+
 type ProjectData struct {
 	ProjectPreview     string                    `json:"project_preview"`
 	Tasks              []models.Task             `json:"tasks"`
@@ -76,6 +90,113 @@ func (d *ProjectData) IsEmpty() bool {
 		len(d.WorkflowTasks) == 0 &&
 		len(d.Tombs) == 0 &&
 		d.ProjectPreview == ""
+}
+
+// CheckForConflicts checks for entity and task name conflicts before writing data.
+// Returns a WriteResult with any conflicts found. If conflicts exist, data should NOT be written.
+func CheckForConflicts(tx *sqlx.Tx, data ProjectData) (*WriteResult, error) {
+	result := &WriteResult{Success: true, Conflicts: []ConflictInfo{}}
+
+	tombItems := make(map[string]bool)
+	tombedItems, err := repository.GetTombedItems(tx)
+	if err != nil {
+		return nil, err
+	}
+	for _, tombItem := range tombedItems {
+		tombItems[tombItem] = true
+	}
+
+	localEntities, err := repository.GetSimpleEntities(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	localEntitiesIndex := make(map[string]bool)
+	for _, entity := range localEntities {
+		localEntitiesIndex[entity.Id] = true
+	}
+
+	entityByNameParent := make(map[string]string)
+	for _, entity := range localEntities {
+		key := strings.ToLower(entity.Name) + "|" + entity.ParentId
+		entityByNameParent[key] = entity.Id
+	}
+
+	conflictIdMap := make(map[string]string)
+
+	for _, entity := range data.Entities {
+		if tombItems[entity.Id] {
+			continue
+		}
+		if localEntitiesIndex[entity.Id] {
+			continue
+		}
+
+		resolvedParentId := entity.ParentId
+		if mappedParentId, exists := conflictIdMap[entity.ParentId]; exists {
+			resolvedParentId = mappedParentId
+		}
+
+		key := strings.ToLower(entity.Name) + "|" + resolvedParentId
+		if existingId, hasConflict := entityByNameParent[key]; hasConflict {
+			result.Conflicts = append(result.Conflicts, ConflictInfo{
+				Type:       "entity",
+				LocalId:    entity.Id,
+				ExistingId: existingId,
+				Name:       entity.Name,
+				ParentId:   entity.ParentId,
+			})
+			conflictIdMap[entity.Id] = existingId
+		}
+	}
+
+	localTasks, err := repository.GetSimpleTasks(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	localTasksIndex := make(map[string]bool)
+	for _, task := range localTasks {
+		localTasksIndex[task.Id] = true
+	}
+
+	taskByKey := make(map[string]string)
+	for _, task := range localTasks {
+		key := strings.ToLower(task.Name) + "|" + task.EntityId + "|" + task.Extension
+		taskByKey[key] = task.Id
+	}
+
+	for _, task := range data.Tasks {
+		if tombItems[task.Id] {
+			continue
+		}
+		if localTasksIndex[task.Id] {
+			continue
+		}
+
+		resolvedEntityId := task.EntityId
+		if mappedEntityId, exists := conflictIdMap[task.EntityId]; exists {
+			resolvedEntityId = mappedEntityId
+		}
+
+		key := strings.ToLower(task.Name) + "|" + resolvedEntityId + "|" + task.Extension
+		if existingId, hasConflict := taskByKey[key]; hasConflict {
+			result.Conflicts = append(result.Conflicts, ConflictInfo{
+				Type:       "task",
+				LocalId:    task.Id,
+				ExistingId: existingId,
+				Name:       task.Name,
+				ParentId:   task.EntityId,
+				Extension:  task.Extension,
+			})
+		}
+	}
+
+	if len(result.Conflicts) > 0 {
+		result.Success = false
+	}
+
+	return result, nil
 }
 
 func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {

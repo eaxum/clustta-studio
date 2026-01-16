@@ -630,7 +630,19 @@ func PostDataHandler(
 		Tombs: repository.FromPbTombs(userDataPb.Tomb),
 	}
 
-	// objJson, _ := json.Marshal(requestData)
+	conflictResult, err := sync_service.CheckForConflicts(tx, requestData)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if !conflictResult.Success {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(conflictResult)
+		return
+	}
+
 	err = sync_service.WriteProjectData(tx, requestData, true)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
