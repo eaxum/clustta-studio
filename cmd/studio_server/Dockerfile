@@ -12,7 +12,8 @@ RUN go mod download
 # Copy the rest of the application's source code
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux go build -o /clustta_server ./cmd/studio_server
+ARG VERSION=dev
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-X main.Version=${VERSION}" -o /clustta_server ./cmd/studio_server
 
 # Run the tests in the container
 # FROM build-stage AS run-test-stage

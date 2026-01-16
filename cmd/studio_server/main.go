@@ -14,6 +14,9 @@ import (
 	"time"
 )
 
+// Version is set at build time via -ldflags "-X main.Version=x.x.x"
+var Version = "dev"
+
 var Users = map[string]models.StudioUserInfo{}
 
 func GetUsers() error {

@@ -7,5 +7,7 @@ protoc --go_out=. .\internal\repository\schema.proto
 pbjs -t static-module -w es6 --keep-case -o .\frontend\src\lib\repositorypb.js .\internal\repository\schema.proto
 
 docker build -f .\cmd\studio_server\Dockerfile -t eaxum/clustta:latest -t eaxum/clustta:0.4.23 .
+docker build -f .\cmd\studio_server\Dockerfile --build-arg VERSION=0.4.23 -t eaxum/clustta:latest -t eaxum/clustta:0.4.23 .
+go build -ldflags "-X main.Version=0.4.23" -o clustta_server ./cmd/studio_server
 
 MsixPackagingTool.exe create-package --template ".\Clustta_template.xml" -v

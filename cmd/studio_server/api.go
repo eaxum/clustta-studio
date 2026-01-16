@@ -57,6 +57,7 @@ func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /ping", PingHandler)
+	router.HandleFunc("GET /version", VersionHandler)
 	router.HandleFunc("GET /studio-key", GetStudioKeyHandler)
 	router.HandleFunc("POST /{project}", PostProjectHandler)
 	router.HandleFunc("PUT /{project}", RenameProjectHandler)
