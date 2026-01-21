@@ -56,9 +56,27 @@ func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 
+	// ============================================
+	// Authentication Endpoints
+	// ============================================
+	router.HandleFunc("POST /auth/register", RegisterUserHandler)
+	router.HandleFunc("POST /auth/login", LoginUserHandler)
+	router.HandleFunc("GET /auth/logout", LogoutUserHandler)
+	router.HandleFunc("GET /auth/authenticated", UserAuthenticatedHandler)
+	router.HandleFunc("GET /auth/email-exists/{email}", CheckEmailExistHandler)
+	router.HandleFunc("GET /auth/username-exists/{username}", CheckUsernameExistHandler)
+	router.HandleFunc("GET /auth/user", GetCurrentUserHandler)
+
+	// ============================================
+	// System Endpoints
+	// ============================================
 	router.HandleFunc("GET /ping", PingHandler)
 	router.HandleFunc("GET /version", VersionHandler)
 	router.HandleFunc("GET /studio-key", GetStudioKeyHandler)
+
+	// ============================================
+	// Project Endpoints
+	// ============================================
 	router.HandleFunc("POST /{project}", PostProjectHandler)
 	router.HandleFunc("PUT /{project}", RenameProjectHandler)
 	router.HandleFunc("GET /{project}", GetProjectHandler)
@@ -83,14 +101,16 @@ func (s *APIServer) Run() error {
 		AllowedOrigins: []string{
 			"https://app.clustta.com",
 			"http://localhost:1420",
+			"http://wails.localhost:*",
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData", "Cookie"},
 		AllowCredentials: true,
 	})
 
-	handlerWithLogging := RequestLoggerMiddleware(c.Handler(router))
-	// handlerWithCor := c.Handler(router)
+	// Wrap with session manager for auth endpoints
+	handlerWithSession := sessionManager.LoadAndSave(c.Handler(router))
+	handlerWithLogging := RequestLoggerMiddleware(handlerWithSession)
 
 	server := http.Server{
 		Addr:         s.addr,

@@ -117,6 +117,29 @@ func GetUserByEmail(tx *sqlx.Tx, email string) (models.User, error) {
 	}
 	return user, nil
 }
+
+// EmailExists checks if an email is already registered
+func EmailExists(tx *sqlx.Tx, email string) (bool, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM user WHERE email = ?`
+	err := tx.Get(&count, query, email)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// UsernameExists checks if a username is already taken
+func UsernameExists(tx *sqlx.Tx, username string) (bool, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM user WHERE username = ?`
+	err := tx.Get(&count, query, username)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func IsUserDeleted(tx *sqlx.Tx, emailOrUsername string) (bool, error) {
 	var isDeleted bool
 	query := `SELECT is_deleted FROM user WHERE email = ? OR username = ?`
@@ -194,6 +217,14 @@ func UpdateUser(tx *sqlx.Tx, id string, params map[string]interface{}) error {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 	return nil
+}
+
+// ActivateUser sets the user's active status to true
+func ActivateUser(tx *sqlx.Tx, id string) error {
+	params := map[string]interface{}{
+		"active": true,
+	}
+	return UpdateUser(tx, id, params)
 }
 
 func UpdatePassword(tx *sqlx.Tx, id string, new_password string) error {

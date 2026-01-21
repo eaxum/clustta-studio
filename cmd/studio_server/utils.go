@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/jmoiron/sqlx"
 )
 
 func UpdateStudioUrl() error {
@@ -40,8 +42,53 @@ func UpdateStudioUrl() error {
 
 	return nil
 }
+
+// GetStudioUsers returns users from local DB in private mode, or from global server otherwise
 func GetStudioUsers() ([]models.StudioUserInfo, error) {
-	///studio/{studio_id}/persons
+	if CONFIG.Private {
+		return getLocalStudioUsers()
+	}
+	return getRemoteStudioUsers()
+}
+
+// getLocalStudioUsers fetches users from the local studio_users.db
+func getLocalStudioUsers() ([]models.StudioUserInfo, error) {
+	users := []models.StudioUserInfo{}
+
+	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
+	if err != nil {
+		return users, fmt.Errorf("failed to open local users db: %w", err)
+	}
+	defer db.Close()
+
+	query := `
+		SELECT id, first_name, last_name, username, email, active
+		FROM user
+		WHERE active = 1
+	`
+	rows, err := db.Queryx(query)
+	if err != nil {
+		return users, fmt.Errorf("failed to query local users: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user models.StudioUserInfo
+		err := rows.StructScan(&user)
+		if err != nil {
+			continue
+		}
+		// Set default values for fields not in local DB
+		user.RoleName = "member"
+		user.StudioName = CONFIG.ServerName
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+// getRemoteStudioUsers fetches users from the global Clustta server
+func getRemoteStudioUsers() ([]models.StudioUserInfo, error) {
 	users := []models.StudioUserInfo{}
 	url := constants.HOST + "/studio/" + CONFIG.ServerName + ":" + CONFIG.StudioAPIKey + "/persons"
 
