@@ -686,6 +686,7 @@ func PostDataHandler(
 		http.Error(w, err.Error(), 400)
 		return
 	}
+	utils.RunPassiveCheckpoint(db)
 }
 
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
@@ -829,6 +830,7 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
+	chunk_service.RunPassiveCheckpointForProject(projectPath)
 
 	data := map[string]interface{}{
 		"failed_chunks": failedChunks,
