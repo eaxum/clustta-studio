@@ -407,6 +407,54 @@ func ToPbTombs(tombs []Tomb) []*repositorypb.Tomb {
 	return pb
 }
 
+func ToPbIntegrationProjects(integrations []models.IntegrationProject) []*repositorypb.IntegrationProject {
+	pb := make([]*repositorypb.IntegrationProject, len(integrations))
+	for i, ip := range integrations {
+		pb[i] = &repositorypb.IntegrationProject{
+			Id:                  ip.Id,
+			Mtime:               int64(ip.MTime),
+			IntegrationType:     ip.IntegrationType,
+			ExternalProjectId:   ip.ExternalProjectId,
+			ExternalProjectName: ip.ExternalProjectName,
+			ApiUrl:              ip.ApiUrl,
+			Config:              ip.Config,
+			Synced:              ip.Synced,
+		}
+	}
+	return pb
+}
+
+func ToPbIntegrationCollectionMappings(mappings []models.IntegrationCollectionMapping) []*repositorypb.IntegrationCollectionMapping {
+	pb := make([]*repositorypb.IntegrationCollectionMapping, len(mappings))
+	for i, cm := range mappings {
+		pb[i] = &repositorypb.IntegrationCollectionMapping{
+			Id:                   cm.Id,
+			Mtime:                int64(cm.MTime),
+			IntegrationProjectId: cm.IntegrationProjectId,
+			CollectionId:         cm.CollectionId,
+			ExternalEntityId:     cm.ExternalEntityId,
+			ExternalEntityType:   cm.ExternalEntityType,
+			Synced:               cm.Synced,
+		}
+	}
+	return pb
+}
+
+func ToPbIntegrationAssetMappings(mappings []models.IntegrationAssetMapping) []*repositorypb.IntegrationAssetMapping {
+	pb := make([]*repositorypb.IntegrationAssetMapping, len(mappings))
+	for i, am := range mappings {
+		pb[i] = &repositorypb.IntegrationAssetMapping{
+			Id:                   am.Id,
+			Mtime:                int64(am.MTime),
+			IntegrationProjectId: am.IntegrationProjectId,
+			AssetId:              am.AssetId,
+			ExternalTaskId:       am.ExternalTaskId,
+			Synced:               am.Synced,
+		}
+	}
+	return pb
+}
+
 // type FullTask struct {
 // 	Id              string `db:"id" json:"id"`
 // 	MTime           int    `db:"mtime" json:"mtime"`
@@ -1009,4 +1057,63 @@ func FromPbTombs(pbs []*repositorypb.Tomb) []Tomb {
 		tombs[i] = FromPbTomb(pb)
 	}
 	return tombs
+}
+func FromPbIntegrationProject(pb *repositorypb.IntegrationProject) models.IntegrationProject {
+	return models.IntegrationProject{
+		Id:                  pb.Id,
+		MTime:               int(pb.Mtime),
+		IntegrationType:     pb.IntegrationType,
+		ExternalProjectId:   pb.ExternalProjectId,
+		ExternalProjectName: pb.ExternalProjectName,
+		ApiUrl:              pb.ApiUrl,
+		Config:              pb.Config,
+		Synced:              pb.Synced,
+	}
+}
+
+func FromPbIntegrationProjects(pbs []*repositorypb.IntegrationProject) []models.IntegrationProject {
+	items := make([]models.IntegrationProject, len(pbs))
+	for i, pb := range pbs {
+		items[i] = FromPbIntegrationProject(pb)
+	}
+	return items
+}
+
+func FromPbIntegrationCollectionMapping(pb *repositorypb.IntegrationCollectionMapping) models.IntegrationCollectionMapping {
+	return models.IntegrationCollectionMapping{
+		Id:                   pb.Id,
+		MTime:                int(pb.Mtime),
+		IntegrationProjectId: pb.IntegrationProjectId,
+		CollectionId:         pb.CollectionId,
+		ExternalEntityId:     pb.ExternalEntityId,
+		ExternalEntityType:   pb.ExternalEntityType,
+		Synced:               pb.Synced,
+	}
+}
+
+func FromPbIntegrationCollectionMappings(pbs []*repositorypb.IntegrationCollectionMapping) []models.IntegrationCollectionMapping {
+	items := make([]models.IntegrationCollectionMapping, len(pbs))
+	for i, pb := range pbs {
+		items[i] = FromPbIntegrationCollectionMapping(pb)
+	}
+	return items
+}
+
+func FromPbIntegrationAssetMapping(pb *repositorypb.IntegrationAssetMapping) models.IntegrationAssetMapping {
+	return models.IntegrationAssetMapping{
+		Id:                   pb.Id,
+		MTime:                int(pb.Mtime),
+		IntegrationProjectId: pb.IntegrationProjectId,
+		AssetId:              pb.AssetId,
+		ExternalTaskId:       pb.ExternalTaskId,
+		Synced:               pb.Synced,
+	}
+}
+
+func FromPbIntegrationAssetMappings(pbs []*repositorypb.IntegrationAssetMapping) []models.IntegrationAssetMapping {
+	items := make([]models.IntegrationAssetMapping, len(pbs))
+	for i, pb := range pbs {
+		items[i] = FromPbIntegrationAssetMapping(pb)
+	}
+	return items
 }

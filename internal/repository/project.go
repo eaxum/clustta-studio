@@ -161,7 +161,7 @@ func InitDB(projectPath string, studioName, workingDir string, user auth_service
 	if err != nil {
 		return err
 	}
-	err = utils.SetProjectVersion(tx, 1.4)
+	err = utils.SetProjectVersion(tx, 1.8)
 	if err != nil {
 		return err
 	}
@@ -1147,7 +1147,7 @@ func UpdateProject(projectPath string) error {
 	}
 	defer tx.Rollback()
 
-	err = utils.SetProjectVersion(tx, 1.7)
+	err = utils.SetProjectVersion(tx, 1.8)
 	if err != nil {
 		return err
 	}

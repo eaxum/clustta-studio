@@ -242,6 +242,28 @@ func OLDLoadUserData(tx *sqlx.Tx, userId string) (ProjectData, error) {
 
 	userData.Tags = tags
 	userData.TasksTags = tasksTags
+
+	integrationProjects := []models.IntegrationProject{}
+	err = base_service.GetAll(tx, "integration_project", &integrationProjects)
+	if err != nil {
+		return ProjectData{}, err
+	}
+	userData.IntegrationProjects = integrationProjects
+
+	integrationCollectionMappings := []models.IntegrationCollectionMapping{}
+	err = base_service.GetAll(tx, "integration_collection_mapping", &integrationCollectionMappings)
+	if err != nil {
+		return ProjectData{}, err
+	}
+	userData.IntegrationCollectionMappings = integrationCollectionMappings
+
+	integrationAssetMappings := []models.IntegrationAssetMapping{}
+	err = base_service.GetAll(tx, "integration_asset_mapping", &integrationAssetMappings)
+	if err != nil {
+		return ProjectData{}, err
+	}
+	userData.IntegrationAssetMappings = integrationAssetMappings
+
 	return userData, nil
 }
 
@@ -475,6 +497,28 @@ func LoadUserData(tx *sqlx.Tx, userId string) (ProjectData, error) {
 
 	userData.Tags = tags
 	userData.TasksTags = tasksTags
+
+	integrationProjects := []models.IntegrationProject{}
+	err = base_service.GetAll(tx, "integration_project", &integrationProjects)
+	if err != nil {
+		return ProjectData{}, err
+	}
+	userData.IntegrationProjects = integrationProjects
+
+	integrationCollectionMappings := []models.IntegrationCollectionMapping{}
+	err = base_service.GetAll(tx, "integration_collection_mapping", &integrationCollectionMappings)
+	if err != nil {
+		return ProjectData{}, err
+	}
+	userData.IntegrationCollectionMappings = integrationCollectionMappings
+
+	integrationAssetMappings := []models.IntegrationAssetMapping{}
+	err = base_service.GetAll(tx, "integration_asset_mapping", &integrationAssetMappings)
+	if err != nil {
+		return ProjectData{}, err
+	}
+	userData.IntegrationAssetMappings = integrationAssetMappings
+
 	return userData, nil
 }
 
@@ -918,6 +962,31 @@ func LoadChangedData(tx *sqlx.Tx) (ProjectData, error) {
 	userData.TasksTags = tasksTags
 
 	userData.Tombs = tombs
+
+	integrationProjectsQuery := "SELECT * FROM integration_project WHERE synced = 0"
+	integrationProjects := []models.IntegrationProject{}
+	err = tx.Select(&integrationProjects, integrationProjectsQuery)
+	if err != nil && err != sql.ErrNoRows {
+		return userData, err
+	}
+	userData.IntegrationProjects = integrationProjects
+
+	integrationCollectionMappingsQuery := "SELECT * FROM integration_collection_mapping WHERE synced = 0"
+	integrationCollectionMappings := []models.IntegrationCollectionMapping{}
+	err = tx.Select(&integrationCollectionMappings, integrationCollectionMappingsQuery)
+	if err != nil && err != sql.ErrNoRows {
+		return userData, err
+	}
+	userData.IntegrationCollectionMappings = integrationCollectionMappings
+
+	integrationAssetMappingsQuery := "SELECT * FROM integration_asset_mapping WHERE synced = 0"
+	integrationAssetMappings := []models.IntegrationAssetMapping{}
+	err = tx.Select(&integrationAssetMappings, integrationAssetMappingsQuery)
+	if err != nil && err != sql.ErrNoRows {
+		return userData, err
+	}
+	userData.IntegrationAssetMappings = integrationAssetMappings
+
 	return userData, nil
 }
 

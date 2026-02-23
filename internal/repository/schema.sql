@@ -652,6 +652,84 @@ CREATE TABLE IF NOT EXISTS tomb (
     synced BOOLEAN DEFAULT 0 NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS integration_project (
+    id TEXT PRIMARY KEY,
+    mtime INTEGER NOT NULL,
+    integration_type TEXT NOT NULL COLLATE NOCASE,
+    external_project_id TEXT NOT NULL,
+    external_project_name TEXT NOT NULL COLLATE NOCASE,
+    api_url TEXT NOT NULL,
+    config TEXT DEFAULT '{}' NOT NULL,
+    synced BOOLEAN DEFAULT 0 NOT NULL,
+    UNIQUE (integration_type)
+);
+
+CREATE TRIGGER IF NOT EXISTS integration_project_update AFTER UPDATE ON integration_project
+FOR EACH ROW
+WHEN OLD.mtime != NEW.mtime
+BEGIN
+    UPDATE integration_project SET synced = 0 WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS integration_project_delete AFTER DELETE ON integration_project
+FOR EACH ROW
+BEGIN
+    INSERT INTO tomb (id, mtime, table_name, synced) VALUES (OLD.id, unixepoch(), 'integration_project', 0);
+END;
+
+CREATE TABLE IF NOT EXISTS integration_collection_mapping (
+    id TEXT PRIMARY KEY,
+    mtime INTEGER NOT NULL,
+    integration_project_id TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    external_entity_id TEXT NOT NULL,
+    external_entity_type TEXT NOT NULL,
+    synced BOOLEAN DEFAULT 0 NOT NULL,
+    FOREIGN KEY (integration_project_id) REFERENCES integration_project(id) ON DELETE CASCADE,
+    FOREIGN KEY (collection_id) REFERENCES entity(id) ON DELETE CASCADE,
+    UNIQUE (integration_project_id, collection_id),
+    UNIQUE (integration_project_id, external_entity_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS integration_collection_mapping_update AFTER UPDATE ON integration_collection_mapping
+FOR EACH ROW
+WHEN OLD.mtime != NEW.mtime
+BEGIN
+    UPDATE integration_collection_mapping SET synced = 0 WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS integration_collection_mapping_delete AFTER DELETE ON integration_collection_mapping
+FOR EACH ROW
+BEGIN
+    INSERT INTO tomb (id, mtime, table_name, synced) VALUES (OLD.id, unixepoch(), 'integration_collection_mapping', 0);
+END;
+
+CREATE TABLE IF NOT EXISTS integration_asset_mapping (
+    id TEXT PRIMARY KEY,
+    mtime INTEGER NOT NULL,
+    integration_project_id TEXT NOT NULL,
+    asset_id TEXT NOT NULL,
+    external_task_id TEXT NOT NULL,
+    synced BOOLEAN DEFAULT 0 NOT NULL,
+    FOREIGN KEY (integration_project_id) REFERENCES integration_project(id) ON DELETE CASCADE,
+    FOREIGN KEY (asset_id) REFERENCES task(id) ON DELETE CASCADE,
+    UNIQUE (integration_project_id, asset_id),
+    UNIQUE (integration_project_id, external_task_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS integration_asset_mapping_update AFTER UPDATE ON integration_asset_mapping
+FOR EACH ROW
+WHEN OLD.mtime != NEW.mtime
+BEGIN
+    UPDATE integration_asset_mapping SET synced = 0 WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS integration_asset_mapping_delete AFTER DELETE ON integration_asset_mapping
+FOR EACH ROW
+BEGIN
+    INSERT INTO tomb (id, mtime, table_name, synced) VALUES (OLD.id, unixepoch(), 'integration_asset_mapping', 0);
+END;
+
 DROP VIEW IF EXISTS entity_hierarchy;
 
 CREATE VIEW entity_hierarchy AS
