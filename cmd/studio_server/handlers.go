@@ -859,6 +859,10 @@ func PostDataHandler(
 		TasksTags: repository.FromPbTaskTags(userDataPb.TasksTags),
 
 		Tombs: repository.FromPbTombs(userDataPb.Tomb),
+
+		IntegrationProjects:           repository.FromPbIntegrationProjects(userDataPb.IntegrationProjects),
+		IntegrationCollectionMappings: repository.FromPbIntegrationCollectionMappings(userDataPb.IntegrationCollectionMappings),
+		IntegrationAssetMappings:      repository.FromPbIntegrationAssetMappings(userDataPb.IntegrationAssetMappings),
 	}
 
 	conflictResult, err := sync_service.CheckForConflicts(tx, requestData)

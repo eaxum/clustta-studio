@@ -10,13 +10,13 @@ import (
 )
 
 // CreateIntegrationProject creates a new integration project link.
-func CreateIntegrationProject(tx *sqlx.Tx, integrationType, externalProjectId, externalProjectName, apiUrl, config string) (models.IntegrationProject, error) {
+func CreateIntegrationProject(tx *sqlx.Tx, integrationId, externalProjectId, externalProjectName, apiUrl, syncOptions, linkedByUserId, linkedAt string, enabled bool) (models.IntegrationProject, error) {
 	id := uuid.New().String()
 	mtime := utils.GetEpochTime()
 
-	query := `INSERT INTO integration_project (id, mtime, integration_type, external_project_id, external_project_name, api_url, config, synced)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 0)`
-	_, err := tx.Exec(query, id, mtime, integrationType, externalProjectId, externalProjectName, apiUrl, config)
+	query := `INSERT INTO integration_project (id, mtime, integration_id, external_project_id, external_project_name, api_url, sync_options, linked_by_user_id, linked_at, enabled, synced)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0)`
+	_, err := tx.Exec(query, id, mtime, integrationId, externalProjectId, externalProjectName, apiUrl, syncOptions, linkedByUserId, linkedAt, enabled)
 	if err != nil {
 		return models.IntegrationProject{}, err
 	}
@@ -31,10 +31,10 @@ func GetIntegrationProject(tx *sqlx.Tx, id string) (models.IntegrationProject, e
 	return project, err
 }
 
-// GetIntegrationProjectByType retrieves an integration project by integration type.
-func GetIntegrationProjectByType(tx *sqlx.Tx, integrationType string) (models.IntegrationProject, error) {
+// GetIntegrationProjectByIntegrationId retrieves an integration project by integration ID.
+func GetIntegrationProjectByIntegrationId(tx *sqlx.Tx, integrationId string) (models.IntegrationProject, error) {
 	var project models.IntegrationProject
-	err := tx.Get(&project, "SELECT * FROM integration_project WHERE integration_type = $1", integrationType)
+	err := tx.Get(&project, "SELECT * FROM integration_project WHERE integration_id = $1", integrationId)
 	return project, err
 }
 
@@ -46,11 +46,11 @@ func GetIntegrationProjects(tx *sqlx.Tx) ([]models.IntegrationProject, error) {
 }
 
 // UpdateIntegrationProject updates an existing integration project.
-func UpdateIntegrationProject(tx *sqlx.Tx, id, externalProjectId, externalProjectName, apiUrl, config string) (models.IntegrationProject, error) {
+func UpdateIntegrationProject(tx *sqlx.Tx, id, externalProjectId, externalProjectName, apiUrl, syncOptions string, enabled bool) (models.IntegrationProject, error) {
 	mtime := utils.GetEpochTime()
 
-	query := `UPDATE integration_project SET mtime = $1, external_project_id = $2, external_project_name = $3, api_url = $4, config = $5 WHERE id = $6`
-	_, err := tx.Exec(query, mtime, externalProjectId, externalProjectName, apiUrl, config, id)
+	query := `UPDATE integration_project SET mtime = $1, external_project_id = $2, external_project_name = $3, api_url = $4, sync_options = $5, enabled = $6 WHERE id = $7`
+	_, err := tx.Exec(query, mtime, externalProjectId, externalProjectName, apiUrl, syncOptions, enabled, id)
 	if err != nil {
 		return models.IntegrationProject{}, err
 	}
@@ -65,13 +65,13 @@ func DeleteIntegrationProject(tx *sqlx.Tx, id string) error {
 }
 
 // CreateCollectionMapping creates a new collection to external entity mapping.
-func CreateCollectionMapping(tx *sqlx.Tx, integrationProjectId, collectionId, externalEntityId, externalEntityType string) (models.IntegrationCollectionMapping, error) {
+func CreateCollectionMapping(tx *sqlx.Tx, integrationId, externalId, externalType, externalName, externalParentId, externalPath, externalMetadata, collectionId, syncedAt string) (models.IntegrationCollectionMapping, error) {
 	id := uuid.New().String()
 	mtime := utils.GetEpochTime()
 
-	query := `INSERT INTO integration_collection_mapping (id, mtime, integration_project_id, collection_id, external_entity_id, external_entity_type, synced)
-		VALUES ($1, $2, $3, $4, $5, $6, 0)`
-	_, err := tx.Exec(query, id, mtime, integrationProjectId, collectionId, externalEntityId, externalEntityType)
+	query := `INSERT INTO integration_collection_mapping (id, mtime, integration_id, external_id, external_type, external_name, external_parent_id, external_path, external_metadata, collection_id, synced_at, synced)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0)`
+	_, err := tx.Exec(query, id, mtime, integrationId, externalId, externalType, externalName, externalParentId, externalPath, externalMetadata, collectionId, syncedAt)
 	if err != nil {
 		return models.IntegrationCollectionMapping{}, err
 	}
@@ -86,17 +86,24 @@ func GetCollectionMapping(tx *sqlx.Tx, id string) (models.IntegrationCollectionM
 	return mapping, err
 }
 
-// GetCollectionMappingByCollectionId retrieves a collection mapping by collection ID and integration project.
-func GetCollectionMappingByCollectionId(tx *sqlx.Tx, integrationProjectId, collectionId string) (models.IntegrationCollectionMapping, error) {
+// GetCollectionMappingByExternalId retrieves a collection mapping by external ID and integration ID.
+func GetCollectionMappingByExternalId(tx *sqlx.Tx, integrationId, externalId string) (models.IntegrationCollectionMapping, error) {
 	var mapping models.IntegrationCollectionMapping
-	err := tx.Get(&mapping, "SELECT * FROM integration_collection_mapping WHERE integration_project_id = $1 AND collection_id = $2", integrationProjectId, collectionId)
+	err := tx.Get(&mapping, "SELECT * FROM integration_collection_mapping WHERE integration_id = $1 AND external_id = $2", integrationId, externalId)
 	return mapping, err
 }
 
-// GetCollectionMappings retrieves all collection mappings for an integration project.
-func GetCollectionMappings(tx *sqlx.Tx, integrationProjectId string) ([]models.IntegrationCollectionMapping, error) {
+// GetCollectionMappingByCollectionId retrieves a collection mapping by collection ID and integration ID.
+func GetCollectionMappingByCollectionId(tx *sqlx.Tx, integrationId, collectionId string) (models.IntegrationCollectionMapping, error) {
+	var mapping models.IntegrationCollectionMapping
+	err := tx.Get(&mapping, "SELECT * FROM integration_collection_mapping WHERE integration_id = $1 AND collection_id = $2", integrationId, collectionId)
+	return mapping, err
+}
+
+// GetCollectionMappings retrieves all collection mappings for an integration.
+func GetCollectionMappings(tx *sqlx.Tx, integrationId string) ([]models.IntegrationCollectionMapping, error) {
 	var mappings []models.IntegrationCollectionMapping
-	err := tx.Select(&mappings, "SELECT * FROM integration_collection_mapping WHERE integration_project_id = $1", integrationProjectId)
+	err := tx.Select(&mappings, "SELECT * FROM integration_collection_mapping WHERE integration_id = $1", integrationId)
 	return mappings, err
 }
 
@@ -108,11 +115,11 @@ func GetAllCollectionMappings(tx *sqlx.Tx) ([]models.IntegrationCollectionMappin
 }
 
 // UpdateCollectionMapping updates an existing collection mapping.
-func UpdateCollectionMapping(tx *sqlx.Tx, id, externalEntityId, externalEntityType string) (models.IntegrationCollectionMapping, error) {
+func UpdateCollectionMapping(tx *sqlx.Tx, id, externalType, externalName, externalParentId, externalPath, externalMetadata, collectionId, syncedAt string) (models.IntegrationCollectionMapping, error) {
 	mtime := utils.GetEpochTime()
 
-	query := `UPDATE integration_collection_mapping SET mtime = $1, external_entity_id = $2, external_entity_type = $3 WHERE id = $4`
-	_, err := tx.Exec(query, mtime, externalEntityId, externalEntityType, id)
+	query := `UPDATE integration_collection_mapping SET mtime = $1, external_type = $2, external_name = $3, external_parent_id = $4, external_path = $5, external_metadata = $6, collection_id = $7, synced_at = $8 WHERE id = $9`
+	_, err := tx.Exec(query, mtime, externalType, externalName, externalParentId, externalPath, externalMetadata, collectionId, syncedAt, id)
 	if err != nil {
 		return models.IntegrationCollectionMapping{}, err
 	}
@@ -127,13 +134,13 @@ func DeleteCollectionMapping(tx *sqlx.Tx, id string) error {
 }
 
 // CreateAssetMapping creates a new asset to external task mapping.
-func CreateAssetMapping(tx *sqlx.Tx, integrationProjectId, assetId, externalTaskId string) (models.IntegrationAssetMapping, error) {
+func CreateAssetMapping(tx *sqlx.Tx, integrationId, externalId, externalName, externalParentId, externalType, externalStatus, externalAssignees, externalMetadata, assetId, lastPushedCheckpointId, syncedAt string) (models.IntegrationAssetMapping, error) {
 	id := uuid.New().String()
 	mtime := utils.GetEpochTime()
 
-	query := `INSERT INTO integration_asset_mapping (id, mtime, integration_project_id, asset_id, external_task_id, synced)
-		VALUES ($1, $2, $3, $4, $5, 0)`
-	_, err := tx.Exec(query, id, mtime, integrationProjectId, assetId, externalTaskId)
+	query := `INSERT INTO integration_asset_mapping (id, mtime, integration_id, external_id, external_name, external_parent_id, external_type, external_status, external_assignees, external_metadata, asset_id, last_pushed_checkpoint_id, synced_at, synced)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0)`
+	_, err := tx.Exec(query, id, mtime, integrationId, externalId, externalName, externalParentId, externalType, externalStatus, externalAssignees, externalMetadata, assetId, lastPushedCheckpointId, syncedAt)
 	if err != nil {
 		return models.IntegrationAssetMapping{}, err
 	}
@@ -148,17 +155,24 @@ func GetAssetMapping(tx *sqlx.Tx, id string) (models.IntegrationAssetMapping, er
 	return mapping, err
 }
 
-// GetAssetMappingByAssetId retrieves an asset mapping by asset ID and integration project.
-func GetAssetMappingByAssetId(tx *sqlx.Tx, integrationProjectId, assetId string) (models.IntegrationAssetMapping, error) {
+// GetAssetMappingByExternalId retrieves an asset mapping by external ID and integration ID.
+func GetAssetMappingByExternalId(tx *sqlx.Tx, integrationId, externalId string) (models.IntegrationAssetMapping, error) {
 	var mapping models.IntegrationAssetMapping
-	err := tx.Get(&mapping, "SELECT * FROM integration_asset_mapping WHERE integration_project_id = $1 AND asset_id = $2", integrationProjectId, assetId)
+	err := tx.Get(&mapping, "SELECT * FROM integration_asset_mapping WHERE integration_id = $1 AND external_id = $2", integrationId, externalId)
 	return mapping, err
 }
 
-// GetAssetMappings retrieves all asset mappings for an integration project.
-func GetAssetMappings(tx *sqlx.Tx, integrationProjectId string) ([]models.IntegrationAssetMapping, error) {
+// GetAssetMappingByAssetId retrieves an asset mapping by asset ID and integration ID.
+func GetAssetMappingByAssetId(tx *sqlx.Tx, integrationId, assetId string) (models.IntegrationAssetMapping, error) {
+	var mapping models.IntegrationAssetMapping
+	err := tx.Get(&mapping, "SELECT * FROM integration_asset_mapping WHERE integration_id = $1 AND asset_id = $2", integrationId, assetId)
+	return mapping, err
+}
+
+// GetAssetMappings retrieves all asset mappings for an integration.
+func GetAssetMappings(tx *sqlx.Tx, integrationId string) ([]models.IntegrationAssetMapping, error) {
 	var mappings []models.IntegrationAssetMapping
-	err := tx.Select(&mappings, "SELECT * FROM integration_asset_mapping WHERE integration_project_id = $1", integrationProjectId)
+	err := tx.Select(&mappings, "SELECT * FROM integration_asset_mapping WHERE integration_id = $1", integrationId)
 	return mappings, err
 }
 
@@ -170,11 +184,11 @@ func GetAllAssetMappings(tx *sqlx.Tx) ([]models.IntegrationAssetMapping, error) 
 }
 
 // UpdateAssetMapping updates an existing asset mapping.
-func UpdateAssetMapping(tx *sqlx.Tx, id, externalTaskId string) (models.IntegrationAssetMapping, error) {
+func UpdateAssetMapping(tx *sqlx.Tx, id, externalName, externalParentId, externalType, externalStatus, externalAssignees, externalMetadata, assetId, lastPushedCheckpointId, syncedAt string) (models.IntegrationAssetMapping, error) {
 	mtime := utils.GetEpochTime()
 
-	query := `UPDATE integration_asset_mapping SET mtime = $1, external_task_id = $2 WHERE id = $3`
-	_, err := tx.Exec(query, mtime, externalTaskId, id)
+	query := `UPDATE integration_asset_mapping SET mtime = $1, external_name = $2, external_parent_id = $3, external_type = $4, external_status = $5, external_assignees = $6, external_metadata = $7, asset_id = $8, last_pushed_checkpoint_id = $9, synced_at = $10 WHERE id = $11`
+	_, err := tx.Exec(query, mtime, externalName, externalParentId, externalType, externalStatus, externalAssignees, externalMetadata, assetId, lastPushedCheckpointId, syncedAt, id)
 	if err != nil {
 		return models.IntegrationAssetMapping{}, err
 	}

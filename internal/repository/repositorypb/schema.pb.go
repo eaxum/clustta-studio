@@ -2273,12 +2273,15 @@ type IntegrationProject struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Mtime               int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
-	IntegrationType     string                 `protobuf:"bytes,3,opt,name=integration_type,json=integrationType,proto3" json:"integration_type,omitempty"`
+	IntegrationId       string                 `protobuf:"bytes,3,opt,name=integration_id,json=integrationId,proto3" json:"integration_id,omitempty"`
 	ExternalProjectId   string                 `protobuf:"bytes,4,opt,name=external_project_id,json=externalProjectId,proto3" json:"external_project_id,omitempty"`
 	ExternalProjectName string                 `protobuf:"bytes,5,opt,name=external_project_name,json=externalProjectName,proto3" json:"external_project_name,omitempty"`
 	ApiUrl              string                 `protobuf:"bytes,6,opt,name=api_url,json=apiUrl,proto3" json:"api_url,omitempty"`
-	Config              string                 `protobuf:"bytes,7,opt,name=config,proto3" json:"config,omitempty"`
-	Synced              bool                   `protobuf:"varint,8,opt,name=synced,proto3" json:"synced,omitempty"`
+	SyncOptions         string                 `protobuf:"bytes,7,opt,name=sync_options,json=syncOptions,proto3" json:"sync_options,omitempty"`
+	LinkedByUserId      string                 `protobuf:"bytes,8,opt,name=linked_by_user_id,json=linkedByUserId,proto3" json:"linked_by_user_id,omitempty"`
+	LinkedAt            string                 `protobuf:"bytes,9,opt,name=linked_at,json=linkedAt,proto3" json:"linked_at,omitempty"`
+	Enabled             bool                   `protobuf:"varint,10,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Synced              bool                   `protobuf:"varint,11,opt,name=synced,proto3" json:"synced,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -2327,9 +2330,9 @@ func (x *IntegrationProject) GetMtime() int64 {
 	return 0
 }
 
-func (x *IntegrationProject) GetIntegrationType() string {
+func (x *IntegrationProject) GetIntegrationId() string {
 	if x != nil {
-		return x.IntegrationType
+		return x.IntegrationId
 	}
 	return ""
 }
@@ -2355,11 +2358,32 @@ func (x *IntegrationProject) GetApiUrl() string {
 	return ""
 }
 
-func (x *IntegrationProject) GetConfig() string {
+func (x *IntegrationProject) GetSyncOptions() string {
 	if x != nil {
-		return x.Config
+		return x.SyncOptions
 	}
 	return ""
+}
+
+func (x *IntegrationProject) GetLinkedByUserId() string {
+	if x != nil {
+		return x.LinkedByUserId
+	}
+	return ""
+}
+
+func (x *IntegrationProject) GetLinkedAt() string {
+	if x != nil {
+		return x.LinkedAt
+	}
+	return ""
+}
+
+func (x *IntegrationProject) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
 }
 
 func (x *IntegrationProject) GetSynced() bool {
@@ -2370,16 +2394,21 @@ func (x *IntegrationProject) GetSynced() bool {
 }
 
 type IntegrationCollectionMapping struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Mtime                int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
-	IntegrationProjectId string                 `protobuf:"bytes,3,opt,name=integration_project_id,json=integrationProjectId,proto3" json:"integration_project_id,omitempty"`
-	CollectionId         string                 `protobuf:"bytes,4,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
-	ExternalEntityId     string                 `protobuf:"bytes,5,opt,name=external_entity_id,json=externalEntityId,proto3" json:"external_entity_id,omitempty"`
-	ExternalEntityType   string                 `protobuf:"bytes,6,opt,name=external_entity_type,json=externalEntityType,proto3" json:"external_entity_type,omitempty"`
-	Synced               bool                   `protobuf:"varint,7,opt,name=synced,proto3" json:"synced,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Mtime            int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	IntegrationId    string                 `protobuf:"bytes,3,opt,name=integration_id,json=integrationId,proto3" json:"integration_id,omitempty"`
+	ExternalId       string                 `protobuf:"bytes,4,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
+	ExternalType     string                 `protobuf:"bytes,5,opt,name=external_type,json=externalType,proto3" json:"external_type,omitempty"`
+	ExternalName     string                 `protobuf:"bytes,6,opt,name=external_name,json=externalName,proto3" json:"external_name,omitempty"`
+	ExternalParentId string                 `protobuf:"bytes,7,opt,name=external_parent_id,json=externalParentId,proto3" json:"external_parent_id,omitempty"`
+	ExternalPath     string                 `protobuf:"bytes,8,opt,name=external_path,json=externalPath,proto3" json:"external_path,omitempty"`
+	ExternalMetadata string                 `protobuf:"bytes,9,opt,name=external_metadata,json=externalMetadata,proto3" json:"external_metadata,omitempty"`
+	CollectionId     string                 `protobuf:"bytes,10,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	SyncedAt         string                 `protobuf:"bytes,11,opt,name=synced_at,json=syncedAt,proto3" json:"synced_at,omitempty"`
+	Synced           bool                   `protobuf:"varint,12,opt,name=synced,proto3" json:"synced,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *IntegrationCollectionMapping) Reset() {
@@ -2426,9 +2455,51 @@ func (x *IntegrationCollectionMapping) GetMtime() int64 {
 	return 0
 }
 
-func (x *IntegrationCollectionMapping) GetIntegrationProjectId() string {
+func (x *IntegrationCollectionMapping) GetIntegrationId() string {
 	if x != nil {
-		return x.IntegrationProjectId
+		return x.IntegrationId
+	}
+	return ""
+}
+
+func (x *IntegrationCollectionMapping) GetExternalId() string {
+	if x != nil {
+		return x.ExternalId
+	}
+	return ""
+}
+
+func (x *IntegrationCollectionMapping) GetExternalType() string {
+	if x != nil {
+		return x.ExternalType
+	}
+	return ""
+}
+
+func (x *IntegrationCollectionMapping) GetExternalName() string {
+	if x != nil {
+		return x.ExternalName
+	}
+	return ""
+}
+
+func (x *IntegrationCollectionMapping) GetExternalParentId() string {
+	if x != nil {
+		return x.ExternalParentId
+	}
+	return ""
+}
+
+func (x *IntegrationCollectionMapping) GetExternalPath() string {
+	if x != nil {
+		return x.ExternalPath
+	}
+	return ""
+}
+
+func (x *IntegrationCollectionMapping) GetExternalMetadata() string {
+	if x != nil {
+		return x.ExternalMetadata
 	}
 	return ""
 }
@@ -2440,16 +2511,9 @@ func (x *IntegrationCollectionMapping) GetCollectionId() string {
 	return ""
 }
 
-func (x *IntegrationCollectionMapping) GetExternalEntityId() string {
+func (x *IntegrationCollectionMapping) GetSyncedAt() string {
 	if x != nil {
-		return x.ExternalEntityId
-	}
-	return ""
-}
-
-func (x *IntegrationCollectionMapping) GetExternalEntityType() string {
-	if x != nil {
-		return x.ExternalEntityType
+		return x.SyncedAt
 	}
 	return ""
 }
@@ -2462,15 +2526,23 @@ func (x *IntegrationCollectionMapping) GetSynced() bool {
 }
 
 type IntegrationAssetMapping struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Mtime                int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
-	IntegrationProjectId string                 `protobuf:"bytes,3,opt,name=integration_project_id,json=integrationProjectId,proto3" json:"integration_project_id,omitempty"`
-	AssetId              string                 `protobuf:"bytes,4,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	ExternalTaskId       string                 `protobuf:"bytes,5,opt,name=external_task_id,json=externalTaskId,proto3" json:"external_task_id,omitempty"`
-	Synced               bool                   `protobuf:"varint,6,opt,name=synced,proto3" json:"synced,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Id                     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Mtime                  int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	IntegrationId          string                 `protobuf:"bytes,3,opt,name=integration_id,json=integrationId,proto3" json:"integration_id,omitempty"`
+	ExternalId             string                 `protobuf:"bytes,4,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
+	ExternalName           string                 `protobuf:"bytes,5,opt,name=external_name,json=externalName,proto3" json:"external_name,omitempty"`
+	ExternalParentId       string                 `protobuf:"bytes,6,opt,name=external_parent_id,json=externalParentId,proto3" json:"external_parent_id,omitempty"`
+	ExternalType           string                 `protobuf:"bytes,7,opt,name=external_type,json=externalType,proto3" json:"external_type,omitempty"`
+	ExternalStatus         string                 `protobuf:"bytes,8,opt,name=external_status,json=externalStatus,proto3" json:"external_status,omitempty"`
+	ExternalAssignees      string                 `protobuf:"bytes,9,opt,name=external_assignees,json=externalAssignees,proto3" json:"external_assignees,omitempty"`
+	ExternalMetadata       string                 `protobuf:"bytes,10,opt,name=external_metadata,json=externalMetadata,proto3" json:"external_metadata,omitempty"`
+	AssetId                string                 `protobuf:"bytes,11,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
+	LastPushedCheckpointId string                 `protobuf:"bytes,12,opt,name=last_pushed_checkpoint_id,json=lastPushedCheckpointId,proto3" json:"last_pushed_checkpoint_id,omitempty"`
+	SyncedAt               string                 `protobuf:"bytes,13,opt,name=synced_at,json=syncedAt,proto3" json:"synced_at,omitempty"`
+	Synced                 bool                   `protobuf:"varint,14,opt,name=synced,proto3" json:"synced,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *IntegrationAssetMapping) Reset() {
@@ -2517,9 +2589,58 @@ func (x *IntegrationAssetMapping) GetMtime() int64 {
 	return 0
 }
 
-func (x *IntegrationAssetMapping) GetIntegrationProjectId() string {
+func (x *IntegrationAssetMapping) GetIntegrationId() string {
 	if x != nil {
-		return x.IntegrationProjectId
+		return x.IntegrationId
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalId() string {
+	if x != nil {
+		return x.ExternalId
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalName() string {
+	if x != nil {
+		return x.ExternalName
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalParentId() string {
+	if x != nil {
+		return x.ExternalParentId
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalType() string {
+	if x != nil {
+		return x.ExternalType
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalStatus() string {
+	if x != nil {
+		return x.ExternalStatus
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalAssignees() string {
+	if x != nil {
+		return x.ExternalAssignees
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetExternalMetadata() string {
+	if x != nil {
+		return x.ExternalMetadata
 	}
 	return ""
 }
@@ -2531,9 +2652,16 @@ func (x *IntegrationAssetMapping) GetAssetId() string {
 	return ""
 }
 
-func (x *IntegrationAssetMapping) GetExternalTaskId() string {
+func (x *IntegrationAssetMapping) GetLastPushedCheckpointId() string {
 	if x != nil {
-		return x.ExternalTaskId
+		return x.LastPushedCheckpointId
+	}
+	return ""
+}
+
+func (x *IntegrationAssetMapping) GetSyncedAt() string {
+	if x != nil {
+		return x.SyncedAt
 	}
 	return ""
 }
@@ -3622,31 +3750,52 @@ const file_internal_repository_schema_proto_rawDesc = "" +
 	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x12\x1d\n" +
 	"\n" +
 	"table_name\x18\x03 \x01(\tR\ttableName\x12\x16\n" +
-	"\x06synced\x18\x04 \x01(\bR\x06synced\"\x92\x02\n" +
+	"\x06synced\x18\x04 \x01(\bR\x06synced\"\xfb\x02\n" +
 	"\x12IntegrationProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x12)\n" +
-	"\x10integration_type\x18\x03 \x01(\tR\x0fintegrationType\x12.\n" +
+	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x12%\n" +
+	"\x0eintegration_id\x18\x03 \x01(\tR\rintegrationId\x12.\n" +
 	"\x13external_project_id\x18\x04 \x01(\tR\x11externalProjectId\x122\n" +
 	"\x15external_project_name\x18\x05 \x01(\tR\x13externalProjectName\x12\x17\n" +
-	"\aapi_url\x18\x06 \x01(\tR\x06apiUrl\x12\x16\n" +
-	"\x06config\x18\a \x01(\tR\x06config\x12\x16\n" +
-	"\x06synced\x18\b \x01(\bR\x06synced\"\x97\x02\n" +
+	"\aapi_url\x18\x06 \x01(\tR\x06apiUrl\x12!\n" +
+	"\fsync_options\x18\a \x01(\tR\vsyncOptions\x12)\n" +
+	"\x11linked_by_user_id\x18\b \x01(\tR\x0elinkedByUserId\x12\x1b\n" +
+	"\tlinked_at\x18\t \x01(\tR\blinkedAt\x12\x18\n" +
+	"\aenabled\x18\n" +
+	" \x01(\bR\aenabled\x12\x16\n" +
+	"\x06synced\x18\v \x01(\bR\x06synced\"\xb0\x03\n" +
 	"\x1cIntegrationCollectionMapping\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x124\n" +
-	"\x16integration_project_id\x18\x03 \x01(\tR\x14integrationProjectId\x12#\n" +
-	"\rcollection_id\x18\x04 \x01(\tR\fcollectionId\x12,\n" +
-	"\x12external_entity_id\x18\x05 \x01(\tR\x10externalEntityId\x120\n" +
-	"\x14external_entity_type\x18\x06 \x01(\tR\x12externalEntityType\x12\x16\n" +
-	"\x06synced\x18\a \x01(\bR\x06synced\"\xd2\x01\n" +
+	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x12%\n" +
+	"\x0eintegration_id\x18\x03 \x01(\tR\rintegrationId\x12\x1f\n" +
+	"\vexternal_id\x18\x04 \x01(\tR\n" +
+	"externalId\x12#\n" +
+	"\rexternal_type\x18\x05 \x01(\tR\fexternalType\x12#\n" +
+	"\rexternal_name\x18\x06 \x01(\tR\fexternalName\x12,\n" +
+	"\x12external_parent_id\x18\a \x01(\tR\x10externalParentId\x12#\n" +
+	"\rexternal_path\x18\b \x01(\tR\fexternalPath\x12+\n" +
+	"\x11external_metadata\x18\t \x01(\tR\x10externalMetadata\x12#\n" +
+	"\rcollection_id\x18\n" +
+	" \x01(\tR\fcollectionId\x12\x1b\n" +
+	"\tsynced_at\x18\v \x01(\tR\bsyncedAt\x12\x16\n" +
+	"\x06synced\x18\f \x01(\bR\x06synced\"\x8f\x04\n" +
 	"\x17IntegrationAssetMapping\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x124\n" +
-	"\x16integration_project_id\x18\x03 \x01(\tR\x14integrationProjectId\x12\x19\n" +
-	"\basset_id\x18\x04 \x01(\tR\aassetId\x12(\n" +
-	"\x10external_task_id\x18\x05 \x01(\tR\x0eexternalTaskId\x12\x16\n" +
-	"\x06synced\x18\x06 \x01(\bR\x06synced\"\xc3\v\n" +
+	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x12%\n" +
+	"\x0eintegration_id\x18\x03 \x01(\tR\rintegrationId\x12\x1f\n" +
+	"\vexternal_id\x18\x04 \x01(\tR\n" +
+	"externalId\x12#\n" +
+	"\rexternal_name\x18\x05 \x01(\tR\fexternalName\x12,\n" +
+	"\x12external_parent_id\x18\x06 \x01(\tR\x10externalParentId\x12#\n" +
+	"\rexternal_type\x18\a \x01(\tR\fexternalType\x12'\n" +
+	"\x0fexternal_status\x18\b \x01(\tR\x0eexternalStatus\x12-\n" +
+	"\x12external_assignees\x18\t \x01(\tR\x11externalAssignees\x12+\n" +
+	"\x11external_metadata\x18\n" +
+	" \x01(\tR\x10externalMetadata\x12\x19\n" +
+	"\basset_id\x18\v \x01(\tR\aassetId\x129\n" +
+	"\x19last_pushed_checkpoint_id\x18\f \x01(\tR\x16lastPushedCheckpointId\x12\x1b\n" +
+	"\tsynced_at\x18\r \x01(\tR\bsyncedAt\x12\x16\n" +
+	"\x06synced\x18\x0e \x01(\bR\x06synced\"\xc3\v\n" +
 	"\vProjectData\x12'\n" +
 	"\x0fproject_preview\x18\x01 \x01(\tR\x0eprojectPreview\x12&\n" +
 	"\x05tasks\x18\x02 \x03(\v2\x10.repository.TaskR\x05tasks\x123\n" +

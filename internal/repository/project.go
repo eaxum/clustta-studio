@@ -1141,6 +1141,15 @@ func UpdateProject(projectPath string) error {
 		}
 	}
 
+	// Version 1.8: Integration tables (Kitsu, ShotGrid, etc.)
+	// Running schema adds new tables without affecting existing ones (CREATE TABLE IF NOT EXISTS)
+	if projectVersion <= 1.7 {
+		err = utils.CreateSchema(db, ProjectSchema)
+		if err != nil {
+			return err
+		}
+	}
+
 	tx, err = db.Beginx()
 	if err != nil {
 		return err

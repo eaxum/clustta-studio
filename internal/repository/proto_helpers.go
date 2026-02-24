@@ -413,11 +413,14 @@ func ToPbIntegrationProjects(integrations []models.IntegrationProject) []*reposi
 		pb[i] = &repositorypb.IntegrationProject{
 			Id:                  ip.Id,
 			Mtime:               int64(ip.MTime),
-			IntegrationType:     ip.IntegrationType,
+			IntegrationId:       ip.IntegrationId,
 			ExternalProjectId:   ip.ExternalProjectId,
 			ExternalProjectName: ip.ExternalProjectName,
 			ApiUrl:              ip.ApiUrl,
-			Config:              ip.Config,
+			SyncOptions:         ip.SyncOptions,
+			LinkedByUserId:      ip.LinkedByUserId,
+			LinkedAt:            ip.LinkedAt,
+			Enabled:             ip.Enabled,
 			Synced:              ip.Synced,
 		}
 	}
@@ -428,13 +431,18 @@ func ToPbIntegrationCollectionMappings(mappings []models.IntegrationCollectionMa
 	pb := make([]*repositorypb.IntegrationCollectionMapping, len(mappings))
 	for i, cm := range mappings {
 		pb[i] = &repositorypb.IntegrationCollectionMapping{
-			Id:                   cm.Id,
-			Mtime:                int64(cm.MTime),
-			IntegrationProjectId: cm.IntegrationProjectId,
-			CollectionId:         cm.CollectionId,
-			ExternalEntityId:     cm.ExternalEntityId,
-			ExternalEntityType:   cm.ExternalEntityType,
-			Synced:               cm.Synced,
+			Id:               cm.Id,
+			Mtime:            int64(cm.MTime),
+			IntegrationId:    cm.IntegrationId,
+			ExternalId:       cm.ExternalId,
+			ExternalType:     cm.ExternalType,
+			ExternalName:     cm.ExternalName,
+			ExternalParentId: cm.ExternalParentId,
+			ExternalPath:     cm.ExternalPath,
+			ExternalMetadata: cm.ExternalMetadata,
+			CollectionId:     cm.CollectionId,
+			SyncedAt:         cm.SyncedAt,
+			Synced:           cm.Synced,
 		}
 	}
 	return pb
@@ -444,12 +452,20 @@ func ToPbIntegrationAssetMappings(mappings []models.IntegrationAssetMapping) []*
 	pb := make([]*repositorypb.IntegrationAssetMapping, len(mappings))
 	for i, am := range mappings {
 		pb[i] = &repositorypb.IntegrationAssetMapping{
-			Id:                   am.Id,
-			Mtime:                int64(am.MTime),
-			IntegrationProjectId: am.IntegrationProjectId,
-			AssetId:              am.AssetId,
-			ExternalTaskId:       am.ExternalTaskId,
-			Synced:               am.Synced,
+			Id:                     am.Id,
+			Mtime:                  int64(am.MTime),
+			IntegrationId:          am.IntegrationId,
+			ExternalId:             am.ExternalId,
+			ExternalName:           am.ExternalName,
+			ExternalParentId:       am.ExternalParentId,
+			ExternalType:           am.ExternalType,
+			ExternalStatus:         am.ExternalStatus,
+			ExternalAssignees:      am.ExternalAssignees,
+			ExternalMetadata:       am.ExternalMetadata,
+			AssetId:                am.AssetId,
+			LastPushedCheckpointId: am.LastPushedCheckpointId,
+			SyncedAt:               am.SyncedAt,
+			Synced:                 am.Synced,
 		}
 	}
 	return pb
@@ -1062,11 +1078,14 @@ func FromPbIntegrationProject(pb *repositorypb.IntegrationProject) models.Integr
 	return models.IntegrationProject{
 		Id:                  pb.Id,
 		MTime:               int(pb.Mtime),
-		IntegrationType:     pb.IntegrationType,
+		IntegrationId:       pb.IntegrationId,
 		ExternalProjectId:   pb.ExternalProjectId,
 		ExternalProjectName: pb.ExternalProjectName,
 		ApiUrl:              pb.ApiUrl,
-		Config:              pb.Config,
+		SyncOptions:         pb.SyncOptions,
+		LinkedByUserId:      pb.LinkedByUserId,
+		LinkedAt:            pb.LinkedAt,
+		Enabled:             pb.Enabled,
 		Synced:              pb.Synced,
 	}
 }
@@ -1081,13 +1100,18 @@ func FromPbIntegrationProjects(pbs []*repositorypb.IntegrationProject) []models.
 
 func FromPbIntegrationCollectionMapping(pb *repositorypb.IntegrationCollectionMapping) models.IntegrationCollectionMapping {
 	return models.IntegrationCollectionMapping{
-		Id:                   pb.Id,
-		MTime:                int(pb.Mtime),
-		IntegrationProjectId: pb.IntegrationProjectId,
-		CollectionId:         pb.CollectionId,
-		ExternalEntityId:     pb.ExternalEntityId,
-		ExternalEntityType:   pb.ExternalEntityType,
-		Synced:               pb.Synced,
+		Id:               pb.Id,
+		MTime:            int(pb.Mtime),
+		IntegrationId:    pb.IntegrationId,
+		ExternalId:       pb.ExternalId,
+		ExternalType:     pb.ExternalType,
+		ExternalName:     pb.ExternalName,
+		ExternalParentId: pb.ExternalParentId,
+		ExternalPath:     pb.ExternalPath,
+		ExternalMetadata: pb.ExternalMetadata,
+		CollectionId:     pb.CollectionId,
+		SyncedAt:         pb.SyncedAt,
+		Synced:           pb.Synced,
 	}
 }
 
@@ -1101,12 +1125,20 @@ func FromPbIntegrationCollectionMappings(pbs []*repositorypb.IntegrationCollecti
 
 func FromPbIntegrationAssetMapping(pb *repositorypb.IntegrationAssetMapping) models.IntegrationAssetMapping {
 	return models.IntegrationAssetMapping{
-		Id:                   pb.Id,
-		MTime:                int(pb.Mtime),
-		IntegrationProjectId: pb.IntegrationProjectId,
-		AssetId:              pb.AssetId,
-		ExternalTaskId:       pb.ExternalTaskId,
-		Synced:               pb.Synced,
+		Id:                     pb.Id,
+		MTime:                  int(pb.Mtime),
+		IntegrationId:          pb.IntegrationId,
+		ExternalId:             pb.ExternalId,
+		ExternalName:           pb.ExternalName,
+		ExternalParentId:       pb.ExternalParentId,
+		ExternalType:           pb.ExternalType,
+		ExternalStatus:         pb.ExternalStatus,
+		ExternalAssignees:      pb.ExternalAssignees,
+		ExternalMetadata:       pb.ExternalMetadata,
+		AssetId:                pb.AssetId,
+		LastPushedCheckpointId: pb.LastPushedCheckpointId,
+		SyncedAt:               pb.SyncedAt,
+		Synced:                 pb.Synced,
 	}
 }
 

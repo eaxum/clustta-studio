@@ -857,13 +857,13 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 		localProject, err := repository.GetIntegrationProject(tx, integrationProject.Id)
 		if err != nil {
-			_, err = repository.CreateIntegrationProject(tx, integrationProject.IntegrationType, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.Config)
+			_, err = repository.CreateIntegrationProject(tx, integrationProject.IntegrationId, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.SyncOptions, integrationProject.LinkedByUserId, integrationProject.LinkedAt, integrationProject.Enabled)
 			if err != nil {
 				return err
 			}
 		} else {
 			if localProject.MTime < integrationProject.MTime {
-				_, err = repository.UpdateIntegrationProject(tx, integrationProject.Id, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.Config)
+				_, err = repository.UpdateIntegrationProject(tx, integrationProject.Id, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.SyncOptions, integrationProject.Enabled)
 				if err != nil {
 					return err
 				}
@@ -877,13 +877,13 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 		localMapping, err := repository.GetCollectionMapping(tx, mapping.Id)
 		if err != nil {
-			_, err = repository.CreateCollectionMapping(tx, mapping.IntegrationProjectId, mapping.CollectionId, mapping.ExternalEntityId, mapping.ExternalEntityType)
+			_, err = repository.CreateCollectionMapping(tx, mapping.IntegrationId, mapping.ExternalId, mapping.ExternalType, mapping.ExternalName, mapping.ExternalParentId, mapping.ExternalPath, mapping.ExternalMetadata, mapping.CollectionId, mapping.SyncedAt)
 			if err != nil {
 				return err
 			}
 		} else {
 			if localMapping.MTime < mapping.MTime {
-				_, err = repository.UpdateCollectionMapping(tx, mapping.Id, mapping.ExternalEntityId, mapping.ExternalEntityType)
+				_, err = repository.UpdateCollectionMapping(tx, mapping.Id, mapping.ExternalType, mapping.ExternalName, mapping.ExternalParentId, mapping.ExternalPath, mapping.ExternalMetadata, mapping.CollectionId, mapping.SyncedAt)
 				if err != nil {
 					return err
 				}
@@ -897,13 +897,13 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 		localMapping, err := repository.GetAssetMapping(tx, mapping.Id)
 		if err != nil {
-			_, err = repository.CreateAssetMapping(tx, mapping.IntegrationProjectId, mapping.AssetId, mapping.ExternalTaskId)
+			_, err = repository.CreateAssetMapping(tx, mapping.IntegrationId, mapping.ExternalId, mapping.ExternalName, mapping.ExternalParentId, mapping.ExternalType, mapping.ExternalStatus, mapping.ExternalAssignees, mapping.ExternalMetadata, mapping.AssetId, mapping.LastPushedCheckpointId, mapping.SyncedAt)
 			if err != nil {
 				return err
 			}
 		} else {
 			if localMapping.MTime < mapping.MTime {
-				_, err = repository.UpdateAssetMapping(tx, mapping.Id, mapping.ExternalTaskId)
+				_, err = repository.UpdateAssetMapping(tx, mapping.Id, mapping.ExternalName, mapping.ExternalParentId, mapping.ExternalType, mapping.ExternalStatus, mapping.ExternalAssignees, mapping.ExternalMetadata, mapping.AssetId, mapping.LastPushedCheckpointId, mapping.SyncedAt)
 				if err != nil {
 					return err
 				}
@@ -1215,21 +1215,21 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	}
 
 	for _, integrationProject := range data.IntegrationProjects {
-		_, err = repository.CreateIntegrationProject(tx, integrationProject.IntegrationType, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.Config)
+		_, err = repository.CreateIntegrationProject(tx, integrationProject.IntegrationId, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.SyncOptions, integrationProject.LinkedByUserId, integrationProject.LinkedAt, integrationProject.Enabled)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, mapping := range data.IntegrationCollectionMappings {
-		_, err = repository.CreateCollectionMapping(tx, mapping.IntegrationProjectId, mapping.CollectionId, mapping.ExternalEntityId, mapping.ExternalEntityType)
+		_, err = repository.CreateCollectionMapping(tx, mapping.IntegrationId, mapping.ExternalId, mapping.ExternalType, mapping.ExternalName, mapping.ExternalParentId, mapping.ExternalPath, mapping.ExternalMetadata, mapping.CollectionId, mapping.SyncedAt)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, mapping := range data.IntegrationAssetMappings {
-		_, err = repository.CreateAssetMapping(tx, mapping.IntegrationProjectId, mapping.AssetId, mapping.ExternalTaskId)
+		_, err = repository.CreateAssetMapping(tx, mapping.IntegrationId, mapping.ExternalId, mapping.ExternalName, mapping.ExternalParentId, mapping.ExternalType, mapping.ExternalStatus, mapping.ExternalAssignees, mapping.ExternalMetadata, mapping.AssetId, mapping.LastPushedCheckpointId, mapping.SyncedAt)
 		if err != nil {
 			return err
 		}
