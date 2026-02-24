@@ -73,6 +73,14 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /ping", PingHandler)
 	router.HandleFunc("GET /version", VersionHandler)
 	router.HandleFunc("GET /studio-key", GetStudioKeyHandler)
+	router.HandleFunc("GET /studio-info", GetStudioInfoHandler)
+
+	// ============================================
+	// Studio User Management Endpoints
+	// ============================================
+	router.HandleFunc("GET /studio/persons", GetStudioUsersHandler)
+	router.HandleFunc("PUT /studio/person/role", ChangeStudioUserRoleHandler)
+	router.HandleFunc("DELETE /studio/person/{user_id}", RemoveStudioUserHandler)
 
 	// ============================================
 	// Project Endpoints

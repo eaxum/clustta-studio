@@ -1,11 +1,13 @@
 package main
 
 import (
+	"clustta/internal/constants"
 	"clustta/internal/repository"
 	"clustta/internal/server/models"
+	"clustta/internal/server/session_service"
 	"clustta/internal/settings"
+	"clustta/internal/studio_users_service"
 	"clustta/internal/utils"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -94,8 +96,12 @@ func main() {
 
 	loadDefaults(&CONFIG)
 
+	// Set private mode globals for internal packages
+	constants.PrivateMode = CONFIG.Private
+	constants.StudioUsersDBPath = CONFIG.StudioUsersDB
+
 	// Initialize studio users database early (needed for private mode user lookup)
-	if err := initStudioUsersDB(CONFIG.StudioUsersDB); err != nil {
+	if err := studio_users_service.InitDB(CONFIG.StudioUsersDB); err != nil {
 		log.Fatalf("Failed to initialize studio users database: %v", err)
 	}
 
@@ -104,8 +110,26 @@ func main() {
 	if !CONFIG.Private {
 		err = UpdateStudioUrl()
 		if err != nil {
-			println(err.Error())
-			return
+			if IsNetworkError(err) && CONFIG.RegisteredAt != "" {
+				// Already registered, network temporarily unavailable - continue with warning
+				log.Printf("Warning: Could not connect to global server (network error), but studio is already registered. Continuing in offline mode...")
+			} else if IsNetworkError(err) {
+				// First-time registration requires network
+				log.Fatalf("Failed to register studio: %v (network connectivity required for first-time registration)", err)
+			} else {
+				// API error (invalid credentials, studio not found, etc.) - always fail
+				log.Fatalf("Failed to register studio: %v", err)
+			}
+		} else {
+			// Success - save registration timestamp if not already set
+			if CONFIG.RegisteredAt == "" {
+				CONFIG.RegisteredAt = time.Now().UTC().Format(time.RFC3339)
+				if saveErr := saveConfig(&CONFIG); saveErr != nil {
+					log.Printf("Warning: Could not save registration timestamp: %v", saveErr)
+				} else {
+					log.Println("Studio registered successfully")
+				}
+			}
 		}
 	} else {
 		log.Println("Running in PRIVATE mode - no connection to global server")
@@ -120,6 +144,13 @@ func main() {
 	// Read the directory
 	projectFolder := CONFIG.ProjectsDir
 	extension := "clst"
+
+	// Ensure projects directory exists
+	if err := os.MkdirAll(projectFolder, os.ModePerm); err != nil {
+		println("Failed to create projects directory:", err.Error())
+		return
+	}
+
 	entries, err := os.ReadDir(projectFolder)
 	if err != nil {
 		println(err.Error())
@@ -172,7 +203,7 @@ func main() {
 	}
 
 	// Initialize session database
-	sessionDb, err := initSessionDB(CONFIG.SessionDB)
+	sessionDb, err := session_service.OpenDB(CONFIG.SessionDB)
 	if err != nil {
 		log.Fatalf("Failed to initialize session database: %v", err)
 	}
@@ -185,87 +216,4 @@ func main() {
 	server := NewAPIServer(addr)
 	err = server.Run()
 	println(err.Error())
-}
-
-// initStudioUsersDB creates the studio users database and schema
-func initStudioUsersDB(dbPath string) error {
-	// Ensure directory exists
-	dir := filepath.Dir(dbPath)
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer db.Close()
-
-	// Create users table (must match base_service expectations including mtime)
-	schema := `
-	CREATE TABLE IF NOT EXISTS user (
-		id TEXT PRIMARY KEY,
-		mtime INTEGER NOT NULL DEFAULT 0,
-		first_name TEXT NOT NULL,
-		last_name TEXT NOT NULL,
-		username TEXT NOT NULL UNIQUE COLLATE NOCASE,
-		email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-		password TEXT NOT NULL,
-		last_presence DATETIME DEFAULT CURRENT_TIMESTAMP,
-		login_failed_attempts INTEGER NOT NULL DEFAULT 0,
-		last_login_failed DATETIME DEFAULT NULL,
-		totp_enabled BOOLEAN NOT NULL DEFAULT 0,
-		totp_secret TEXT DEFAULT NULL,
-		email_otp_enabled BOOLEAN NOT NULL DEFAULT 0,
-		email_otp_secret TEXT DEFAULT NULL,
-		photo BLOB,
-		has_avatar BOOLEAN NOT NULL DEFAULT 0,
-		added_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		active BOOLEAN DEFAULT 1,
-		is_deleted BOOLEAN DEFAULT 0
-	);
-	CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
-	CREATE INDEX IF NOT EXISTS idx_user_username ON user(username);
-	`
-
-	_, err = db.Exec(schema)
-	if err != nil {
-		return fmt.Errorf("failed to create schema: %w", err)
-	}
-
-	log.Printf("Studio users database initialized: %s", dbPath)
-	return nil
-}
-
-// initSessionDB creates the session database and returns the connection
-func initSessionDB(dbPath string) (*sql.DB, error) {
-	// Ensure directory exists
-	dir := filepath.Dir(dbPath)
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
-	}
-
-	// Create sessions table (required by scs/sqlite3store)
-	schema := `
-	CREATE TABLE IF NOT EXISTS sessions (
-		token TEXT PRIMARY KEY,
-		data BLOB NOT NULL,
-		expiry REAL NOT NULL
-	);
-	CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expiry);
-	`
-
-	_, err = db.Exec(schema)
-	if err != nil {
-		db.Close()
-		return nil, fmt.Errorf("failed to create schema: %w", err)
-	}
-
-	log.Printf("Session database initialized: %s", dbPath)
-	return db, nil
 }

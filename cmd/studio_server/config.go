@@ -23,6 +23,7 @@ type Config struct {
 	StudioUsersDB     string `json:"studio_users_db" envconfig:"STUDIO_USERS_DB"`
 	SessionDB         string `json:"session_db" envconfig:"SESSION_DB"`
 	Private           bool   `json:"private" envconfig:"PRIVATE"`
+	RegisteredAt      string `json:"registered_at,omitempty"`
 }
 
 var CONFIG Config = Config{}
@@ -105,4 +106,20 @@ func loadDefaults(cfg *Config) {
 	if cfg.SessionDB == "" {
 		cfg.SessionDB = filepath.Join(defaultDataDir, "sessions.db")
 	}
+}
+
+// saveConfig writes the current config to studio_config.json
+func saveConfig(cfg *Config) error {
+	file, err := os.Create("studio_config.json")
+	if err != nil {
+		return fmt.Errorf("failed to create config file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(cfg); err != nil {
+		return fmt.Errorf("failed to encode config: %w", err)
+	}
+	return nil
 }

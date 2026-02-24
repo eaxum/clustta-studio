@@ -33,6 +33,14 @@ func getWebsite() string {
 	return "https://clustta.com"
 }
 
+// PrivateMode indicates the server is running without a global Clustta server.
+// Set from studio_config.json at startup.
+var PrivateMode bool
+
+// StudioUsersDBPath is the path to the local studio_users.db.
+// Used by internal packages to query local user data in private mode.
+var StudioUsersDBPath string
+
 // host will be replaced by the value passed at build time using ldflags
 var host string
 var dashboard_host string

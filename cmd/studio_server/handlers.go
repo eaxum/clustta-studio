@@ -9,12 +9,14 @@ import (
 	"clustta/internal/utils"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/DataDog/zstd"
+	"github.com/jmoiron/sqlx"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -71,6 +73,219 @@ func GetStudioKeyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+// StudioInfoResponse represents studio metadata for client discovery
+type StudioInfoResponse struct {
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Url    string `json:"url"`
+	AltUrl string `json:"alt_url"`
+}
+
+// GetStudioInfoHandler returns studio metadata for client discovery
+func GetStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Generate a deterministic ID from the server name if not configured
+	studioId := CONFIG.ServerName
+	if studioId == "" {
+		studioId = "private-studio"
+	}
+
+	response := StudioInfoResponse{
+		Id:     studioId,
+		Name:   CONFIG.ServerName,
+		Url:    CONFIG.ServerURL,
+		AltUrl: CONFIG.ServerAltURL,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetStudioUsersHandler returns all studio users with their roles
+func GetStudioUsersHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Verify the user is authenticated
+	userData := sessionManager.Get(r.Context(), "user")
+	if userData == nil {
+		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	users, err := GetStudioUsers()
+	if err != nil {
+		log.Printf("[GetStudioUsers] Error: %v", err)
+		SendErrorResponse(w, "Error fetching studio users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[GetStudioUsers] Returning %d users:", len(users))
+	for i, u := range users {
+		log.Printf("  [%d] id=%s name=%s %s username=%s email=%s role=%s role_id=%s active=%v",
+			i, u.Id, u.FirstName, u.LastName, u.UserName, u.Email, u.RoleName, u.RoleId, u.Active)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(users)
+}
+
+// ChangeStudioUserRoleHandler changes a user's role in the studio
+func ChangeStudioUserRoleHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Verify the user is authenticated
+	userData := sessionManager.Get(r.Context(), "user")
+	if userData == nil {
+		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	// Check the requesting user is admin
+	var requestingUser UserInfo
+	if userBytes, ok := userData.([]byte); ok {
+		if err := json.Unmarshal(userBytes, &requestingUser); err != nil {
+			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
+			return
+		}
+	}
+	serverUser := Users[requestingUser.Id]
+	if serverUser.RoleName != "admin" {
+		SendErrorResponse(w, "Only admins can change user roles", http.StatusForbidden)
+		return
+	}
+
+	var data map[string]string
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		SendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	userId, ok := data["user_id"]
+	if !ok || userId == "" {
+		SendErrorResponse(w, "user_id is required", http.StatusBadRequest)
+		return
+	}
+	roleName, ok := data["role_name"]
+	if !ok || roleName == "" {
+		SendErrorResponse(w, "role_name is required", http.StatusBadRequest)
+		return
+	}
+
+	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
+	if err != nil {
+		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Look up the role ID by name
+	var roleId string
+	err = db.QueryRow("SELECT id FROM role WHERE name = ?", strings.ToLower(roleName)).Scan(&roleId)
+	if err != nil {
+		SendErrorResponse(w, "Invalid role name: "+roleName, http.StatusBadRequest)
+		return
+	}
+
+	// Update the user's role
+	result, err := db.Exec("UPDATE user SET role_id = ? WHERE id = ?", roleId, userId)
+	if err != nil {
+		SendErrorResponse(w, "Error updating user role: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		SendErrorResponse(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Refresh the in-memory users map
+	_ = GetUsers()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Role updated successfully"})
+}
+
+// RemoveStudioUserHandler removes a user from the studio
+func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Verify the user is authenticated
+	userData := sessionManager.Get(r.Context(), "user")
+	if userData == nil {
+		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	// Check the requesting user is admin
+	var requestingUser UserInfo
+	if userBytes, ok := userData.([]byte); ok {
+		if err := json.Unmarshal(userBytes, &requestingUser); err != nil {
+			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
+			return
+		}
+	}
+	serverUser := Users[requestingUser.Id]
+	if serverUser.RoleName != "admin" {
+		SendErrorResponse(w, "Only admins can remove users", http.StatusForbidden)
+		return
+	}
+
+	userId := r.PathValue("user_id")
+	if userId == "" {
+		SendErrorResponse(w, "user_id is required", http.StatusBadRequest)
+		return
+	}
+
+	// Prevent admin from removing themselves
+	if userId == requestingUser.Id {
+		SendErrorResponse(w, "Cannot remove yourself", http.StatusBadRequest)
+		return
+	}
+
+	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
+	if err != nil {
+		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Soft-delete the user
+	result, err := db.Exec("UPDATE user SET is_deleted = 1, active = 0 WHERE id = ?", userId)
+	if err != nil {
+		SendErrorResponse(w, "Error removing user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		SendErrorResponse(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Remove from in-memory map
+	delete(Users, userId)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User removed successfully"})
 }
 
 func PostProjectHandler(

@@ -137,6 +137,26 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Assign role: first user gets admin, subsequent users get 'user' role
+	var userCount int
+	err = tx.QueryRow("SELECT COUNT(*) FROM user WHERE active = 1").Scan(&userCount)
+	if err == nil {
+		roleName := "user"
+		if userCount <= 1 {
+			roleName = "admin"
+		}
+
+		var roleId string
+		err = tx.QueryRow("SELECT id FROM role WHERE name = ?", roleName).Scan(&roleId)
+		if err == nil && roleId != "" {
+			_, err = tx.Exec("UPDATE user SET role_id = ? WHERE id = ?", roleId, createdUser.Id)
+			if err != nil {
+				SendErrorResponse(w, "Error assigning role: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		SendErrorResponse(w, "Error committing transaction: "+err.Error(), http.StatusInternalServerError)

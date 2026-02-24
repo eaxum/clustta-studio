@@ -25,6 +25,7 @@ type User struct {
 	AddedAt             time.Time      `db:"added_at" json:"added_at"`
 	Active              bool           `db:"active" json:"active"`
 	IsDeleted           bool           `db:"is_deleted" json:"is_deleted"`
+	RoleId              sql.NullString `db:"role_id" json:"role_id"`
 }
 type Studio struct {
 	Id        string `db:"id" json:"id"`
