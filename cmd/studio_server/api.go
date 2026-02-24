@@ -83,6 +83,13 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("DELETE /studio/person/{user_id}", RemoveStudioUserHandler)
 
 	// ============================================
+	// User Lookup Endpoints
+	// ============================================
+	router.HandleFunc("GET /auth/persons/{user_id}", GetUserByIdHandler)
+	router.HandleFunc("GET /auth/person/{email_or_username}", GetUserHandler)
+	router.HandleFunc("GET /auth/person/{user_id}/photo", GetUserPhotoHandler)
+
+	// ============================================
 	// Project Endpoints
 	// ============================================
 	router.HandleFunc("POST /{project}", PostProjectHandler)
