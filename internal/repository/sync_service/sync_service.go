@@ -66,6 +66,10 @@ type ProjectData struct {
 	WorkflowTasks    []models.WorkflowTask   `json:"workflow_tasks"`
 
 	Tombs []repository.Tomb `json:"tomb"`
+
+	IntegrationProjects           []models.IntegrationProject           `json:"integration_projects"`
+	IntegrationCollectionMappings []models.IntegrationCollectionMapping `json:"integration_collection_mappings"`
+	IntegrationAssetMappings      []models.IntegrationAssetMapping      `json:"integration_asset_mappings"`
 }
 
 func (d *ProjectData) IsEmpty() bool {
@@ -89,6 +93,9 @@ func (d *ProjectData) IsEmpty() bool {
 		len(d.WorkflowEntities) == 0 &&
 		len(d.WorkflowTasks) == 0 &&
 		len(d.Tombs) == 0 &&
+		len(d.IntegrationProjects) == 0 &&
+		len(d.IntegrationCollectionMappings) == 0 &&
+		len(d.IntegrationAssetMappings) == 0 &&
 		d.ProjectPreview == ""
 }
 
@@ -843,6 +850,67 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 			}
 		}
 	}
+
+	for _, integrationProject := range data.IntegrationProjects {
+		if tombItems[integrationProject.Id] {
+			continue
+		}
+		localProject, err := repository.GetIntegrationProject(tx, integrationProject.Id)
+		if err != nil {
+			_, err = repository.CreateIntegrationProject(tx, integrationProject.IntegrationType, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.Config)
+			if err != nil {
+				return err
+			}
+		} else {
+			if localProject.MTime < integrationProject.MTime {
+				_, err = repository.UpdateIntegrationProject(tx, integrationProject.Id, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.Config)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	for _, mapping := range data.IntegrationCollectionMappings {
+		if tombItems[mapping.Id] {
+			continue
+		}
+		localMapping, err := repository.GetCollectionMapping(tx, mapping.Id)
+		if err != nil {
+			_, err = repository.CreateCollectionMapping(tx, mapping.IntegrationProjectId, mapping.CollectionId, mapping.ExternalEntityId, mapping.ExternalEntityType)
+			if err != nil {
+				return err
+			}
+		} else {
+			if localMapping.MTime < mapping.MTime {
+				_, err = repository.UpdateCollectionMapping(tx, mapping.Id, mapping.ExternalEntityId, mapping.ExternalEntityType)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	for _, mapping := range data.IntegrationAssetMappings {
+		if tombItems[mapping.Id] {
+			continue
+		}
+		localMapping, err := repository.GetAssetMapping(tx, mapping.Id)
+		if err != nil {
+			_, err = repository.CreateAssetMapping(tx, mapping.IntegrationProjectId, mapping.AssetId, mapping.ExternalTaskId)
+			if err != nil {
+				return err
+			}
+		} else {
+			if localMapping.MTime < mapping.MTime {
+				_, err = repository.UpdateAssetMapping(tx, mapping.Id, mapping.ExternalTaskId)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -1145,6 +1213,28 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 			return err
 		}
 	}
+
+	for _, integrationProject := range data.IntegrationProjects {
+		_, err = repository.CreateIntegrationProject(tx, integrationProject.IntegrationType, integrationProject.ExternalProjectId, integrationProject.ExternalProjectName, integrationProject.ApiUrl, integrationProject.Config)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, mapping := range data.IntegrationCollectionMappings {
+		_, err = repository.CreateCollectionMapping(tx, mapping.IntegrationProjectId, mapping.CollectionId, mapping.ExternalEntityId, mapping.ExternalEntityType)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, mapping := range data.IntegrationAssetMappings {
+		_, err = repository.CreateAssetMapping(tx, mapping.IntegrationProjectId, mapping.AssetId, mapping.ExternalTaskId)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -1222,6 +1312,10 @@ func FetchData(remoteUrl string, userId string) (ProjectData, error) {
 
 				Tags:      repository.FromPbTags(userDataPb.Tags),
 				TasksTags: repository.FromPbTaskTags(userDataPb.TasksTags),
+
+				IntegrationProjects:           repository.FromPbIntegrationProjects(userDataPb.IntegrationProjects),
+				IntegrationCollectionMappings: repository.FromPbIntegrationCollectionMappings(userDataPb.IntegrationCollectionMappings),
+				IntegrationAssetMappings:      repository.FromPbIntegrationAssetMappings(userDataPb.IntegrationAssetMappings),
 			}
 
 			return userData, nil

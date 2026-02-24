@@ -198,6 +198,18 @@ func WriteChunks(projectPath string, chunks []byte) ([]string, error) {
 	return failedChunks, nil
 }
 
+// RunPassiveCheckpointForProject opens the project database and runs a
+// non-blocking WAL checkpoint. Use after WriteChunks to prevent
+// WAL buildup from stalling subsequent writers.
+func RunPassiveCheckpointForProject(projectPath string) {
+	dbConn, err := utils.OpenDb(projectPath)
+	if err != nil {
+		return
+	}
+	defer dbConn.Close()
+	utils.RunPassiveCheckpoint(dbConn)
+}
+
 func DecodeChunk(data []byte) (hash string, compressedData []byte, bytesRead int, err error) {
 	if len(data) < 36 { // Adjusted to 36 to account for 4 bytes of length
 		return "", nil, 0, fmt.Errorf("not enough data for a complete chunk")

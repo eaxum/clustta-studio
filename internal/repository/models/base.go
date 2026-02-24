@@ -466,3 +466,33 @@ type Preview struct {
 	Preview   []byte `db:"preview" json:"preview"`
 	Extension string `db:"extension" json:"extension"`
 }
+
+type IntegrationProject struct {
+	Id                  string `db:"id" json:"id"`
+	MTime               int    `db:"mtime" json:"mtime"`
+	IntegrationType     string `db:"integration_type" json:"integration_type"`
+	ExternalProjectId   string `db:"external_project_id" json:"external_project_id"`
+	ExternalProjectName string `db:"external_project_name" json:"external_project_name"`
+	ApiUrl              string `db:"api_url" json:"api_url"`
+	Config              string `db:"config" json:"config"`
+	Synced              bool   `db:"synced" json:"synced"`
+}
+
+type IntegrationCollectionMapping struct {
+	Id                   string `db:"id" json:"id"`
+	MTime                int    `db:"mtime" json:"mtime"`
+	IntegrationProjectId string `db:"integration_project_id" json:"integration_project_id"`
+	CollectionId         string `db:"collection_id" json:"collection_id"`
+	ExternalEntityId     string `db:"external_entity_id" json:"external_entity_id"`
+	ExternalEntityType   string `db:"external_entity_type" json:"external_entity_type"`
+	Synced               bool   `db:"synced" json:"synced"`
+}
+
+type IntegrationAssetMapping struct {
+	Id                   string `db:"id" json:"id"`
+	MTime                int    `db:"mtime" json:"mtime"`
+	IntegrationProjectId string `db:"integration_project_id" json:"integration_project_id"`
+	AssetId              string `db:"asset_id" json:"asset_id"`
+	ExternalTaskId       string `db:"external_task_id" json:"external_task_id"`
+	Synced               bool   `db:"synced" json:"synced"`
+}

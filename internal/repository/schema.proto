@@ -261,6 +261,36 @@ message Tomb {
   bool synced = 4;
 }
 
+message IntegrationProject {
+  string id = 1;
+  int64 mtime = 2;
+  string integration_type = 3;
+  string external_project_id = 4;
+  string external_project_name = 5;
+  string api_url = 6;
+  string config = 7;
+  bool synced = 8;
+}
+
+message IntegrationCollectionMapping {
+  string id = 1;
+  int64 mtime = 2;
+  string integration_project_id = 3;
+  string collection_id = 4;
+  string external_entity_id = 5;
+  string external_entity_type = 6;
+  bool synced = 7;
+}
+
+message IntegrationAssetMapping {
+  string id = 1;
+  int64 mtime = 2;
+  string integration_project_id = 3;
+  string asset_id = 4;
+  string external_task_id = 5;
+  bool synced = 6;
+}
+
 message ProjectData {
     string project_preview = 1;
     repeated Task tasks = 2;
@@ -289,6 +319,10 @@ message ProjectData {
     repeated WorkflowTask workflow_tasks = 20;
 
     repeated Tomb tomb = 21;
+
+    repeated IntegrationProject integration_projects = 22;
+    repeated IntegrationCollectionMapping integration_collection_mappings = 23;
+    repeated IntegrationAssetMapping integration_asset_mappings = 24;
 }
 
 message FullTask {
