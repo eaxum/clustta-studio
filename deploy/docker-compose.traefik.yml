@@ -1,0 +1,60 @@
+# Clustta Studio — with Traefik reverse proxy
+# Includes automatic TLS via Let's Encrypt (commented out by default).
+#
+# Usage:
+#   docker compose -f docker-compose.traefik.yml up -d
+#
+# For TLS, uncomment the certificate resolver lines and set your email/domain.
+
+services:
+  app:
+    image: eaxum/clustta:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=PathPrefix(`/clustta`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.middlewares.app-strip.stripprefix.prefixes=/clustta"
+      - "traefik.http.routers.app.middlewares=app-strip"
+      - "traefik.http.services.app.loadbalancer.server.port=7774"
+
+      ## ── TLS (uncomment to enable) ──
+      # - "traefik.http.routers.app.rule=Host(`yourdomain.com`)"
+      # - "traefik.http.routers.app.tls=true"
+      # - "traefik.http.routers.app.entrypoints=websecure"
+      # - "traefik.http.routers.app.tls.certresolver=myresolver"
+    networks:
+      - web
+    env_file:
+      - .env
+    volumes:
+      - ${DATA_FOLDER:?Please set DATA_FOLDER in .env}:/var/data/
+      - ${PROJECTS_FOLDER:?Please set PROJECTS_FOLDER in .env}:/var/projects/
+    restart: unless-stopped
+
+  traefik:
+    image: traefik:v3.6
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+      ## ── TLS / Let's Encrypt (uncomment to enable) ──
+      # - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      # - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      # - "--certificatesresolvers.myresolver.acme.email=you@example.com"
+      # - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"   # Traefik dashboard (remove in production)
+    networks:
+      - web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - ./letsencrypt:/letsencrypt   # Uncomment for TLS
+    restart: unless-stopped
+
+networks:
+  web:

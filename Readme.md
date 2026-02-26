@@ -40,7 +40,13 @@ Clustta Studio is part of a comprehensive ecosystem:
 
 ## Quick Start
 
-For quick installation and setup instructions, please refer to the [Quick install](Installation.md#quick-install-setting-up-clustta-studio-on-your-machine).
+Install and run Clustta Studio with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eaxum/clustta-studio/main/install.sh | bash
+```
+
+For manual setup or advanced options, see the [Installation Guide](Installation.md).
 
 
 ## Development
