@@ -137,8 +137,11 @@ func main() {
 
 	err = GetUsers()
 	if err != nil {
-		println(err.Error())
-		return
+		if IsNetworkError(err) && CONFIG.RegisteredAt != "" {
+			log.Printf("Warning: Could not fetch users (network error). Starting with empty user list — background sync will retry every 5s...")
+		} else {
+			log.Fatalf("Failed to fetch users: %v", err)
+		}
 	}
 
 	// Read the directory
