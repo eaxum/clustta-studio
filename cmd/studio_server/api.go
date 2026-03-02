@@ -94,6 +94,7 @@ func (s *APIServer) Run() error {
 	// ============================================
 	router.HandleFunc("POST /{project}", PostProjectHandler)
 	router.HandleFunc("PUT /{project}", RenameProjectHandler)
+	router.HandleFunc("DELETE /{project}", DeleteProjectHandler)
 	router.HandleFunc("GET /{project}", GetProjectHandler)
 	router.HandleFunc("GET /{project}/sync-token", GetProjectSyncTokenHandler)
 	router.HandleFunc("PUT /{project}/icon", SetProjectIconHandler)

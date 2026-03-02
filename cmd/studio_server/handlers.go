@@ -418,6 +418,50 @@ func RenameProjectHandler(
 	w.Write(objJson)
 }
 
+// DeleteProjectHandler permanently deletes a project from the studio.
+// Only admins can delete projects. This operation cannot be undone.
+func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
+	projectName := r.PathValue("project")
+	projectFolder := CONFIG.ProjectsDir
+	projectPath := filepath.Join(projectFolder, projectName+".clst")
+
+	if !utils.FileExists(projectPath) {
+		http.Error(w, "Project Not Found", 404)
+		return
+	}
+
+	UserData := r.Header.Get("UserData")
+
+	user := auth_service.User{}
+	err := json.Unmarshal([]byte(UserData), &user)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	serverUser := Users[user.Id]
+	if serverUser.RoleName != "admin" {
+		http.Error(w, "You have no permission to delete this project", 403)
+		return
+	}
+
+	// Delete the .clst file
+	if err := os.Remove(projectPath); err != nil {
+		http.Error(w, "Failed to delete project: "+err.Error(), 500)
+		return
+	}
+
+	// Also delete journal file if exists
+	journal := projectPath + "-journal"
+	if utils.FileExists(journal) {
+		os.Remove(journal)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Project deleted successfully"})
+}
+
 func ToggleProjectCloseHandler(
 	w http.ResponseWriter, r *http.Request) {
 	projectName := r.PathValue("project")
