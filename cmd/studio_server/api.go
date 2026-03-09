@@ -113,6 +113,15 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /{project}/previews-exist", PreviewsExistHandler)
 	router.HandleFunc("GET /projects", GetProjectsHandler)
 
+	// ============================================
+	// Share Endpoints
+	// ============================================
+	router.HandleFunc("POST /{project}/share", CreateShareLinkHandler)
+	router.HandleFunc("GET /share/{token}/download", ShareDownloadHandler)
+	router.HandleFunc("GET /share/{token}/download/{checkpoint_id}", ShareDownloadHandler)
+	router.HandleFunc("GET /share/{token}/metadata", ShareMetadataHandler)
+
+
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
 			"https://app.clustta.com",

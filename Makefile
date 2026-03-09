@@ -27,3 +27,13 @@ endif
 .PHONY: install-dev
 install-dev:
 	go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+# Create/overwrite a git tag and push to trigger CI
+# Usage: make tag V=0.4.24-alpha
+.PHONY: tag
+tag:
+ifndef V
+	$(error Usage: make tag V=0.4.24-alpha)
+endif
+	git tag -f v$(V)
+	git push origin -f v$(V)
