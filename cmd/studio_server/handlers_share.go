@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"clustta/internal/auth_service"
 	"clustta/internal/chunk_service"
 	"clustta/internal/constants"
 	"clustta/internal/utils"
@@ -24,20 +25,15 @@ func CreateShareLinkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
 
-	var requestingUser UserInfo
-	if userBytes, ok := userData.([]byte); ok {
-		if err := json.Unmarshal(userBytes, &requestingUser); err != nil {
-			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		SendErrorResponse(w, "Invalid session data type", http.StatusInternalServerError)
+	user := auth_service.User{}
+	if err := json.Unmarshal([]byte(UserData), &user); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusBadRequest)
 		return
 	}
 
@@ -66,7 +62,7 @@ func CreateShareLinkHandler(w http.ResponseWriter, r *http.Request) {
 		"checkpoint_ids":   requestData.CheckpointIDs,
 		"label":            requestData.Label,
 		"expires_in_hours": requestData.ExpiresIn,
-		"created_by":       requestingUser.Id,
+		"created_by":       user.Id,
 	}
 
 	payloadBytes, err := json.Marshal(globalPayload)
