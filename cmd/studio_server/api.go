@@ -56,11 +56,45 @@ func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 
+	// ============================================
+	// Authentication Endpoints
+	// ============================================
+	router.HandleFunc("POST /auth/register", RegisterUserHandler)
+	router.HandleFunc("POST /auth/login", LoginUserHandler)
+	router.HandleFunc("GET /auth/logout", LogoutUserHandler)
+	router.HandleFunc("GET /auth/authenticated", UserAuthenticatedHandler)
+	router.HandleFunc("GET /auth/email-exists/{email}", CheckEmailExistHandler)
+	router.HandleFunc("GET /auth/username-exists/{username}", CheckUsernameExistHandler)
+	router.HandleFunc("GET /auth/user", GetCurrentUserHandler)
+
+	// ============================================
+	// System Endpoints
+	// ============================================
 	router.HandleFunc("GET /ping", PingHandler)
 	router.HandleFunc("GET /version", VersionHandler)
 	router.HandleFunc("GET /studio-key", GetStudioKeyHandler)
+	router.HandleFunc("GET /studio-info", GetStudioInfoHandler)
+
+	// ============================================
+	// Studio User Management Endpoints
+	// ============================================
+	router.HandleFunc("GET /studio/persons", GetStudioUsersHandler)
+	router.HandleFunc("PUT /studio/person/role", ChangeStudioUserRoleHandler)
+	router.HandleFunc("DELETE /studio/person/{user_id}", RemoveStudioUserHandler)
+
+	// ============================================
+	// User Lookup Endpoints
+	// ============================================
+	router.HandleFunc("GET /auth/persons/{user_id}", GetUserByIdHandler)
+	router.HandleFunc("GET /auth/person/{email_or_username}", GetUserHandler)
+	router.HandleFunc("GET /auth/person/{user_id}/photo", GetUserPhotoHandler)
+
+	// ============================================
+	// Project Endpoints
+	// ============================================
 	router.HandleFunc("POST /{project}", PostProjectHandler)
 	router.HandleFunc("PUT /{project}", RenameProjectHandler)
+	router.HandleFunc("DELETE /{project}", DeleteProjectHandler)
 	router.HandleFunc("GET /{project}", GetProjectHandler)
 	router.HandleFunc("GET /{project}/sync-token", GetProjectSyncTokenHandler)
 	router.HandleFunc("PUT /{project}/icon", SetProjectIconHandler)
@@ -79,18 +113,29 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /{project}/previews-exist", PreviewsExistHandler)
 	router.HandleFunc("GET /projects", GetProjectsHandler)
 
+	// ============================================
+	// Share Endpoints
+	// ============================================
+	router.HandleFunc("POST /{project}/share", CreateShareLinkHandler)
+	router.HandleFunc("GET /share/{token}/download", ShareDownloadHandler)
+	router.HandleFunc("GET /share/{token}/download/{checkpoint_id}", ShareDownloadHandler)
+	router.HandleFunc("GET /share/{token}/metadata", ShareMetadataHandler)
+
+
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
 			"https://app.clustta.com",
 			"http://localhost:1420",
+			"http://wails.localhost:*",
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData", "Cookie"},
 		AllowCredentials: true,
 	})
 
-	handlerWithLogging := RequestLoggerMiddleware(c.Handler(router))
-	// handlerWithCor := c.Handler(router)
+	// Wrap with session manager for auth endpoints
+	handlerWithSession := sessionManager.LoadAndSave(c.Handler(router))
+	handlerWithLogging := RequestLoggerMiddleware(handlerWithSession)
 
 	server := http.Server{
 		Addr:         s.addr,

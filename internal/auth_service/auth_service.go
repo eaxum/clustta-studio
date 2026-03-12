@@ -2,6 +2,7 @@ package auth_service
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -87,7 +88,29 @@ func IsAuthenticated() (bool, error) {
 	return false, fmt.Errorf("error loading user: code - %d: body - %s", response.StatusCode, bodyData)
 }
 
+// fetchLocalUserPhoto retrieves a user's photo from the local studio_users.db.
+func fetchLocalUserPhoto(userId string) ([]byte, error) {
+	db, err := sql.Open("sqlite3", constants.StudioUsersDBPath)
+	if err != nil {
+		return []byte{}, err
+	}
+	defer db.Close()
+
+	var photo []byte
+	err = db.QueryRow("SELECT photo FROM user WHERE id = ?", userId).Scan(&photo)
+	if err != nil {
+		return []byte{}, nil
+	}
+	return photo, nil
+}
+
+// FetchUserPhoto retrieves a user's profile photo from the global server,
+// or from the local studio_users.db in private mode.
 func FetchUserPhoto(userId string) ([]byte, error) {
+	if constants.PrivateMode {
+		return fetchLocalUserPhoto(userId)
+	}
+
 	url := constants.HOST + "/person/" + userId + "/photo"
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -127,7 +150,32 @@ func FetchUserPhoto(userId string) ([]byte, error) {
 	return []byte{}, fmt.Errorf("error loading user: code - %d: body - %s", response.StatusCode, bodyData)
 }
 
+// fetchLocalUserData retrieves user data from the local studio_users.db.
+func fetchLocalUserData(email string) (models.User, error) {
+	db, err := sql.Open("sqlite3", constants.StudioUsersDBPath)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer db.Close()
+
+	var user models.User
+	err = db.QueryRow(
+		"SELECT id, first_name, last_name, username, email, photo FROM user WHERE email = ? AND active = 1",
+		email,
+	).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Username, &user.Email, &user.Photo)
+	if err != nil {
+		return models.User{}, fmt.Errorf("user not found: %w", err)
+	}
+	return user, nil
+}
+
+// FetchUserData retrieves user data from the global server,
+// or from the local studio_users.db in private mode.
 func FetchUserData(email string) (models.User, error) {
+	if constants.PrivateMode {
+		return fetchLocalUserData(email)
+	}
+
 	url := constants.HOST + "/person/" + email
 
 	req, err := http.NewRequest("GET", url, nil)

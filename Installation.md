@@ -20,84 +20,115 @@ If you are authenticating against your own private server, the client will acces
 
 # Quick install: Setting up Clustta studio on your machine
 
-If docker isnt already installed, install docker and all of it's necessary dependencies on the new machine. Copy and paste the following script into the termial. It will:
-- Update system packages
-- Install Docker CE (Community Edition)
-- Install latest Docker Compose
-- Add current user to docker group
-- Enable Docker to start on boot
-- Clean up unnecessary packages
+## One-line install (recommended)
+
+The fastest way to get Clustta Studio running. This script will install Docker if needed, download the compose file, walk you through configuration, and start the server:
 
 ```bash
-sudo apt update && sudo apt upgrade -y && sudo apt install -y apt-transport-https ca-certificates curl software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && sudo apt update && sudo apt install -y docker-ce && sudo systemctl enable docker && sudo usermod -aG docker $USER && mkdir -p ~/.docker/cli-plugins/ && curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o ~/.docker/cli-plugins/docker-compose && chmod +x ~/.docker/cli-plugins/docker-compose && sudo apt autoremove -y && echo 
+curl -fsSL https://raw.githubusercontent.com/eaxum/clustta-studio/main/install.sh | bash
 ```
 
-## Give permissions to Docker
-After the script completes
+### Install options
 
-1. **Add your user to the docker group** (if not already done):
-   ```bash
-   sudo usermod -aG docker $USER
-   ```
+| Flag | Description |
+|------|-------------|
+| `--private` | Skip Clustta Cloud setup (standalone mode) |
+| `--traefik` | Include Traefik reverse proxy with auto-TLS |
+| `--dir PATH` | Custom install directory (default: `~/clustta-studio`) |
+| `--version VER` | Pin a specific image version (default: `latest`) |
 
-2. **Log out and log back in** for the group membership to take effect, or run:
-   ```bash
-   newgrp docker
-   ```
-
-After the script completes, you must log out and log back in for Docker group membership to take effect.
-
-### Setting up the variables
-Create a directory to place the `docker-compose.yml` and `.env` files
-
+Example — private mode with Traefik:
 ```bash
-mkdir clustta-docker
+curl -fsSL https://raw.githubusercontent.com/eaxum/clustta-studio/main/install.sh | bash -s -- --private --traefik
 ```
-Create a `docker-compose.yml`. Copy and paste the contents of `cmd\studio_server\compose.yml` into it.
 
-Create the `.env` file and add the following parameters:
-
+After installation, manage your server with:
 ```bash
-DATA_FOLDER=/home/server-user-name/data/
-PROJECTS_FOLDER=/home/server-user-name/projects/
-CLUSTTA_STUDIO_API_KEY=StudioKey
-CLUSTTA_SERVER_NAME=StudioName
-CLUSTTA_SERVER_URL=http://host-ip/clustta
+cd ~/clustta-studio
+docker compose logs -f      # view logs
+docker compose restart       # restart
+docker compose down          # stop
+docker compose pull && docker compose up -d   # update
 ```
-`server-user-name` : the username to the host machine.
 
-`StudioKey` : the key generated in [Creating and accessing a studio](#creating-and-accessing-a-studio)
+<br>
 
-`StudioName` : The registered studio name exactly as formatted on creation.
+## Manual install with Docker
 
-`host-ip` : The IP address of the host machine.
+If you prefer to set things up manually, or the install script doesn't support your OS:
 
+### 1. Install Docker
 
-Compose the docker file
+If Docker isn't already installed, install it and all necessary dependencies. Copy and paste the following script into the terminal:
+
 ```bash
+sudo apt update && sudo apt upgrade -y && sudo apt install -y apt-transport-https ca-certificates curl software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && sudo apt update && sudo apt install -y docker-ce && sudo systemctl enable docker && sudo usermod -aG docker $USER && sudo apt autoremove -y
+```
+
+After installation, add your user to the docker group and re-login:
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### 2. Set up the project directory
+
+```bash
+mkdir clustta-studio && cd clustta-studio
+```
+
+Download the compose file (choose one):
+
+**Standalone** (no reverse proxy — use if you have your own nginx/Caddy, or on a LAN):
+```bash
+curl -fsSL https://raw.githubusercontent.com/eaxum/clustta-studio/main/deploy/docker-compose.yml -o docker-compose.yml
+```
+
+**With Traefik** (includes reverse proxy and optional TLS):
+```bash
+curl -fsSL https://raw.githubusercontent.com/eaxum/clustta-studio/main/deploy/docker-compose.traefik.yml -o docker-compose.yml
+```
+
+### 3. Configure environment
+
+Create a `.env` file:
+
+```bash
+DATA_FOLDER=./data
+PROJECTS_FOLDER=./projects
+STUDIO_USERS_DB=/var/data/studio_users.db
+SESSION_DB=/var/data/sessions.db
+PRIVATE=true
+```
+
+If connecting to Clustta Cloud, set `PRIVATE=false` and add:
+```bash
+CLUSTTA_STUDIO_API_KEY=YourStudioKey
+CLUSTTA_SERVER_NAME=YourStudioName
+CLUSTTA_SERVER_URL=http://your-host-ip/clustta
+```
+
+See [Creating and accessing a studio](#creating-and-accessing-a-studio) for how to obtain the `StudioKey`.
+
+### 4. Start the server
+
+```bash
+mkdir -p data projects
 docker compose up -d
 ```
 
 <br>
 
+> ⚠️ NOTE
+>
+> Ensure ports `80` and `443` (if using Traefik) or `7774` (if standalone) are open on your server.
 
 > ⚠️ NOTE
 >
-> Ensure the ports `80` and `443` are enabled on your server host else the client can't reach it.
-
-> ⚠️ NOTE
->
-> You also need to change permissions so clustta can write to the projects directory 
-
+> You may need to set permissions on the projects directory:
 ```bash
 sudo chmod a+w ./projects/
 ```
-
-<br>
-
-
-## Docker Compose Version Warning
-If you see warnings about obsolete `version` attribute in docker-compose.yml files, you can safely ignore them or remove the version line entirely. Modern Docker Compose automatically detects the appropriate version.
 
 <br>
 <br>

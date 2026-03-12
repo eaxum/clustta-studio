@@ -1,0 +1,19 @@
+# Clustta Studio — Standalone (default)
+# No reverse proxy. App listens directly on port 7774.
+# Use this if you already have nginx/Caddy/Cloudflare Tunnel,
+# or just want to run Clustta on a local network.
+#
+# Usage:
+#   docker compose up -d
+
+services:
+  app:
+    image: eaxum/clustta:latest
+    ports:
+      - "7774:7774"
+    env_file:
+      - .env
+    volumes:
+      - ${DATA_FOLDER:?Please set DATA_FOLDER in .env}:/var/data/
+      - ${PROJECTS_FOLDER:?Please set PROJECTS_FOLDER in .env}:/var/projects/
+    restart: unless-stopped

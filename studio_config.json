@@ -1,10 +1,13 @@
 {
-  "host": "127.0.0.1",
-  "port": "",
+  "host": "0.0.0.0",
+  "port": "7774",
   "projects_dir": "./data/projects",
   "shared_projects_dir": "./data/shared_projects",
+  "studio_users_db": "./data/studio_users.db",
+  "session_db": "./data/sessions.db",
   "server_url": "",
   "server_alt_url": "http://192.168.0.116",
   "server_name": "Baby",
-  "studio_api_key": "PR0QR9E9892955K4ALULOUHALZPATGE4WX5I89LBFARPU4UQ6KF6R9NSXNJU7LWX" 
+  "studio_api_key": "PR0QR9E9892955K4ALULOUHALZPATGE4WX5I89LBFARPU4UQ6KF6R9NSXNJU7LWX", 
+  "private": true
 }

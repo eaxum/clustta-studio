@@ -42,13 +42,12 @@ type ProjectContext struct {
 }
 
 func OpenDb(dbPath string) (*sqlx.DB, error) {
-	// dbConn, err := sqlx.Open("sqlite3", dbPath+"?_busy_timeout=30000")
 	dbConn, err := sqlx.Open("sqlite3", dbPath)
 	if err != nil {
 		return dbConn, err
 	}
 
-	// Enable WAL mode for better performance on large databases
+	// Enable WAL mode for better concurrent read/write performance
 	_, err = dbConn.Exec("PRAGMA journal_mode = WAL;")
 	if err != nil {
 		return dbConn, err
@@ -66,13 +65,25 @@ func OpenDb(dbPath string) (*sqlx.DB, error) {
 		return dbConn, err
 	}
 
-	// Set WAL auto-checkpoint to smaller intervals for better commit performance
-	_, err = dbConn.Exec("PRAGMA wal_autocheckpoint = 100;")
+	// Disable auto-checkpoint to prevent post-commit blocking.
+	// After large writes the auto-checkpoint would run synchronously inside
+	// the committing connection, holding a checkpoint lock that blocks all
+	// new writers even though no transaction is active. We run passive
+	// checkpoints explicitly instead (see RunPassiveCheckpoint).
+	_, err = dbConn.Exec("PRAGMA wal_autocheckpoint = 0;")
 	if err != nil {
 		return dbConn, err
 	}
 
 	return dbConn, err
+}
+
+// RunPassiveCheckpoint performs a non-blocking WAL checkpoint. It copies
+// committed WAL pages back into the main database file without waiting for
+// active readers or writers, so it never causes "database is locked" stalls.
+// Call this after heavy write operations (e.g. after sync/checkpoint commit).
+func RunPassiveCheckpoint(dbConn *sqlx.DB) {
+	_, _ = dbConn.Exec("PRAGMA wal_checkpoint(PASSIVE);")
 }
 
 func GenerateXXHashChecksum(filePath string) (string, error) {

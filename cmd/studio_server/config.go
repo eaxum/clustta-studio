@@ -20,6 +20,10 @@ type Config struct {
 	ServerAltURL      string `json:"server_alt_url" envconfig:"CLUSTTA_SERVER_ALT_URL"`
 	ServerName        string `json:"server_name" envconfig:"CLUSTTA_SERVER_NAME"`
 	StudioAPIKey      string `json:"studio_api_key" envconfig:"CLUSTTA_STUDIO_API_KEY"`
+	StudioUsersDB     string `json:"studio_users_db" envconfig:"STUDIO_USERS_DB"`
+	SessionDB         string `json:"session_db" envconfig:"SESSION_DB"`
+	Private           bool   `json:"private" envconfig:"PRIVATE"`
+	RegisteredAt      string `json:"registered_at,omitempty"`
 }
 
 var CONFIG Config = Config{}
@@ -83,6 +87,12 @@ func loadDefaults(cfg *Config) {
 	}
 	defaultProjectsDir := filepath.Join(homedir, "clustta", "projects")
 	defaultSharedProjectsDir := filepath.Join(homedir, "clustta", "shared_projects")
+	defaultDataDir := filepath.Join(homedir, "clustta", "data")
+
+	// Create data directory if it doesn't exist
+	if err := os.MkdirAll(defaultDataDir, os.ModePerm); err != nil {
+		processError(err)
+	}
 
 	if cfg.ProjectsDir == "" {
 		cfg.ProjectsDir = defaultProjectsDir
@@ -90,4 +100,26 @@ func loadDefaults(cfg *Config) {
 	if cfg.SharedProjectsDir == "" {
 		cfg.SharedProjectsDir = defaultSharedProjectsDir
 	}
+	if cfg.StudioUsersDB == "" {
+		cfg.StudioUsersDB = filepath.Join(defaultDataDir, "studio_users.db")
+	}
+	if cfg.SessionDB == "" {
+		cfg.SessionDB = filepath.Join(defaultDataDir, "sessions.db")
+	}
+}
+
+// saveConfig writes the current config to studio_config.json
+func saveConfig(cfg *Config) error {
+	file, err := os.Create("studio_config.json")
+	if err != nil {
+		return fmt.Errorf("failed to create config file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(cfg); err != nil {
+		return fmt.Errorf("failed to encode config: %w", err)
+	}
+	return nil
 }

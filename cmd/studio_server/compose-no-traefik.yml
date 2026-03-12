@@ -9,13 +9,13 @@ services:
       - "traefik.http.middlewares.app-strip.stripprefix.prefixes=/clustta"
       - "traefik.http.routers.app.middlewares=app-strip"
       - "traefik.http.services.app.loadbalancer.server.port=7774"
-      # - "traefik.http.routers.app.rule=Host(`yourdomain.com`)" # Replace with your domain
-      # - "traefik.http.services.app.loadbalancer.server.port=8080" # The port exposed by your app
 
-      #use tls
-      # - traefik.http.routers.app.tls=true
-      # - traefik.http.routers.app.entrypoints=websecure
-      # - traefik.http.routers.app.tls.certresolver=myresolver
+      # If you're mapping the machine's IP through a DNS
+      # - "traefik.http.routers.app.rule=Host(`subdomain.your-studio.com`)"
+      # - "traefik.http.routers.app.entrypoints=websecure"
+      # - "traefik.http.routers.app.tls=true"
+      # - "traefik.http.routers.app.tls.certresolver=myresolver"
+      
     networks:
       - web
     env_file:

@@ -161,7 +161,7 @@ func InitDB(projectPath string, studioName, workingDir string, user auth_service
 	if err != nil {
 		return err
 	}
-	err = utils.SetProjectVersion(tx, 1.4)
+	err = utils.SetProjectVersion(tx, 1.8)
 	if err != nil {
 		return err
 	}
@@ -1141,13 +1141,22 @@ func UpdateProject(projectPath string) error {
 		}
 	}
 
+	// Version 1.8: Integration tables (Kitsu, ShotGrid, etc.)
+	// Running schema adds new tables without affecting existing ones (CREATE TABLE IF NOT EXISTS)
+	if projectVersion <= 1.7 {
+		err = utils.CreateSchema(db, ProjectSchema)
+		if err != nil {
+			return err
+		}
+	}
+
 	tx, err = db.Beginx()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	err = utils.SetProjectVersion(tx, 1.7)
+	err = utils.SetProjectVersion(tx, 1.8)
 	if err != nil {
 		return err
 	}
