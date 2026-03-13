@@ -3,6 +3,7 @@ services:
   app:
     image: eaxum/clustta:latest # You can build locally or use your image tag
     labels:
+      # If you're routing through a path
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=PathPrefix(`/clustta`)"
       - "traefik.http.routers.app.entrypoints=web"
@@ -11,8 +12,10 @@ services:
       - "traefik.http.services.app.loadbalancer.server.port=7774"
 
       # If you're mapping the machine's IP through a DNS
+      # - "traefik.enable=true"
       # - "traefik.http.routers.app.rule=Host(`subdomain.your-studio.com`)"
       # - "traefik.http.routers.app.entrypoints=websecure"
+      # - "traefik.http.services.app.loadbalancer.server.port=7774"
       # - "traefik.http.routers.app.tls=true"
       # - "traefik.http.routers.app.tls.certresolver=myresolver"
       
