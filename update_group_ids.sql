@@ -6,7 +6,7 @@ WITH ordered_checkpoints AS (
     author_id,
     comment,
     ROW_NUMBER() OVER (ORDER BY author_id, created_at) as row_num
-  FROM task_checkpoint 
+  FROM asset_checkpoint 
   WHERE (group_id = '' OR group_id IS NULL) 
     AND trashed = 0
   ORDER BY author_id, created_at
@@ -44,13 +44,13 @@ group_uuids AS (
   FROM checkpoint_groups
   GROUP BY group_number
 )
-UPDATE task_checkpoint 
+UPDATE asset_checkpoint 
 SET 
   group_id = (
     SELECT gu.group_uuid 
     FROM checkpoint_groups cg 
     JOIN group_uuids gu ON cg.group_number = gu.group_number
-    WHERE cg.id = task_checkpoint.id
+    WHERE cg.id = asset_checkpoint.id
   ),
   synced = 0
 WHERE id IN (
@@ -61,7 +61,7 @@ WHERE id IN (
 SELECT 
   COUNT(*) as updated_checkpoints,
   COUNT(DISTINCT group_id) as groups_created
-FROM task_checkpoint 
+FROM asset_checkpoint 
 WHERE group_id IS NOT NULL 
   AND group_id != ''
   AND synced = 0;

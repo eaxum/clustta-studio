@@ -298,22 +298,6 @@ func PostProjectHandler(
 	projectName := r.PathValue("project")
 	projectFolder := CONFIG.ProjectsDir
 	projectPath := filepath.Join(projectFolder, projectName+".clst")
-	// w.Write([]byte(projectPath))
-	// clusttaServerDB := filepath.Join(CONFIG.DataDir, "clustta_studio.db")
-
-	// db, err := sqlx.Open("sqlite3", clusttaServerDB)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), 400)
-	// 	return
-	// }
-	// defer db.Close()
-
-	// tx, err := db.Beginx()
-	// if err != nil {
-	// 	http.Error(w, err.Error(), 400)
-	// 	return
-	// }
-	// defer tx.Rollback()
 
 	if utils.FileExists(projectPath) {
 		http.Error(w, "Project Already Exist", 400)
@@ -801,26 +785,6 @@ func GetDataHandler(
 		return
 	}
 
-	// dbConn, err := utils.OpenDb( projectPath)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// tx, err := dbConn.Beginx()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// users, err := repository.GetUsers(tx)
-	// if err != nil {
-	// 	return err
-	// }
-	// tx.Commit()
-
-	// objJson, err := json.Marshal(userData)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), 400)
-	// 	return
-	// }
 	_, err = w.Write(compressedData)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
@@ -875,16 +839,16 @@ func PostDataHandler(
 	}
 
 	requestData := sync_service.ProjectData{
-		ProjectPreview:  userDataPb.ProjectPreview,
-		EntityTypes:     repository.FromPbEntityTypes(userDataPb.EntityTypes),
-		Entities:        repository.FromPbEntities(userDataPb.Entities),
-		EntityAssignees: repository.FromPbEntityAssignees(userDataPb.EntityAssignees),
+		ProjectPreview:      userDataPb.ProjectPreview,
+		CollectionTypes:     repository.FromPbCollectionTypes(userDataPb.CollectionTypes),
+		Collections:         repository.FromPbCollections(userDataPb.Collections),
+		CollectionAssignees: repository.FromPbCollectionAssignees(userDataPb.CollectionAssignees),
 
-		TaskTypes:          repository.FromPbTaskTypes(userDataPb.TaskTypes),
-		Tasks:              repository.FromPbTasks(userDataPb.Tasks),
-		TasksCheckpoints:   repository.FromPbCheckpoints(userDataPb.TasksCheckpoints),
-		TaskDependencies:   repository.FromPbTaskDependencies(userDataPb.TaskDependencies),
-		EntityDependencies: repository.FromPbEntityDependencies(userDataPb.EntityDependencies),
+		AssetTypes:             repository.FromPbAssetTypes(userDataPb.AssetTypes),
+		Assets:                 repository.FromPbAssets(userDataPb.Assets),
+		AssetsCheckpoints:      repository.FromPbCheckpoints(userDataPb.AssetsCheckpoints),
+		AssetDependencies:      repository.FromPbAssetDependencies(userDataPb.AssetDependencies),
+		CollectionDependencies: repository.FromPbCollectionDependencies(userDataPb.CollectionDependencies),
 
 		Statuses:        repository.FromPbStatuses(userDataPb.Statuses),
 		DependencyTypes: repository.FromPbDependencyTypes(userDataPb.DependencyTypes),
@@ -894,13 +858,13 @@ func PostDataHandler(
 
 		Templates: repository.FromPbTemplates(userDataPb.Templates),
 
-		Workflows:        repository.FromPbWorkflows(userDataPb.Workflows),
-		WorkflowLinks:    repository.FromPbWorkflowLinks(userDataPb.WorkflowLinks),
-		WorkflowEntities: repository.FromPbWorkflowEntities(userDataPb.WorkflowEntities),
-		WorkflowTasks:    repository.FromPbWorkflowTasks(userDataPb.WorkflowTasks),
+		Workflows:           repository.FromPbWorkflows(userDataPb.Workflows),
+		WorkflowLinks:       repository.FromPbWorkflowLinks(userDataPb.WorkflowLinks),
+		WorkflowCollections: repository.FromPbWorkflowCollections(userDataPb.WorkflowCollections),
+		WorkflowAssets:      repository.FromPbWorkflowAssets(userDataPb.WorkflowAssets),
 
-		Tags:      repository.FromPbTags(userDataPb.Tags),
-		TasksTags: repository.FromPbTaskTags(userDataPb.TasksTags),
+		Tags:       repository.FromPbTags(userDataPb.Tags),
+		AssetsTags: repository.FromPbAssetTags(userDataPb.AssetsTags),
 
 		Tombs: repository.FromPbTombs(userDataPb.Tomb),
 
@@ -956,7 +920,6 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
 	projectFolder := CONFIG.ProjectsDir
 	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -1077,7 +1040,6 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
 	projectFolder := CONFIG.ProjectsDir
 	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -1110,13 +1072,7 @@ func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
 	projectFolder := CONFIG.ProjectsDir
 	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
 	if !utils.FileExists(projectPath) {
-		// errMessage := ErrorStruct{
-		// 	Message: "Project Not Found",
-		// }
-		// objJson, _ := json.Marshal(errMessage)
-		// w.Write(objJson)
 		http.Error(w, "Project Not Found", 400)
 		return
 	}
@@ -1139,11 +1095,6 @@ func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&data)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
-		// errMessage := ErrorStruct{
-		// 	Message: err.Error(),
-		// }
-		// objJson, _ := json.Marshal(errMessage)
-		// w.Write(objJson)
 		return
 	}
 
@@ -1168,13 +1119,7 @@ func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
 	projectFolder := CONFIG.ProjectsDir
 	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
 	if !utils.FileExists(projectPath) {
-		// errMessage := ErrorStruct{
-		// 	Message: "Project Not Found",
-		// }
-		// objJson, _ := json.Marshal(errMessage)
-		// w.Write(objJson)
 		http.Error(w, "Project Not Found", 400)
 		return
 	}
@@ -1197,11 +1142,6 @@ func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&data)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
-		// errMessage := ErrorStruct{
-		// 	Message: err.Error(),
-		// }
-		// objJson, _ := json.Marshal(errMessage)
-		// w.Write(objJson)
 		return
 	}
 

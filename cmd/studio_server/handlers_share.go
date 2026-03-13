@@ -181,7 +181,7 @@ func ShareDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	var allChunkHashes []string
 	for _, cpID := range targetIDs {
 		var chunks string
-		err := tx.Get(&chunks, "SELECT chunks FROM task_checkpoint WHERE id = ?", cpID)
+		err := tx.Get(&chunks, "SELECT chunks FROM asset_checkpoint WHERE id = ?", cpID)
 		if err != nil {
 			log.Printf("[ShareDownload] Checkpoint %s not found: %v", cpID, err)
 			continue
@@ -305,26 +305,26 @@ func ShareMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	for _, cpID := range shareData.CheckpointIDs {
 		var checkpoint struct {
 			ID       string `db:"id"`
-			TaskID   string `db:"task_id"`
+			AssetID   string `db:"asset_id"`
 			FileSize int64  `db:"file_size"`
 		}
-		err := tx.Get(&checkpoint, "SELECT id, task_id, file_size FROM task_checkpoint WHERE id = ?", cpID)
+		err := tx.Get(&checkpoint, "SELECT id, asset_id, file_size FROM asset_checkpoint WHERE id = ?", cpID)
 		if err != nil {
 			continue
 		}
 
-		var task struct {
+		var asset struct {
 			Name      string `db:"name"`
 			Extension string `db:"extension"`
 		}
-		err = tx.Get(&task, "SELECT name, extension FROM task WHERE id = ?", checkpoint.TaskID)
+		err = tx.Get(&asset, "SELECT name, extension FROM asset WHERE id = ?", checkpoint.AssetID)
 		if err != nil {
 			continue
 		}
 
 		files = append(files, FileInfo{
 			CheckpointID: cpID,
-			FileName:     task.Name + task.Extension,
+			FileName:     asset.Name + asset.Extension,
 			FileSize:     checkpoint.FileSize,
 		})
 	}

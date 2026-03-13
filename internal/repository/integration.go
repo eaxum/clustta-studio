@@ -64,7 +64,7 @@ func DeleteIntegrationProject(tx *sqlx.Tx, id string) error {
 	return err
 }
 
-// CreateCollectionMapping creates a new collection to external entity mapping.
+// CreateCollectionMapping creates a new collection to external collection mapping.
 func CreateCollectionMapping(tx *sqlx.Tx, integrationId, externalId, externalType, externalName, externalParentId, externalPath, externalMetadata, collectionId, syncedAt string) (models.IntegrationCollectionMapping, error) {
 	id := uuid.New().String()
 	mtime := utils.GetEpochTime()
@@ -133,7 +133,7 @@ func DeleteCollectionMapping(tx *sqlx.Tx, id string) error {
 	return err
 }
 
-// CreateAssetMapping creates a new asset to external task mapping.
+// CreateAssetMapping creates a new asset to external asset mapping.
 func CreateAssetMapping(tx *sqlx.Tx, integrationId, externalId, externalName, externalParentId, externalType, externalStatus, externalAssignees, externalMetadata, assetId, lastPushedCheckpointId, syncedAt string) (models.IntegrationAssetMapping, error) {
 	id := uuid.New().String()
 	mtime := utils.GetEpochTime()

@@ -650,11 +650,11 @@ func GetProjectWorkspaces(projectId string) ([]interface{}, error) {
 
 	defaultWorkspace := map[string]interface{}{
 		"name":                 "Default",
-		"filters":              map[string]interface{}{"taskFilters": []interface{}{}, "entityFilters": []interface{}{}, "resourceFilters": []interface{}{}},
+		"filters":              map[string]interface{}{"assetFilters": []interface{}{}, "entityFilters": []interface{}{}, "resourceFilters": []interface{}{}},
 		"workspaceSearchQuery": "",
 	}
 
-	taskFilter := map[string]interface{}{
+	assetFilter := map[string]interface{}{
 		"email":      user.Email,
 		"first_name": user.FirstName,
 		"id":         user.Id,
@@ -662,19 +662,19 @@ func GetProjectWorkspaces(projectId string) ([]interface{}, error) {
 		"type":       "assignation",
 		"username":   user.Username,
 	}
-	assignedTasksWorkspace := map[string]interface{}{
-		"name":                 "My Tasks",
-		"filters":              map[string]interface{}{"taskFilters": []interface{}{taskFilter}, "entityFilters": []interface{}{}, "resourceFilters": []interface{}{}, "showTasks": true, "onlyAssets": true},
+	assignedAssetsWorkspace := map[string]interface{}{
+		"name":                 "My Assets",
+		"filters":              map[string]interface{}{"assetFilters": []interface{}{assetFilter}, "entityFilters": []interface{}{}, "resourceFilters": []interface{}{}, "showAssets": true, "onlyAssets": true},
 		"workspaceSearchQuery": "",
 	}
 
 	projectWorkspaces, exists := settings.WorkSpaces[projectId]
 	if !exists {
 		projectWorkspaces = append(projectWorkspaces, defaultWorkspace)
-		projectWorkspaces = append(projectWorkspaces, assignedTasksWorkspace)
+		projectWorkspaces = append(projectWorkspaces, assignedAssetsWorkspace)
 		return projectWorkspaces, nil
 	}
-	projectWorkspaces = append([]interface{}{defaultWorkspace, assignedTasksWorkspace}, projectWorkspaces...)
+	projectWorkspaces = append([]interface{}{defaultWorkspace, assignedAssetsWorkspace}, projectWorkspaces...)
 	return projectWorkspaces, nil
 }
 

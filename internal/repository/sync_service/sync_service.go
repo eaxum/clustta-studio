@@ -25,12 +25,12 @@ import (
 )
 
 type ConflictInfo struct {
-	Type       string `json:"type"`        // "entity" or "task"
+	Type       string `json:"type"`        // "collection" or "asset"
 	LocalId    string `json:"local_id"`    // ID client tried to push
 	ExistingId string `json:"existing_id"` // ID that already exists on server
 	Name       string `json:"name"`        // The conflicting name
-	ParentId   string `json:"parent_id"`   // Parent entity ID (or entity_id for tasks)
-	Extension  string `json:"extension"`   // For tasks only
+	ParentId   string `json:"parent_id"`   // Parent collection ID (or collection_id for assets)
+	Extension  string `json:"extension"`   // For assets only
 }
 
 type WriteResult struct {
@@ -39,12 +39,12 @@ type WriteResult struct {
 }
 
 type ProjectData struct {
-	ProjectPreview     string                    `json:"project_preview"`
-	Tasks              []models.Task             `json:"tasks"`
-	TaskTypes          []models.TaskType         `json:"task_types"`
-	TasksCheckpoints   []models.Checkpoint       `json:"tasks_checkpoints"`
-	TaskDependencies   []models.TaskDependency   `json:"task_dependencies"`
-	EntityDependencies []models.EntityDependency `json:"entity_dependencies"`
+	ProjectPreview         string                        `json:"project_preview"`
+	Assets                 []models.Asset                `json:"assets"`
+	AssetTypes             []models.AssetType            `json:"asset_types"`
+	AssetsCheckpoints      []models.Checkpoint           `json:"assets_checkpoints"`
+	AssetDependencies      []models.AssetDependency      `json:"asset_dependencies"`
+	CollectionDependencies []models.CollectionDependency `json:"collection_dependencies"`
 
 	Statuses        []models.Status         `json:"statuses"`
 	DependencyTypes []models.DependencyType `json:"dependency_types"`
@@ -52,18 +52,18 @@ type ProjectData struct {
 	Users []models.User `json:"users"`
 	Roles []models.Role `json:"roles"`
 
-	EntityTypes     []models.EntityType     `json:"entity_types"`
-	Entities        []models.Entity         `json:"entities"`
-	EntityAssignees []models.EntityAssignee `json:"entity_assignees"`
+	CollectionTypes     []models.CollectionType     `json:"collection_types"`
+	Collections         []models.Collection         `json:"collections"`
+	CollectionAssignees []models.CollectionAssignee `json:"collection_assignees"`
 
-	Templates []models.Template `json:"templates"`
-	Tags      []models.Tag      `json:"tags"`
-	TasksTags []models.TaskTag  `json:"tasks_tags"`
+	Templates  []models.Template `json:"templates"`
+	Tags       []models.Tag      `json:"tags"`
+	AssetsTags []models.AssetTag `json:"assets_tags"`
 
-	Workflows        []models.Workflow       `json:"workflows"`
-	WorkflowLinks    []models.WorkflowLink   `json:"workflow_links"`
-	WorkflowEntities []models.WorkflowEntity `json:"workflow_entities"`
-	WorkflowTasks    []models.WorkflowTask   `json:"workflow_tasks"`
+	Workflows           []models.Workflow           `json:"workflows"`
+	WorkflowLinks       []models.WorkflowLink       `json:"workflow_links"`
+	WorkflowCollections []models.WorkflowCollection `json:"workflow_collections"`
+	WorkflowAssets      []models.WorkflowAsset      `json:"workflow_assets"`
 
 	Tombs []repository.Tomb `json:"tomb"`
 
@@ -73,25 +73,25 @@ type ProjectData struct {
 }
 
 func (d *ProjectData) IsEmpty() bool {
-	return len(d.Tasks) == 0 &&
-		len(d.TaskTypes) == 0 &&
-		len(d.TasksCheckpoints) == 0 &&
-		len(d.TaskDependencies) == 0 &&
-		len(d.EntityDependencies) == 0 &&
-		len(d.EntityTypes) == 0 &&
-		len(d.Entities) == 0 &&
-		len(d.EntityAssignees) == 0 &&
+	return len(d.Assets) == 0 &&
+		len(d.AssetTypes) == 0 &&
+		len(d.AssetsCheckpoints) == 0 &&
+		len(d.AssetDependencies) == 0 &&
+		len(d.CollectionDependencies) == 0 &&
+		len(d.CollectionTypes) == 0 &&
+		len(d.Collections) == 0 &&
+		len(d.CollectionAssignees) == 0 &&
 		len(d.Templates) == 0 &&
 		len(d.Tags) == 0 &&
-		len(d.TasksTags) == 0 &&
+		len(d.AssetsTags) == 0 &&
 		len(d.Statuses) == 0 &&
 		len(d.DependencyTypes) == 0 &&
 		len(d.Users) == 0 &&
 		len(d.Roles) == 0 &&
 		len(d.Workflows) == 0 &&
 		len(d.WorkflowLinks) == 0 &&
-		len(d.WorkflowEntities) == 0 &&
-		len(d.WorkflowTasks) == 0 &&
+		len(d.WorkflowCollections) == 0 &&
+		len(d.WorkflowAssets) == 0 &&
 		len(d.Tombs) == 0 &&
 		len(d.IntegrationProjects) == 0 &&
 		len(d.IntegrationCollectionMappings) == 0 &&
@@ -99,7 +99,7 @@ func (d *ProjectData) IsEmpty() bool {
 		d.ProjectPreview == ""
 }
 
-// CheckForConflicts checks for entity and task name conflicts before writing data.
+// CheckForConflicts checks for collection and asset name conflicts before writing data.
 // Returns a WriteResult with any conflicts found. If conflicts exist, data should NOT be written.
 func CheckForConflicts(tx *sqlx.Tx, data ProjectData) (*WriteResult, error) {
 	result := &WriteResult{Success: true, Conflicts: []ConflictInfo{}}
@@ -113,88 +113,88 @@ func CheckForConflicts(tx *sqlx.Tx, data ProjectData) (*WriteResult, error) {
 		tombItems[tombItem] = true
 	}
 
-	localEntities, err := repository.GetSimpleEntities(tx)
+	localCollections, err := repository.GetSimpleCollections(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	localEntitiesIndex := make(map[string]bool)
-	for _, entity := range localEntities {
-		localEntitiesIndex[entity.Id] = true
+	localCollectionsIndex := make(map[string]bool)
+	for _, collection := range localCollections {
+		localCollectionsIndex[collection.Id] = true
 	}
 
 	entityByNameParent := make(map[string]string)
-	for _, entity := range localEntities {
-		key := strings.ToLower(entity.Name) + "|" + entity.ParentId
-		entityByNameParent[key] = entity.Id
+	for _, collection := range localCollections {
+		key := strings.ToLower(collection.Name) + "|" + collection.ParentId
+		entityByNameParent[key] = collection.Id
 	}
 
 	conflictIdMap := make(map[string]string)
 
-	for _, entity := range data.Entities {
-		if tombItems[entity.Id] {
+	for _, collection := range data.Collections {
+		if tombItems[collection.Id] {
 			continue
 		}
-		if localEntitiesIndex[entity.Id] {
+		if localCollectionsIndex[collection.Id] {
 			continue
 		}
 
-		resolvedParentId := entity.ParentId
-		if mappedParentId, exists := conflictIdMap[entity.ParentId]; exists {
+		resolvedParentId := collection.ParentId
+		if mappedParentId, exists := conflictIdMap[collection.ParentId]; exists {
 			resolvedParentId = mappedParentId
 		}
 
-		key := strings.ToLower(entity.Name) + "|" + resolvedParentId
+		key := strings.ToLower(collection.Name) + "|" + resolvedParentId
 		if existingId, hasConflict := entityByNameParent[key]; hasConflict {
 			result.Conflicts = append(result.Conflicts, ConflictInfo{
-				Type:       "entity",
-				LocalId:    entity.Id,
+				Type:       "collection",
+				LocalId:    collection.Id,
 				ExistingId: existingId,
-				Name:       entity.Name,
-				ParentId:   entity.ParentId,
+				Name:       collection.Name,
+				ParentId:   collection.ParentId,
 			})
-			conflictIdMap[entity.Id] = existingId
+			conflictIdMap[collection.Id] = existingId
 		}
 	}
 
-	localTasks, err := repository.GetSimpleTasks(tx)
+	localAssets, err := repository.GetSimpleAssets(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	localTasksIndex := make(map[string]bool)
-	for _, task := range localTasks {
-		localTasksIndex[task.Id] = true
+	localAssetsIndex := make(map[string]bool)
+	for _, asset := range localAssets {
+		localAssetsIndex[asset.Id] = true
 	}
 
-	taskByKey := make(map[string]string)
-	for _, task := range localTasks {
-		key := strings.ToLower(task.Name) + "|" + task.EntityId + "|" + task.Extension
-		taskByKey[key] = task.Id
+	assetByKey := make(map[string]string)
+	for _, asset := range localAssets {
+		key := strings.ToLower(asset.Name) + "|" + asset.CollectionId + "|" + asset.Extension
+		assetByKey[key] = asset.Id
 	}
 
-	for _, task := range data.Tasks {
-		if tombItems[task.Id] {
+	for _, asset := range data.Assets {
+		if tombItems[asset.Id] {
 			continue
 		}
-		if localTasksIndex[task.Id] {
+		if localAssetsIndex[asset.Id] {
 			continue
 		}
 
-		resolvedEntityId := task.EntityId
-		if mappedEntityId, exists := conflictIdMap[task.EntityId]; exists {
-			resolvedEntityId = mappedEntityId
+		resolvedCollectionId := asset.CollectionId
+		if mappedCollectionId, exists := conflictIdMap[asset.CollectionId]; exists {
+			resolvedCollectionId = mappedCollectionId
 		}
 
-		key := strings.ToLower(task.Name) + "|" + resolvedEntityId + "|" + task.Extension
-		if existingId, hasConflict := taskByKey[key]; hasConflict {
+		key := strings.ToLower(asset.Name) + "|" + resolvedCollectionId + "|" + asset.Extension
+		if existingId, hasConflict := assetByKey[key]; hasConflict {
 			result.Conflicts = append(result.Conflicts, ConflictInfo{
-				Type:       "task",
-				LocalId:    task.Id,
+				Type:       "asset",
+				LocalId:    asset.Id,
 				ExistingId: existingId,
-				Name:       task.Name,
-				ParentId:   task.EntityId,
-				Extension:  task.Extension,
+				Name:       asset.Name,
+				ParentId:   asset.CollectionId,
+				Extension:  asset.Extension,
 			})
 		}
 	}
@@ -209,26 +209,26 @@ func CheckForConflicts(tx *sqlx.Tx, data ProjectData) (*WriteResult, error) {
 func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 
 	// Sort
-	sortedEntities, err := repository.TopologicalSort(data.Entities)
+	sortedCollections, err := repository.TopologicalSort(data.Collections)
 	if err != nil {
 		return err
 	}
-	data.Entities = sortedEntities
-	// sort.Slice(data.Entities, func(i, j int) bool {
-	// 	iDepth := strings.Count(data.Entities[i].EntityPath, "/")
-	// 	jDepth := strings.Count(data.Entities[j].EntityPath, "/")
+	data.Collections = sortedCollections
+	// sort.Slice(data.Collections, func(i, j int) bool {
+	// 	iDepth := strings.Count(data.Collections[i].CollectionPath, "/")
+	// 	jDepth := strings.Count(data.Collections[j].CollectionPath, "/")
 	// 	if iDepth != jDepth {
 	// 		return iDepth < jDepth
 	// 	}
-	// 	return data.Entities[i].EntityPath < data.Entities[j].EntityPath
+	// 	return data.Collections[i].CollectionPath < data.Collections[j].CollectionPath
 	// })
-	// sort.Slice(data.Tasks, func(i, j int) bool {
-	// 	iDepth := strings.Count(data.Tasks[i].TaskPath, "/")
-	// 	jDepth := strings.Count(data.Tasks[j].TaskPath, "/")
+	// sort.Slice(data.Assets, func(i, j int) bool {
+	// 	iDepth := strings.Count(data.Assets[i].AssetPath, "/")
+	// 	jDepth := strings.Count(data.Assets[j].AssetPath, "/")
 	// 	if iDepth != jDepth {
 	// 		return iDepth < jDepth
 	// 	}
-	// 	return data.Tasks[i].TaskPath < data.Tasks[j].TaskPath
+	// 	return data.Assets[i].AssetPath < data.Assets[j].AssetPath
 	// })
 
 	tombItems := make(map[string]bool)
@@ -241,8 +241,8 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 	}
 
 	chunks := []string{}
-	for _, TaskCheckpoint := range data.TasksCheckpoints {
-		chunksString := TaskCheckpoint.Chunks
+	for _, AssetCheckpoint := range data.AssetsCheckpoints {
+		chunksString := AssetCheckpoint.Chunks
 		chunkHashes := strings.Split(chunksString, ",")
 		for _, chunkHash := range chunkHashes {
 			if !utils.Contains(chunks, chunkHash) {
@@ -274,19 +274,19 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		previewIds = append(previewIds, data.ProjectPreview)
 	}
 
-	for _, task := range data.Tasks {
-		if task.PreviewId != "" && !utils.Contains(previewIds, task.PreviewId) {
-			previewIds = append(previewIds, task.PreviewId)
+	for _, asset := range data.Assets {
+		if asset.PreviewId != "" && !utils.Contains(previewIds, asset.PreviewId) {
+			previewIds = append(previewIds, asset.PreviewId)
 		}
 	}
-	for _, entity := range data.Entities {
-		if entity.PreviewId != "" && !utils.Contains(previewIds, entity.PreviewId) {
-			previewIds = append(previewIds, entity.PreviewId)
+	for _, collection := range data.Collections {
+		if collection.PreviewId != "" && !utils.Contains(previewIds, collection.PreviewId) {
+			previewIds = append(previewIds, collection.PreviewId)
 		}
 	}
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		if taskCheckpoint.PreviewId != "" && !utils.Contains(previewIds, taskCheckpoint.PreviewId) {
-			previewIds = append(previewIds, taskCheckpoint.PreviewId)
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		if assetCheckpoint.PreviewId != "" && !utils.Contains(previewIds, assetCheckpoint.PreviewId) {
+			previewIds = append(previewIds, assetCheckpoint.PreviewId)
 		}
 	}
 
@@ -311,15 +311,15 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 			continue
 		}
 		roleAttributes := models.RoleAttributes{
-			ViewEntity:   role.ViewEntity,
-			CreateEntity: role.CreateEntity,
-			UpdateEntity: role.UpdateEntity,
-			DeleteEntity: role.DeleteEntity,
+			ViewCollection:   role.ViewCollection,
+			CreateCollection: role.CreateCollection,
+			UpdateCollection: role.UpdateCollection,
+			DeleteCollection: role.DeleteCollection,
 
-			ViewTask:   role.ViewTask,
-			CreateTask: role.CreateTask,
-			UpdateTask: role.UpdateTask,
-			DeleteTask: role.DeleteTask,
+			ViewAsset:   role.ViewAsset,
+			CreateAsset: role.CreateAsset,
+			UpdateAsset: role.UpdateAsset,
+			DeleteAsset: role.DeleteAsset,
 
 			ViewTemplate:   role.ViewTemplate,
 			CreateTemplate: role.CreateTemplate,
@@ -332,18 +332,18 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 
 			PullChunk: role.PullChunk,
 
-			AssignTask:   role.AssignTask,
-			UnassignTask: role.UnassignTask,
+			AssignAsset:   role.AssignAsset,
+			UnassignAsset: role.UnassignAsset,
 
 			AddUser:    role.AddUser,
 			RemoveUser: role.RemoveUser,
 			ChangeRole: role.ChangeRole,
 
-			ChangeStatus:  role.ChangeStatus,
-			SetDoneTask:   role.SetDoneTask,
-			SetRetakeTask: role.SetRetakeTask,
+			ChangeStatus:   role.ChangeStatus,
+			SetDoneAsset:   role.SetDoneAsset,
+			SetRetakeAsset: role.SetRetakeAsset,
 
-			ViewDoneTask: role.ViewDoneTask,
+			ViewDoneAsset: role.ViewDoneAsset,
 
 			ManageDependencies: role.ManageDependencies,
 		}
@@ -396,15 +396,15 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 	}
 
-	for _, entityType := range data.EntityTypes {
-		if tombItems[entityType.Id] {
+	for _, collectionType := range data.CollectionTypes {
+		if tombItems[collectionType.Id] {
 			continue
 		}
-		localEntityType, err := repository.GetEntityType(tx, entityType.Id)
+		localCollectionType, err := repository.GetCollectionType(tx, collectionType.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrEntityTypeNotFound) {
-				_, err = repository.CreateEntityType(
-					tx, entityType.Id, entityType.Name, entityType.Icon)
+			if errors.Is(err, error_service.ErrCollectionTypeNotFound) {
+				_, err = repository.CreateCollectionType(
+					tx, collectionType.Id, collectionType.Name, collectionType.Icon)
 				if err != nil {
 					return err
 				}
@@ -412,8 +412,8 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 				return err
 			}
 		} else {
-			if localEntityType.MTime < entityType.MTime {
-				_, err = repository.UpdateEntityType(tx, entityType.Id, entityType.Name, entityType.Icon)
+			if localCollectionType.MTime < collectionType.MTime {
+				_, err = repository.UpdateCollectionType(tx, collectionType.Id, collectionType.Name, collectionType.Icon)
 				if err != nil {
 					return err
 				}
@@ -421,15 +421,15 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 
 	}
-	for _, taskType := range data.TaskTypes {
-		if tombItems[taskType.Id] {
+	for _, assetType := range data.AssetTypes {
+		if tombItems[assetType.Id] {
 			continue
 		}
-		localTaskType, err := repository.GetTaskType(tx, taskType.Id)
+		localAssetType, err := repository.GetAssetType(tx, assetType.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrTaskTypeNotFound) {
-				_, err = repository.CreateTaskType(
-					tx, taskType.Id, taskType.Name, taskType.Icon)
+			if errors.Is(err, error_service.ErrAssetTypeNotFound) {
+				_, err = repository.CreateAssetType(
+					tx, assetType.Id, assetType.Name, assetType.Icon)
 				if err != nil {
 					return err
 				}
@@ -438,8 +438,8 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 			}
 		} else {
 
-			if localTaskType.MTime < taskType.MTime {
-				_, err = repository.UpdateTaskType(tx, taskType.Id, taskType.Name, taskType.Icon)
+			if localAssetType.MTime < assetType.MTime {
+				_, err = repository.UpdateAssetType(tx, assetType.Id, assetType.Name, assetType.Icon)
 				if err != nil {
 					return err
 				}
@@ -502,26 +502,26 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 	}
 
 	start := time.Now()
-	localEntities, err := repository.GetSimpleEntities(tx)
+	localCollections, err := repository.GetSimpleCollections(tx)
 	if err != nil {
 		return err
 	}
-	localEntitiesIndex := make(map[string]int)
-	for i, t := range localEntities {
-		localEntitiesIndex[t.Id] = i
+	localCollectionsIndex := make(map[string]int)
+	for i, t := range localCollections {
+		localCollectionsIndex[t.Id] = i
 	}
 
-	for _, entity := range data.Entities {
-		if tombItems[entity.Id] {
+	for _, collection := range data.Collections {
+		if tombItems[collection.Id] {
 			continue
 		}
-		i, exists := localEntitiesIndex[entity.Id]
+		i, exists := localCollectionsIndex[collection.Id]
 		if !exists {
-			fmt.Println("Creating: ", entity.Name)
-			err = repository.AddEntity(
-				tx, entity.Id, entity.Name, entity.Description, entity.EntityTypeId, entity.ParentId, entity.PreviewId, entity.IsLibrary)
+			fmt.Println("Creating: ", collection.Name)
+			err = repository.AddCollection(
+				tx, collection.Id, collection.Name, collection.Description, collection.CollectionTypeId, collection.ParentId, collection.PreviewId, collection.IsLibrary)
 			if err != nil {
-				if err.Error() == "parent entity not found" {
+				if err.Error() == "parent collection not found" {
 					continue
 				}
 				return err
@@ -529,37 +529,37 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 			continue
 		}
 
-		localEntity := localEntities[i]
-		if localEntity.MTime < entity.MTime {
+		localCollection := localCollections[i]
+		if localCollection.MTime < collection.MTime {
 
-			parentId := entity.ParentId
-			previewId := entity.PreviewId
-			isLibrary := entity.IsLibrary
+			parentId := collection.ParentId
+			previewId := collection.PreviewId
+			isLibrary := collection.IsLibrary
 
-			entity, err = repository.RenameEntity(tx, entity.Id, entity.Name)
+			collection, err = repository.RenameCollection(tx, collection.Id, collection.Name)
 			if err != nil {
 				return err
 			}
 
-			entity.ParentId = parentId
-			entity.PreviewId = previewId
-			entity.IsLibrary = isLibrary
+			collection.ParentId = parentId
+			collection.PreviewId = previewId
+			collection.IsLibrary = isLibrary
 
-			if localEntity.ParentId != entity.ParentId {
-				err = repository.ChangeParent(tx, entity.Id, entity.ParentId)
+			if localCollection.ParentId != collection.ParentId {
+				err = repository.ChangeParent(tx, collection.Id, collection.ParentId)
 				if err != nil {
 					return err
 				}
 			}
 
-			if localEntity.PreviewId != entity.PreviewId {
-				err = repository.SetEntityPreview(tx, entity.Id, "entity", entity.PreviewId)
+			if localCollection.PreviewId != collection.PreviewId {
+				err = repository.SetCollectionPreview(tx, collection.Id, "collection", collection.PreviewId)
 				if err != nil {
 					return err
 				}
 			}
-			if localEntity.IsLibrary != entity.IsLibrary {
-				err = repository.ChangeIsLibrary(tx, entity.Id, entity.IsLibrary)
+			if localCollection.IsLibrary != collection.IsLibrary {
+				err = repository.ChangeIsLibrary(tx, collection.Id, collection.IsLibrary)
 				if err != nil {
 					return err
 				}
@@ -568,17 +568,17 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 	}
 	elapsed := time.Since(start)
-	fmt.Printf("entity write took %s\n", elapsed)
+	fmt.Printf("collection write took %s\n", elapsed)
 
-	for _, entityAssignee := range data.EntityAssignees {
-		if tombItems[entityAssignee.Id] {
+	for _, collectionAssignee := range data.CollectionAssignees {
+		if tombItems[collectionAssignee.Id] {
 			continue
 		}
-		_, err = repository.GetAssignee(tx, entityAssignee.Id)
+		_, err = repository.GetAssignee(tx, collectionAssignee.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrEntityAssigneeNotFound) {
+			if errors.Is(err, error_service.ErrCollectionAssigneeNotFound) {
 				err = repository.AddAssignee(
-					tx, entityAssignee.Id, entityAssignee.EntityId, entityAssignee.AssigneeId)
+					tx, collectionAssignee.Id, collectionAssignee.CollectionId, collectionAssignee.AssigneeId)
 				if err != nil {
 					return err
 				}
@@ -589,63 +589,63 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 	}
 
 	start = time.Now()
-	localTasks, err := repository.GetSimpleTasks(tx)
+	localAssets, err := repository.GetSimpleAssets(tx)
 	if err != nil {
 		return err
 	}
-	localTasksIndex := make(map[string]int)
-	for i, t := range localTasks {
-		localTasksIndex[t.Id] = i
+	localAssetsIndex := make(map[string]int)
+	for i, t := range localAssets {
+		localAssetsIndex[t.Id] = i
 	}
 
-	createTaskQuery := `
-		INSERT INTO task 
-		(id, assignee_id, mtime, created_at, name, description, extension, task_type_id, entity_id, is_resource, status_id, pointer, is_link, preview_id) 
+	createAssetQuery := `
+		INSERT INTO asset 
+		(id, assignee_id, mtime, created_at, name, description, extension, asset_type_id, collection_id, is_resource, status_id, pointer, is_link, preview_id) 
 		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 	`
-	createTaskStmt, err := tx.Prepare(createTaskQuery)
+	createAssetStmt, err := tx.Prepare(createAssetQuery)
 	if err != nil {
 		return err
 	}
 
-	for _, task := range data.Tasks {
-		if tombItems[task.Id] {
+	for _, asset := range data.Assets {
+		if tombItems[asset.Id] {
 			continue
 		}
 
-		i, exists := localTasksIndex[task.Id]
+		i, exists := localAssetsIndex[asset.Id]
 		if !exists {
-			_, err := createTaskStmt.Exec(task.Id, task.AssigneeId, task.MTime, task.CreatedAt, task.Name, task.Description, task.Extension, task.TaskTypeId, task.EntityId, task.IsResource, task.StatusId, task.Pointer, task.IsLink, task.PreviewId)
+			_, err := createAssetStmt.Exec(asset.Id, asset.AssigneeId, asset.MTime, asset.CreatedAt, asset.Name, asset.Description, asset.Extension, asset.AssetTypeId, asset.CollectionId, asset.IsResource, asset.StatusId, asset.Pointer, asset.IsLink, asset.PreviewId)
 			if err != nil {
 				return err
 			}
 			continue
 		}
 
-		localTask := localTasks[i]
-		if localTask.MTime < task.MTime {
-			err := repository.UpdateSyncTask(tx, task.Id, task.Name, task.EntityId, task.TaskTypeId, task.AssigneeId, task.AssignerId, task.StatusId, task.PreviewId, task.IsResource, task.IsLink, task.Pointer, []string{})
+		localAsset := localAssets[i]
+		if localAsset.MTime < asset.MTime {
+			err := repository.UpdateSyncAsset(tx, asset.Id, asset.Name, asset.CollectionId, asset.AssetTypeId, asset.AssigneeId, asset.AssignerId, asset.StatusId, asset.PreviewId, asset.IsResource, asset.IsLink, asset.Pointer, []string{})
 			if err != nil {
 				return err
 			}
 		}
 	}
 	elapsed = time.Since(start)
-	fmt.Printf("task write took %s\n", elapsed)
+	fmt.Printf("asset write took %s\n", elapsed)
 
 	start = time.Now()
-	localTasksCheckpoints, err := repository.GetSimpleCheckpoints(tx)
+	localAssetsCheckpoints, err := repository.GetSimpleCheckpoints(tx)
 	if err != nil {
 		return err
 	}
-	localTasksCheckpointsIndex := make(map[string]int)
-	for i, c := range localTasksCheckpoints {
-		localTasksCheckpointsIndex[c.Id] = i
+	localAssetsCheckpointsIndex := make(map[string]int)
+	for i, c := range localAssetsCheckpoints {
+		localAssetsCheckpointsIndex[c.Id] = i
 	}
 
 	createCheckpointQuery := `
-		INSERT INTO task_checkpoint 
-		(id, mtime, created_at, task_id, xxhash_checksum, time_modified, file_size, comment, chunks, author_id, preview_id, group_id) 
+		INSERT INTO asset_checkpoint 
+		(id, mtime, created_at, asset_id, xxhash_checksum, time_modified, file_size, comment, chunks, author_id, preview_id, group_id) 
 		VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);
 	`
 	createCheckpointStmt, err := tx.Prepare(createCheckpointQuery)
@@ -653,19 +653,19 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		return err
 	}
 
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		if tombItems[taskCheckpoint.Id] {
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		if tombItems[assetCheckpoint.Id] {
 			continue
 		}
 
-		_, exists := localTasksCheckpointsIndex[taskCheckpoint.Id]
+		_, exists := localAssetsCheckpointsIndex[assetCheckpoint.Id]
 		if !exists {
-			EpochTime, err := utils.RFC3339ToEpoch(taskCheckpoint.CreatedAt)
+			EpochTime, err := utils.RFC3339ToEpoch(assetCheckpoint.CreatedAt)
 			if err != nil {
 				return err
 			}
 
-			_, err = createCheckpointStmt.Exec(taskCheckpoint.Id, taskCheckpoint.MTime, EpochTime, taskCheckpoint.TaskId, taskCheckpoint.XXHashChecksum, taskCheckpoint.TimeModified, taskCheckpoint.FileSize, taskCheckpoint.Comment, taskCheckpoint.Chunks, taskCheckpoint.AuthorUID, taskCheckpoint.PreviewId, taskCheckpoint.GroupId)
+			_, err = createCheckpointStmt.Exec(assetCheckpoint.Id, assetCheckpoint.MTime, EpochTime, assetCheckpoint.AssetId, assetCheckpoint.XXHashChecksum, assetCheckpoint.TimeModified, assetCheckpoint.FileSize, assetCheckpoint.Comment, assetCheckpoint.Chunks, assetCheckpoint.AuthorUID, assetCheckpoint.PreviewId, assetCheckpoint.GroupId)
 			if err != nil {
 				return err
 			}
@@ -675,17 +675,17 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 	elapsed = time.Since(start)
 	fmt.Printf("checkpoint write took %s\n", elapsed)
 
-	for _, dependency := range data.TaskDependencies {
+	for _, dependency := range data.AssetDependencies {
 		if tombItems[dependency.Id] {
 			continue
 		}
 		_, err = repository.GetDependency(tx, dependency.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrTaskDependencyNotFound) {
+			if errors.Is(err, error_service.ErrAssetDependencyNotFound) {
 				_, err = repository.AddDependency(
-					tx, dependency.Id, dependency.TaskId, dependency.DependencyId, dependency.DependencyTypeId)
+					tx, dependency.Id, dependency.AssetId, dependency.DependencyId, dependency.DependencyTypeId)
 				if err != nil {
-					if err.Error() == "UNIQUE constraint failed: task_dependency.task_id, task_dependency.dependency_id" {
+					if err.Error() == "UNIQUE constraint failed: asset_dependency.asset_id, asset_dependency.dependency_id" {
 						continue
 					}
 					return err
@@ -696,17 +696,17 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 	}
 
-	for _, dependency := range data.EntityDependencies {
+	for _, dependency := range data.CollectionDependencies {
 		if tombItems[dependency.Id] {
 			continue
 		}
-		_, err = repository.GetEntityDependency(tx, dependency.Id)
+		_, err = repository.GetCollectionDependency(tx, dependency.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrEntityDependencyNotFound) {
-				_, err = repository.AddEntityDependency(
-					tx, dependency.Id, dependency.TaskId, dependency.DependencyId, dependency.DependencyTypeId)
+			if errors.Is(err, error_service.ErrCollectionDependencyNotFound) {
+				_, err = repository.AddCollectionDependency(
+					tx, dependency.Id, dependency.AssetId, dependency.DependencyId, dependency.DependencyTypeId)
 				if err != nil {
-					if err.Error() == "UNIQUE constraint failed: entity_dependency.task_id, entity_dependency.dependency_id" {
+					if err.Error() == "UNIQUE constraint failed: collection_dependency.asset_id, collection_dependency.dependency_id" {
 						continue
 					}
 					return err
@@ -743,7 +743,7 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		if err != nil {
 			if errors.Is(err, error_service.ErrWorkflowNotFound) {
 				_, err = repository.CreateWorkflow(
-					tx, workflow.Id, workflow.Name, []models.WorkflowTask{}, []models.WorkflowEntity{}, []models.WorkflowLink{})
+					tx, workflow.Id, workflow.Name, []models.WorkflowAsset{}, []models.WorkflowCollection{}, []models.WorkflowLink{})
 				if err != nil {
 					return err
 				}
@@ -767,7 +767,7 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		localWorkflowLink, err := repository.GetWorkflowLink(tx, workflowLink.Id)
 		if err != nil {
 			if errors.Is(err, error_service.ErrWorkflowLinkNotFound) {
-				err = repository.AddLinkWorkflow(tx, workflowLink.Id, workflowLink.Name, workflowLink.EntityTypeId, workflowLink.WorkflowId, workflowLink.LinkedWorkflowId)
+				err = repository.AddLinkWorkflow(tx, workflowLink.Id, workflowLink.Name, workflowLink.CollectionTypeId, workflowLink.WorkflowId, workflowLink.LinkedWorkflowId)
 				if err != nil {
 					return err
 				}
@@ -784,14 +784,14 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 	}
 
-	for _, workflowEntity := range data.WorkflowEntities {
-		if tombItems[workflowEntity.Id] {
+	for _, workflowCollection := range data.WorkflowCollections {
+		if tombItems[workflowCollection.Id] {
 			continue
 		}
-		localWorkflowEntity, err := repository.GetWorkflowEntity(tx, workflowEntity.Id)
+		localWorkflowCollection, err := repository.GetWorkflowCollection(tx, workflowCollection.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrWorkflowEntityNotFound) {
-				_, err = repository.CreateWorkflowEntity(tx, workflowEntity.Id, workflowEntity.Name, workflowEntity.WorkflowId, workflowEntity.EntityTypeId)
+			if errors.Is(err, error_service.ErrWorkflowCollectionNotFound) {
+				_, err = repository.CreateWorkflowCollection(tx, workflowCollection.Id, workflowCollection.Name, workflowCollection.WorkflowId, workflowCollection.CollectionTypeId)
 				if err != nil {
 					return err
 				}
@@ -799,9 +799,9 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 				return err
 			}
 		} else {
-			if localWorkflowEntity.MTime < workflowEntity.MTime {
-				_, err = repository.UpdateWorkflowEntity(
-					tx, workflowEntity.Id, workflowEntity.Name, workflowEntity.EntityTypeId)
+			if localWorkflowCollection.MTime < workflowCollection.MTime {
+				_, err = repository.UpdateWorkflowCollection(
+					tx, workflowCollection.Id, workflowCollection.Name, workflowCollection.CollectionTypeId)
 				if err != nil {
 					return err
 				}
@@ -810,14 +810,14 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 
 	}
 
-	for _, workflowTask := range data.WorkflowTasks {
-		if tombItems[workflowTask.Id] {
+	for _, workflowAsset := range data.WorkflowAssets {
+		if tombItems[workflowAsset.Id] {
 			continue
 		}
-		localWorkflowTask, err := repository.GetWorkflowTask(tx, workflowTask.Id)
+		localWorkflowAsset, err := repository.GetWorkflowAsset(tx, workflowAsset.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrWorkflowTaskNotFound) {
-				_, err = repository.CreateWorkflowTask(tx, workflowTask.Id, workflowTask.Name, workflowTask.WorkflowId, workflowTask.TaskTypeId, workflowTask.IsResource, workflowTask.TemplateId, workflowTask.Pointer, workflowTask.IsLink)
+			if errors.Is(err, error_service.ErrWorkflowAssetNotFound) {
+				_, err = repository.CreateWorkflowAsset(tx, workflowAsset.Id, workflowAsset.Name, workflowAsset.WorkflowId, workflowAsset.AssetTypeId, workflowAsset.IsResource, workflowAsset.TemplateId, workflowAsset.Pointer, workflowAsset.IsLink)
 				if err != nil {
 					return err
 				}
@@ -825,8 +825,8 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 				return err
 			}
 		} else {
-			if localWorkflowTask.MTime < workflowTask.MTime {
-				_, err = repository.UpdateWorkflowTask(tx, workflowTask.Id, workflowTask.Name, workflowTask.TaskTypeId, workflowTask.IsResource, workflowTask.TemplateId, workflowTask.Pointer, workflowTask.IsLink)
+			if localWorkflowAsset.MTime < workflowAsset.MTime {
+				_, err = repository.UpdateWorkflowAsset(tx, workflowAsset.Id, workflowAsset.Name, workflowAsset.AssetTypeId, workflowAsset.IsResource, workflowAsset.TemplateId, workflowAsset.Pointer, workflowAsset.IsLink)
 				if err != nil {
 					return err
 				}
@@ -834,14 +834,14 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 		}
 	}
 
-	for _, taskTag := range data.TasksTags {
-		if tombItems[taskTag.Id] {
+	for _, assetTag := range data.AssetsTags {
+		if tombItems[assetTag.Id] {
 			continue
 		}
-		_, err = repository.GetTaskTag(tx, taskTag.Id)
+		_, err = repository.GetAssetTag(tx, assetTag.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrTaskTagNotFound) {
-				err = repository.AddTagToTaskById(tx, taskTag.Id, taskTag.TaskId, taskTag.TagId)
+			if errors.Is(err, error_service.ErrAssetTagNotFound) {
+				err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
 				if err != nil {
 					return err
 				}
@@ -917,28 +917,28 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	// Sort
 	start := time.Now()
-	sortedEntities, err := repository.TopologicalSort(data.Entities)
+	sortedCollections, err := repository.TopologicalSort(data.Collections)
 	if err != nil {
 		return err
 	}
-	data.Entities = sortedEntities
+	data.Collections = sortedCollections
 	elapsed := time.Since(start)
 	fmt.Printf("sort data took %s\n", elapsed)
-	// sort.Slice(data.Entities, func(i, j int) bool {
-	// 	iDepth := strings.Count(data.Entities[i].EntityPath, "/")
-	// 	jDepth := strings.Count(data.Entities[j].EntityPath, "/")
+	// sort.Slice(data.Collections, func(i, j int) bool {
+	// 	iDepth := strings.Count(data.Collections[i].CollectionPath, "/")
+	// 	jDepth := strings.Count(data.Collections[j].CollectionPath, "/")
 	// 	if iDepth != jDepth {
 	// 		return iDepth < jDepth
 	// 	}
-	// 	return data.Entities[i].EntityPath < data.Entities[j].EntityPath
+	// 	return data.Collections[i].CollectionPath < data.Collections[j].CollectionPath
 	// })
-	// sort.Slice(data.Tasks, func(i, j int) bool {
-	// 	iDepth := strings.Count(data.Tasks[i].TaskPath, "/")
-	// 	jDepth := strings.Count(data.Tasks[j].TaskPath, "/")
+	// sort.Slice(data.Assets, func(i, j int) bool {
+	// 	iDepth := strings.Count(data.Assets[i].AssetPath, "/")
+	// 	jDepth := strings.Count(data.Assets[j].AssetPath, "/")
 	// 	if iDepth != jDepth {
 	// 		return iDepth < jDepth
 	// 	}
-	// 	return data.Tasks[i].TaskPath < data.Tasks[j].TaskPath
+	// 	return data.Assets[i].AssetPath < data.Assets[j].AssetPath
 	// })
 
 	previewIds := []string{}
@@ -946,19 +946,19 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 		previewIds = append(previewIds, data.ProjectPreview)
 	}
 
-	for _, task := range data.Tasks {
-		if task.PreviewId != "" && !utils.Contains(previewIds, task.PreviewId) {
-			previewIds = append(previewIds, task.PreviewId)
+	for _, asset := range data.Assets {
+		if asset.PreviewId != "" && !utils.Contains(previewIds, asset.PreviewId) {
+			previewIds = append(previewIds, asset.PreviewId)
 		}
 	}
-	for _, entity := range data.Entities {
-		if entity.PreviewId != "" && !utils.Contains(previewIds, entity.PreviewId) {
-			previewIds = append(previewIds, entity.PreviewId)
+	for _, collection := range data.Collections {
+		if collection.PreviewId != "" && !utils.Contains(previewIds, collection.PreviewId) {
+			previewIds = append(previewIds, collection.PreviewId)
 		}
 	}
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		if taskCheckpoint.PreviewId != "" && !utils.Contains(previewIds, taskCheckpoint.PreviewId) {
-			previewIds = append(previewIds, taskCheckpoint.PreviewId)
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		if assetCheckpoint.PreviewId != "" && !utils.Contains(previewIds, assetCheckpoint.PreviewId) {
+			previewIds = append(previewIds, assetCheckpoint.PreviewId)
 		}
 	}
 
@@ -983,15 +983,15 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 
 	for _, role := range data.Roles {
 		roleAttributes := models.RoleAttributes{
-			ViewEntity:   role.ViewEntity,
-			CreateEntity: role.CreateEntity,
-			UpdateEntity: role.UpdateEntity,
-			DeleteEntity: role.DeleteEntity,
+			ViewCollection:   role.ViewCollection,
+			CreateCollection: role.CreateCollection,
+			UpdateCollection: role.UpdateCollection,
+			DeleteCollection: role.DeleteCollection,
 
-			ViewTask:   role.ViewTask,
-			CreateTask: role.CreateTask,
-			UpdateTask: role.UpdateTask,
-			DeleteTask: role.DeleteTask,
+			ViewAsset:   role.ViewAsset,
+			CreateAsset: role.CreateAsset,
+			UpdateAsset: role.UpdateAsset,
+			DeleteAsset: role.DeleteAsset,
 
 			ViewTemplate:   role.ViewTemplate,
 			CreateTemplate: role.CreateTemplate,
@@ -1004,18 +1004,18 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 
 			PullChunk: role.PullChunk,
 
-			AssignTask:   role.AssignTask,
-			UnassignTask: role.UnassignTask,
+			AssignAsset:   role.AssignAsset,
+			UnassignAsset: role.UnassignAsset,
 
 			AddUser:    role.AddUser,
 			RemoveUser: role.RemoveUser,
 			ChangeRole: role.ChangeRole,
 
-			ChangeStatus:  role.ChangeStatus,
-			SetDoneTask:   role.SetDoneTask,
-			SetRetakeTask: role.SetRetakeTask,
+			ChangeStatus:   role.ChangeStatus,
+			SetDoneAsset:   role.SetDoneAsset,
+			SetRetakeAsset: role.SetRetakeAsset,
 
-			ViewDoneTask: role.ViewDoneTask,
+			ViewDoneAsset: role.ViewDoneAsset,
 
 			ManageDependencies: role.ManageDependencies,
 		}
@@ -1034,17 +1034,17 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 		}
 	}
 
-	for _, entityType := range data.EntityTypes {
-		_, err = repository.CreateEntityType(
-			tx, entityType.Id, entityType.Name, entityType.Icon)
+	for _, collectionType := range data.CollectionTypes {
+		_, err = repository.CreateCollectionType(
+			tx, collectionType.Id, collectionType.Name, collectionType.Icon)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, taskType := range data.TaskTypes {
-		_, err = repository.CreateTaskType(
-			tx, taskType.Id, taskType.Name, taskType.Icon)
+	for _, assetType := range data.AssetTypes {
+		_, err = repository.CreateAssetType(
+			tx, assetType.Id, assetType.Name, assetType.Icon)
 		if err != nil {
 			return err
 		}
@@ -1074,60 +1074,60 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	}
 
 	start = time.Now()
-	for _, entity := range data.Entities {
-		err = repository.AddEntity(
-			tx, entity.Id, entity.Name, entity.Description, entity.EntityTypeId, entity.ParentId, entity.PreviewId, entity.IsLibrary)
+	for _, collection := range data.Collections {
+		err = repository.AddCollection(
+			tx, collection.Id, collection.Name, collection.Description, collection.CollectionTypeId, collection.ParentId, collection.PreviewId, collection.IsLibrary)
 		if err != nil {
-			if err.Error() == "parent entity not found" {
+			if err.Error() == "parent collection not found" {
 				continue
 			}
 			return err
 		}
 	}
 	elapsed = time.Since(start)
-	fmt.Printf("entity write took %s\n", elapsed)
+	fmt.Printf("collection write took %s\n", elapsed)
 
-	for _, entityAssignee := range data.EntityAssignees {
+	for _, collectionAssignee := range data.CollectionAssignees {
 		err = repository.AddAssignee(
-			tx, entityAssignee.Id, entityAssignee.EntityId, entityAssignee.AssigneeId)
+			tx, collectionAssignee.Id, collectionAssignee.CollectionId, collectionAssignee.AssigneeId)
 		if err != nil {
 			return err
 		}
 	}
 
 	start = time.Now()
-	localTasks, err := repository.GetSimpleTasks(tx)
+	localAssets, err := repository.GetSimpleAssets(tx)
 	if err != nil {
 		return err
 	}
-	localTasksIndex := make(map[string]int)
-	for i, t := range localTasks {
-		localTasksIndex[t.Id] = i
+	localAssetsIndex := make(map[string]int)
+	for i, t := range localAssets {
+		localAssetsIndex[t.Id] = i
 	}
 
-	createTaskQuery := `
-		INSERT INTO task 
-		(id, assignee_id, mtime, created_at, name, description, extension, task_type_id, entity_id, is_resource, status_id, pointer, is_link, preview_id) 
+	createAssetQuery := `
+		INSERT INTO asset 
+		(id, assignee_id, mtime, created_at, name, description, extension, asset_type_id, collection_id, is_resource, status_id, pointer, is_link, preview_id) 
 		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 	`
-	createTaskStmt, err := tx.Prepare(createTaskQuery)
+	createAssetStmt, err := tx.Prepare(createAssetQuery)
 	if err != nil {
 		return err
 	}
 
-	for _, task := range data.Tasks {
-		_, err := createTaskStmt.Exec(task.Id, task.AssigneeId, task.MTime, task.CreatedAt, task.Name, task.Description, task.Extension, task.TaskTypeId, task.EntityId, task.IsResource, task.StatusId, task.Pointer, task.IsLink, task.PreviewId)
+	for _, asset := range data.Assets {
+		_, err := createAssetStmt.Exec(asset.Id, asset.AssigneeId, asset.MTime, asset.CreatedAt, asset.Name, asset.Description, asset.Extension, asset.AssetTypeId, asset.CollectionId, asset.IsResource, asset.StatusId, asset.Pointer, asset.IsLink, asset.PreviewId)
 		if err != nil {
 			return err
 		}
 	}
 	elapsed = time.Since(start)
-	fmt.Printf("task write took %s\n", elapsed)
+	fmt.Printf("asset write took %s\n", elapsed)
 
 	start = time.Now()
 	createCheckpointQuery := `
-		INSERT INTO task_checkpoint 
-		(id, mtime, created_at, task_id, xxhash_checksum, time_modified, file_size, comment, chunks, author_id, preview_id, group_id) 
+		INSERT INTO asset_checkpoint 
+		(id, mtime, created_at, asset_id, xxhash_checksum, time_modified, file_size, comment, chunks, author_id, preview_id, group_id) 
 		VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);
 	`
 	createCheckpointStmt, err := tx.Prepare(createCheckpointQuery)
@@ -1135,12 +1135,12 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 		return err
 	}
 
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		EpochTime, err := utils.RFC3339ToEpoch(taskCheckpoint.CreatedAt)
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		EpochTime, err := utils.RFC3339ToEpoch(assetCheckpoint.CreatedAt)
 		if err != nil {
 			return err
 		}
-		_, err = createCheckpointStmt.Exec(taskCheckpoint.Id, taskCheckpoint.MTime, EpochTime, taskCheckpoint.TaskId, taskCheckpoint.XXHashChecksum, taskCheckpoint.TimeModified, taskCheckpoint.FileSize, taskCheckpoint.Comment, taskCheckpoint.Chunks, taskCheckpoint.AuthorUID, taskCheckpoint.PreviewId, taskCheckpoint.GroupId)
+		_, err = createCheckpointStmt.Exec(assetCheckpoint.Id, assetCheckpoint.MTime, EpochTime, assetCheckpoint.AssetId, assetCheckpoint.XXHashChecksum, assetCheckpoint.TimeModified, assetCheckpoint.FileSize, assetCheckpoint.Comment, assetCheckpoint.Chunks, assetCheckpoint.AuthorUID, assetCheckpoint.PreviewId, assetCheckpoint.GroupId)
 		if err != nil {
 			return err
 		}
@@ -1148,22 +1148,22 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	elapsed = time.Since(start)
 	fmt.Printf("checkpoint write took %s\n", elapsed)
 
-	for _, dependency := range data.TaskDependencies {
+	for _, dependency := range data.AssetDependencies {
 		_, err = repository.AddDependency(
-			tx, dependency.Id, dependency.TaskId, dependency.DependencyId, dependency.DependencyTypeId)
+			tx, dependency.Id, dependency.AssetId, dependency.DependencyId, dependency.DependencyTypeId)
 		if err != nil {
-			if err.Error() == "UNIQUE constraint failed: task_dependency.task_id, task_dependency.dependency_id" {
+			if err.Error() == "UNIQUE constraint failed: asset_dependency.asset_id, asset_dependency.dependency_id" {
 				continue
 			}
 			return err
 		}
 	}
 
-	for _, dependency := range data.EntityDependencies {
-		_, err = repository.AddEntityDependency(
-			tx, dependency.Id, dependency.TaskId, dependency.DependencyId, dependency.DependencyTypeId)
+	for _, dependency := range data.CollectionDependencies {
+		_, err = repository.AddCollectionDependency(
+			tx, dependency.Id, dependency.AssetId, dependency.DependencyId, dependency.DependencyTypeId)
 		if err != nil {
-			if err.Error() == "UNIQUE constraint failed: entity_dependency.task_id, entity_dependency.dependency_id" {
+			if err.Error() == "UNIQUE constraint failed: collection_dependency.asset_id, collection_dependency.dependency_id" {
 				continue
 			}
 			return err
@@ -1180,35 +1180,35 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 
 	for _, workflow := range data.Workflows {
 		_, err = repository.CreateWorkflow(
-			tx, workflow.Id, workflow.Name, []models.WorkflowTask{}, []models.WorkflowEntity{}, []models.WorkflowLink{})
+			tx, workflow.Id, workflow.Name, []models.WorkflowAsset{}, []models.WorkflowCollection{}, []models.WorkflowLink{})
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, workflowLink := range data.WorkflowLinks {
-		err = repository.AddLinkWorkflow(tx, workflowLink.Id, workflowLink.Name, workflowLink.EntityTypeId, workflowLink.WorkflowId, workflowLink.LinkedWorkflowId)
+		err = repository.AddLinkWorkflow(tx, workflowLink.Id, workflowLink.Name, workflowLink.CollectionTypeId, workflowLink.WorkflowId, workflowLink.LinkedWorkflowId)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, workflowEntity := range data.WorkflowEntities {
-		_, err = repository.CreateWorkflowEntity(tx, workflowEntity.Id, workflowEntity.Name, workflowEntity.WorkflowId, workflowEntity.EntityTypeId)
+	for _, workflowCollection := range data.WorkflowCollections {
+		_, err = repository.CreateWorkflowCollection(tx, workflowCollection.Id, workflowCollection.Name, workflowCollection.WorkflowId, workflowCollection.CollectionTypeId)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, workflowTask := range data.WorkflowTasks {
-		_, err = repository.CreateWorkflowTask(tx, workflowTask.Id, workflowTask.Name, workflowTask.WorkflowId, workflowTask.TaskTypeId, workflowTask.IsResource, workflowTask.TemplateId, workflowTask.Pointer, workflowTask.IsLink)
+	for _, workflowAsset := range data.WorkflowAssets {
+		_, err = repository.CreateWorkflowAsset(tx, workflowAsset.Id, workflowAsset.Name, workflowAsset.WorkflowId, workflowAsset.AssetTypeId, workflowAsset.IsResource, workflowAsset.TemplateId, workflowAsset.Pointer, workflowAsset.IsLink)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, taskTag := range data.TasksTags {
-		err = repository.AddTagToTaskById(tx, taskTag.Id, taskTag.TaskId, taskTag.TagId)
+	for _, assetTag := range data.AssetsTags {
+		err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
 		if err != nil {
 			return err
 		}
@@ -1286,16 +1286,16 @@ func FetchData(remoteUrl string, userId string) (ProjectData, error) {
 			}
 
 			userData = ProjectData{
-				ProjectPreview:  userDataPb.ProjectPreview,
-				EntityTypes:     repository.FromPbEntityTypes(userDataPb.EntityTypes),
-				Entities:        repository.FromPbEntities(userDataPb.Entities),
-				EntityAssignees: repository.FromPbEntityAssignees(userDataPb.EntityAssignees),
+				ProjectPreview:      userDataPb.ProjectPreview,
+				CollectionTypes:     repository.FromPbCollectionTypes(userDataPb.CollectionTypes),
+				Collections:         repository.FromPbCollections(userDataPb.Collections),
+				CollectionAssignees: repository.FromPbCollectionAssignees(userDataPb.CollectionAssignees),
 
-				TaskTypes:          repository.FromPbTaskTypes(userDataPb.TaskTypes),
-				Tasks:              repository.FromPbTasks(userDataPb.Tasks),
-				TasksCheckpoints:   repository.FromPbCheckpoints(userDataPb.TasksCheckpoints),
-				TaskDependencies:   repository.FromPbTaskDependencies(userDataPb.TaskDependencies),
-				EntityDependencies: repository.FromPbEntityDependencies(userDataPb.EntityDependencies),
+				AssetTypes:             repository.FromPbAssetTypes(userDataPb.AssetTypes),
+				Assets:                 repository.FromPbAssets(userDataPb.Assets),
+				AssetsCheckpoints:      repository.FromPbCheckpoints(userDataPb.AssetsCheckpoints),
+				AssetDependencies:      repository.FromPbAssetDependencies(userDataPb.AssetDependencies),
+				CollectionDependencies: repository.FromPbCollectionDependencies(userDataPb.CollectionDependencies),
 
 				Statuses:        repository.FromPbStatuses(userDataPb.Statuses),
 				DependencyTypes: repository.FromPbDependencyTypes(userDataPb.DependencyTypes),
@@ -1305,13 +1305,13 @@ func FetchData(remoteUrl string, userId string) (ProjectData, error) {
 
 				Templates: repository.FromPbTemplates(userDataPb.Templates),
 
-				Workflows:        repository.FromPbWorkflows(userDataPb.Workflows),
-				WorkflowLinks:    repository.FromPbWorkflowLinks(userDataPb.WorkflowLinks),
-				WorkflowEntities: repository.FromPbWorkflowEntities(userDataPb.WorkflowEntities),
-				WorkflowTasks:    repository.FromPbWorkflowTasks(userDataPb.WorkflowTasks),
+				Workflows:           repository.FromPbWorkflows(userDataPb.Workflows),
+				WorkflowLinks:       repository.FromPbWorkflowLinks(userDataPb.WorkflowLinks),
+				WorkflowCollections: repository.FromPbWorkflowCollections(userDataPb.WorkflowCollections),
+				WorkflowAssets:      repository.FromPbWorkflowAssets(userDataPb.WorkflowAssets),
 
-				Tags:      repository.FromPbTags(userDataPb.Tags),
-				TasksTags: repository.FromPbTaskTags(userDataPb.TasksTags),
+				Tags:       repository.FromPbTags(userDataPb.Tags),
+				AssetsTags: repository.FromPbAssetTags(userDataPb.AssetsTags),
 
 				IntegrationProjects:           repository.FromPbIntegrationProjects(userDataPb.IntegrationProjects),
 				IntegrationCollectionMappings: repository.FromPbIntegrationCollectionMappings(userDataPb.IntegrationCollectionMappings),
@@ -1359,19 +1359,19 @@ func CalculateMissingPreviews(tx *sqlx.Tx, data ProjectData) ([]string, error) {
 		previewIds = append(previewIds, data.ProjectPreview)
 	}
 
-	for _, task := range data.Tasks {
-		if task.PreviewId != "" && !utils.Contains(previewIds, task.PreviewId) {
-			previewIds = append(previewIds, task.PreviewId)
+	for _, asset := range data.Assets {
+		if asset.PreviewId != "" && !utils.Contains(previewIds, asset.PreviewId) {
+			previewIds = append(previewIds, asset.PreviewId)
 		}
 	}
-	for _, entity := range data.Entities {
-		if entity.PreviewId != "" && !utils.Contains(previewIds, entity.PreviewId) {
-			previewIds = append(previewIds, entity.PreviewId)
+	for _, collection := range data.Collections {
+		if collection.PreviewId != "" && !utils.Contains(previewIds, collection.PreviewId) {
+			previewIds = append(previewIds, collection.PreviewId)
 		}
 	}
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		if taskCheckpoint.PreviewId != "" && !utils.Contains(previewIds, taskCheckpoint.PreviewId) {
-			previewIds = append(previewIds, taskCheckpoint.PreviewId)
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		if assetCheckpoint.PreviewId != "" && !utils.Contains(previewIds, assetCheckpoint.PreviewId) {
+			previewIds = append(previewIds, assetCheckpoint.PreviewId)
 		}
 	}
 
@@ -1380,26 +1380,26 @@ func CalculateMissingPreviews(tx *sqlx.Tx, data ProjectData) ([]string, error) {
 }
 
 func CalculateMissingChunks(tx *sqlx.Tx, data ProjectData, userId string, syncOptions SyncOptions) ([]string, []string, int, error) {
-	tasksIds := []string{}
+	assetsIds := []string{}
 
-	for _, task := range data.Tasks {
-		if task.AssigneeId == userId {
-			tasksIds = append(tasksIds, task.Id)
-		} else if syncOptions.TaskDependencies && task.IsDependency {
-			tasksIds = append(tasksIds, task.Id)
-		} else if syncOptions.Tasks {
-			tasksIds = append(tasksIds, task.Id)
+	for _, asset := range data.Assets {
+		if asset.AssigneeId == userId {
+			assetsIds = append(assetsIds, asset.Id)
+		} else if syncOptions.AssetDependencies && asset.IsDependency {
+			assetsIds = append(assetsIds, asset.Id)
+		} else if syncOptions.Assets {
+			assetsIds = append(assetsIds, asset.Id)
 		}
 	}
 
-	// Maps to keep track of the latest checkpoint for each entity
-	latestTaskCheckpoints := make(map[string]models.Checkpoint)
-	// Iterate over task checkpoints to find the latest for each entity
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		if utils.Contains(tasksIds, taskCheckpoint.TaskId) {
-			existingCheckpoint, found := latestTaskCheckpoints[taskCheckpoint.TaskId]
-			if !found || taskCheckpoint.CreatedAt > existingCheckpoint.CreatedAt {
-				latestTaskCheckpoints[taskCheckpoint.TaskId] = taskCheckpoint
+	// Maps to keep track of the latest checkpoint for each collection
+	latestAssetCheckpoints := make(map[string]models.Checkpoint)
+	// Iterate over asset checkpoints to find the latest for each collection
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		if utils.Contains(assetsIds, assetCheckpoint.AssetId) {
+			existingCheckpoint, found := latestAssetCheckpoints[assetCheckpoint.AssetId]
+			if !found || assetCheckpoint.CreatedAt > existingCheckpoint.CreatedAt {
+				latestAssetCheckpoints[assetCheckpoint.AssetId] = assetCheckpoint
 			}
 		}
 	}
@@ -1410,7 +1410,7 @@ func CalculateMissingChunks(tx *sqlx.Tx, data ProjectData, userId string, syncOp
 	missingChunks := []string{}
 	allChunks := []string{}
 	totalSize := 0
-	for _, checkpoint := range latestTaskCheckpoints {
+	for _, checkpoint := range latestAssetCheckpoints {
 		chunkHashes := strings.Split(checkpoint.Chunks, ",")
 		checkpointFullyDownloaded := true
 		for _, chunkHash := range chunkHashes {
@@ -1525,7 +1525,7 @@ func DownloadCheckpoints(ctx context.Context, projectPath, remoteUrl string, che
 	}
 
 	checkpoints := []models.Checkpoint{}
-	err = tx.Select(&checkpoints, fmt.Sprintf("SELECT * FROM task_checkpoint WHERE id IN (%s)", strings.Join(quotedcheckpointIds, ",")))
+	err = tx.Select(&checkpoints, fmt.Sprintf("SELECT * FROM asset_checkpoint WHERE id IN (%s)", strings.Join(quotedcheckpointIds, ",")))
 	if err != nil {
 		return err
 	}

@@ -46,15 +46,15 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 	}
 	pdData := repositorypb.ProjectData{
 		ProjectPreview:  data.ProjectPreview,
-		EntityTypes:     repository.ToPbEntityTypes(data.EntityTypes),
-		Entities:        repository.ToPbEntities(data.Entities),
-		EntityAssignees: repository.ToPbEntityAssignees(data.EntityAssignees),
+		CollectionTypes:     repository.ToPbCollectionTypes(data.CollectionTypes),
+		Collections:        repository.ToPbCollections(data.Collections),
+		CollectionAssignees: repository.ToPbCollectionAssignees(data.CollectionAssignees),
 
-		TaskTypes:          repository.ToPbTaskTypes(data.TaskTypes),
-		Tasks:              repository.ToPbTasks(data.Tasks),
-		TasksCheckpoints:   repository.ToPbCheckpoints(data.TasksCheckpoints),
-		TaskDependencies:   repository.ToPbTaskDependencies(data.TaskDependencies),
-		EntityDependencies: repository.ToPbEntityDependencies(data.EntityDependencies),
+		AssetTypes:          repository.ToPbAssetTypes(data.AssetTypes),
+		Assets:              repository.ToPbAssets(data.Assets),
+		AssetsCheckpoints:   repository.ToPbCheckpoints(data.AssetsCheckpoints),
+		AssetDependencies:   repository.ToPbAssetDependencies(data.AssetDependencies),
+		CollectionDependencies: repository.ToPbCollectionDependencies(data.CollectionDependencies),
 
 		Statuses:        repository.ToPbStatuses(data.Statuses),
 		DependencyTypes: repository.ToPbDependencyTypes(data.DependencyTypes),
@@ -66,11 +66,11 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 
 		Workflows:        repository.ToPbWorkflows(data.Workflows),
 		WorkflowLinks:    repository.ToPbWorkflowLinks(data.WorkflowLinks),
-		WorkflowEntities: repository.ToPbWorkflowEntities(data.WorkflowEntities),
-		WorkflowTasks:    repository.ToPbWorkflowTasks(data.WorkflowTasks),
+		WorkflowCollections: repository.ToPbWorkflowCollections(data.WorkflowCollections),
+		WorkflowAssets:    repository.ToPbWorkflowAssets(data.WorkflowAssets),
 
 		Tags:      repository.ToPbTags(data.Tags),
-		TasksTags: repository.ToPbTaskTags(data.TasksTags),
+		AssetsTags: repository.ToPbAssetTags(data.AssetsTags),
 
 		Tomb: repository.ToPbTombs(data.Tombs),
 
@@ -90,8 +90,8 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 	}
 
 	chunks := []string{}
-	for _, TaskCheckpoint := range data.TasksCheckpoints {
-		chunksString := TaskCheckpoint.Chunks
+	for _, AssetCheckpoint := range data.AssetsCheckpoints {
+		chunksString := AssetCheckpoint.Chunks
 		chunkHashes := strings.Split(chunksString, ",")
 		for _, chunkHash := range chunkHashes {
 			if !utils.Contains(chunks, chunkHash) {
@@ -130,19 +130,19 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 	if data.ProjectPreview != "" && !utils.Contains(previewIds, data.ProjectPreview) {
 		previewIds = append(previewIds, data.ProjectPreview)
 	}
-	for _, task := range data.Tasks {
-		if task.PreviewId != "" && !utils.Contains(previewIds, task.PreviewId) {
-			previewIds = append(previewIds, task.PreviewId)
+	for _, asset := range data.Assets {
+		if asset.PreviewId != "" && !utils.Contains(previewIds, asset.PreviewId) {
+			previewIds = append(previewIds, asset.PreviewId)
 		}
 	}
-	for _, entity := range data.Entities {
-		if entity.PreviewId != "" && !utils.Contains(previewIds, entity.PreviewId) {
-			previewIds = append(previewIds, entity.PreviewId)
+	for _, collection := range data.Collections {
+		if collection.PreviewId != "" && !utils.Contains(previewIds, collection.PreviewId) {
+			previewIds = append(previewIds, collection.PreviewId)
 		}
 	}
-	for _, taskCheckpoint := range data.TasksCheckpoints {
-		if taskCheckpoint.PreviewId != "" && !utils.Contains(previewIds, taskCheckpoint.PreviewId) {
-			previewIds = append(previewIds, taskCheckpoint.PreviewId)
+	for _, assetCheckpoint := range data.AssetsCheckpoints {
+		if assetCheckpoint.PreviewId != "" && !utils.Contains(previewIds, assetCheckpoint.PreviewId) {
+			previewIds = append(previewIds, assetCheckpoint.PreviewId)
 		}
 	}
 

@@ -20,7 +20,7 @@ func TestGetDependencyType(t *testing.T) {
 	defer testutils.Teardown()
 	_, err := repository.GetDependencyType(testutils.Tx, "not found")
 	if err == nil {
-		t.Error("expected error of task dependency type not found, but got none")
+		t.Error("expected error of asset dependency type not found, but got none")
 	} else {
 		if err != error_service.ErrDependencyTypeNotFound {
 			t.Error(err.Error())
@@ -70,7 +70,7 @@ func TestDeleteDependencyType(t *testing.T) {
 	}
 	_, err = repository.GetDependencyTypeByName(testutils.Tx, dependencyType.Name)
 	if err == nil {
-		t.Error("expected error of task dependency type not found, but got none")
+		t.Error("expected error of asset dependency type not found, but got none")
 	} else {
 		if err != error_service.ErrDependencyTypeNotFound {
 			t.Error(err.Error())

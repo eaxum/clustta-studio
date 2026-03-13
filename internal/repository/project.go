@@ -214,15 +214,15 @@ func initData(tx *sqlx.Tx) error {
 	}
 
 	adminRoleAttributes := models.RoleAttributes{
-		ViewEntity:   true,
-		CreateEntity: true,
-		UpdateEntity: true,
-		DeleteEntity: true,
+		ViewCollection:   true,
+		CreateCollection: true,
+		UpdateCollection: true,
+		DeleteCollection: true,
 
-		ViewTask:   true,
-		CreateTask: true,
-		UpdateTask: true,
-		DeleteTask: true,
+		ViewAsset:   true,
+		CreateAsset: true,
+		UpdateAsset: true,
+		DeleteAsset: true,
 
 		ViewTemplate:   true,
 		CreateTemplate: true,
@@ -235,31 +235,31 @@ func initData(tx *sqlx.Tx) error {
 
 		PullChunk: true,
 
-		AssignTask:   true,
-		UnassignTask: true,
+		AssignAsset:   true,
+		UnassignAsset: true,
 
 		AddUser:    true,
 		RemoveUser: true,
 		ChangeRole: true,
 
-		ChangeStatus:  true,
-		SetDoneTask:   true,
-		SetRetakeTask: true,
+		ChangeStatus:   true,
+		SetDoneAsset:   true,
+		SetRetakeAsset: true,
 
-		ViewDoneTask: true,
+		ViewDoneAsset: true,
 
 		ManageDependencies: true,
 	}
 	productionManagerRoleAttributes := models.RoleAttributes{
-		ViewEntity:   true,
-		CreateEntity: true,
-		UpdateEntity: true,
-		DeleteEntity: false,
+		ViewCollection:   true,
+		CreateCollection: true,
+		UpdateCollection: true,
+		DeleteCollection: false,
 
-		ViewTask:   true,
-		CreateTask: true,
-		UpdateTask: true,
-		DeleteTask: false,
+		ViewAsset:   true,
+		CreateAsset: true,
+		UpdateAsset: true,
+		DeleteAsset: false,
 
 		ViewTemplate:   true,
 		CreateTemplate: true,
@@ -272,31 +272,31 @@ func initData(tx *sqlx.Tx) error {
 
 		PullChunk: false,
 
-		AssignTask:   true,
-		UnassignTask: true,
+		AssignAsset:   true,
+		UnassignAsset: true,
 
 		AddUser:    false,
 		RemoveUser: false,
 		ChangeRole: false,
 
-		ChangeStatus:  true,
-		SetDoneTask:   true,
-		SetRetakeTask: true,
+		ChangeStatus:   true,
+		SetDoneAsset:   true,
+		SetRetakeAsset: true,
 
-		ViewDoneTask: true,
+		ViewDoneAsset: true,
 
 		ManageDependencies: true,
 	}
 	supervisorRoleAttributes := models.RoleAttributes{
-		ViewEntity:   true,
-		CreateEntity: false,
-		UpdateEntity: false,
-		DeleteEntity: false,
+		ViewCollection:   true,
+		CreateCollection: false,
+		UpdateCollection: false,
+		DeleteCollection: false,
 
-		ViewTask:   true,
-		CreateTask: false,
-		UpdateTask: false,
-		DeleteTask: false,
+		ViewAsset:   true,
+		CreateAsset: false,
+		UpdateAsset: false,
+		DeleteAsset: false,
 
 		ViewTemplate:   false,
 		CreateTemplate: false,
@@ -309,31 +309,31 @@ func initData(tx *sqlx.Tx) error {
 
 		PullChunk: true,
 
-		AssignTask:   true,
-		UnassignTask: true,
+		AssignAsset:   true,
+		UnassignAsset: true,
 
 		AddUser:    false,
 		RemoveUser: false,
 		ChangeRole: false,
 
-		ChangeStatus:  true,
-		SetDoneTask:   true,
-		SetRetakeTask: true,
+		ChangeStatus:   true,
+		SetDoneAsset:   true,
+		SetRetakeAsset: true,
 
-		ViewDoneTask: true,
+		ViewDoneAsset: true,
 
 		ManageDependencies: false,
 	}
 	assistantSupervisorRoleAttributes := models.RoleAttributes{
-		ViewEntity:   false,
-		CreateEntity: false,
-		UpdateEntity: false,
-		DeleteEntity: false,
+		ViewCollection:   false,
+		CreateCollection: false,
+		UpdateCollection: false,
+		DeleteCollection: false,
 
-		ViewTask:   true,
-		CreateTask: false,
-		UpdateTask: false,
-		DeleteTask: false,
+		ViewAsset:   true,
+		CreateAsset: false,
+		UpdateAsset: false,
+		DeleteAsset: false,
 
 		ViewTemplate:   false,
 		CreateTemplate: false,
@@ -346,31 +346,31 @@ func initData(tx *sqlx.Tx) error {
 
 		PullChunk: true,
 
-		AssignTask:   false,
-		UnassignTask: false,
+		AssignAsset:   false,
+		UnassignAsset: false,
 
 		AddUser:    false,
 		RemoveUser: false,
 		ChangeRole: false,
 
-		ChangeStatus:  true,
-		SetDoneTask:   true,
-		SetRetakeTask: true,
+		ChangeStatus:   true,
+		SetDoneAsset:   true,
+		SetRetakeAsset: true,
 
-		ViewDoneTask: true,
+		ViewDoneAsset: true,
 
 		ManageDependencies: false,
 	}
 	artistRoleAttributes := models.RoleAttributes{
-		ViewEntity:   false,
-		CreateEntity: false,
-		UpdateEntity: false,
-		DeleteEntity: false,
+		ViewCollection:   false,
+		CreateCollection: false,
+		UpdateCollection: false,
+		DeleteCollection: false,
 
-		ViewTask:   false,
-		CreateTask: false,
-		UpdateTask: false,
-		DeleteTask: false,
+		ViewAsset:   false,
+		CreateAsset: false,
+		UpdateAsset: false,
+		DeleteAsset: false,
 
 		ViewTemplate:   false,
 		CreateTemplate: false,
@@ -383,31 +383,31 @@ func initData(tx *sqlx.Tx) error {
 
 		PullChunk: true,
 
-		AssignTask:   false,
-		UnassignTask: false,
+		AssignAsset:   false,
+		UnassignAsset: false,
 
 		AddUser:    false,
 		RemoveUser: false,
 		ChangeRole: false,
 
-		ChangeStatus:  true,
-		SetDoneTask:   false,
-		SetRetakeTask: false,
+		ChangeStatus:   true,
+		SetDoneAsset:   false,
+		SetRetakeAsset: false,
 
-		ViewDoneTask: false,
+		ViewDoneAsset: false,
 
 		ManageDependencies: false,
 	}
 	vendorRoleAttributes := models.RoleAttributes{
-		ViewEntity:   false,
-		CreateEntity: false,
-		UpdateEntity: false,
-		DeleteEntity: false,
+		ViewCollection:   false,
+		CreateCollection: false,
+		UpdateCollection: false,
+		DeleteCollection: false,
 
-		ViewTask:   false,
-		CreateTask: false,
-		UpdateTask: false,
-		DeleteTask: false,
+		ViewAsset:   false,
+		CreateAsset: false,
+		UpdateAsset: false,
+		DeleteAsset: false,
 
 		ViewTemplate:   false,
 		CreateTemplate: false,
@@ -420,18 +420,18 @@ func initData(tx *sqlx.Tx) error {
 
 		PullChunk: true,
 
-		AssignTask:   false,
-		UnassignTask: false,
+		AssignAsset:   false,
+		UnassignAsset: false,
 
 		AddUser:    false,
 		RemoveUser: false,
 		ChangeRole: false,
 
-		ChangeStatus:  true,
-		SetDoneTask:   false,
-		SetRetakeTask: false,
+		ChangeStatus:   true,
+		SetDoneAsset:   false,
+		SetRetakeAsset: false,
 
-		ViewDoneTask: false,
+		ViewDoneAsset: false,
 
 		ManageDependencies: false,
 	}
@@ -460,11 +460,11 @@ func initData(tx *sqlx.Tx) error {
 		return err
 	}
 
-	_, err = GetOrCreateTaskType(tx, "generic", "generic")
+	_, err = GetOrCreateAssetType(tx, "generic", "generic")
 	if err != nil {
 		return err
 	}
-	_, err = GetOrCreateEntityType(tx, "generic", "folder")
+	_, err = GetOrCreateCollectionType(tx, "generic", "folder")
 	if err != nil {
 		return err
 	}
@@ -472,102 +472,102 @@ func initData(tx *sqlx.Tx) error {
 }
 
 func ClearTrash(tx *sqlx.Tx) error {
-	deleteTaskAndEntities := `
-		-- Delete task_checkpoint records
-		WITH RECURSIVE trashed_entities AS (
-			SELECT id FROM entity WHERE trashed = 1
+	deleteAssetAndCollections := `
+		-- Delete asset_checkpoint records
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
 			UNION
-			SELECT e.id FROM entity e
-			INNER JOIN trashed_entities te ON e.parent_id = te.id
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM task_checkpoint 
+		DELETE FROM asset_checkpoint 
 		WHERE trashed = 1 
-		OR task_id IN (
-			SELECT id FROM task 
+		OR asset_id IN (
+			SELECT id FROM asset 
 			WHERE trashed = 1 
-			OR entity_id IN (SELECT id FROM trashed_entities)
+			OR collection_id IN (SELECT id FROM trashed_collections)
 		);
 
-		-- Delete task dependencies
-		WITH RECURSIVE trashed_entities AS (
-			SELECT id FROM entity WHERE trashed = 1
+		-- Delete asset dependencies
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
 			UNION
-			SELECT e.id FROM entity e
-			INNER JOIN trashed_entities te ON e.parent_id = te.id
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM task_dependency 
-		WHERE task_id IN (
-			SELECT id FROM task 
+		DELETE FROM asset_dependency 
+		WHERE asset_id IN (
+			SELECT id FROM asset 
 			WHERE trashed = 1 
-			OR entity_id IN (SELECT id FROM trashed_entities)
+			OR collection_id IN (SELECT id FROM trashed_collections)
 		)
 		OR dependency_id IN (
-			SELECT id FROM task 
+			SELECT id FROM asset 
 			WHERE trashed = 1 
-			OR entity_id IN (SELECT id FROM trashed_entities)
+			OR collection_id IN (SELECT id FROM trashed_collections)
 		);
 
-		-- Delete entity dependencies
-		WITH RECURSIVE trashed_entities AS (
-			SELECT id FROM entity WHERE trashed = 1
+		-- Delete collection dependencies
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
 			UNION
-			SELECT e.id FROM entity e
-			INNER JOIN trashed_entities te ON e.parent_id = te.id
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM entity_dependency 
-		WHERE task_id IN (
-			SELECT id FROM task 
+		DELETE FROM collection_dependency 
+		WHERE asset_id IN (
+			SELECT id FROM asset 
 			WHERE trashed = 1 
-			OR entity_id IN (SELECT id FROM trashed_entities)
+			OR collection_id IN (SELECT id FROM trashed_collections)
 		)
-		OR dependency_id IN (SELECT id FROM trashed_entities);
+		OR dependency_id IN (SELECT id FROM trashed_collections);
 
-		-- Delete task tags
-		WITH RECURSIVE trashed_entities AS (
-			SELECT id FROM entity WHERE trashed = 1
+		-- Delete asset tags
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
 			UNION
-			SELECT e.id FROM entity e
-			INNER JOIN trashed_entities te ON e.parent_id = te.id
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM task_tag 
-		WHERE task_id IN (
-			SELECT id FROM task 
+		DELETE FROM asset_tag 
+		WHERE asset_id IN (
+			SELECT id FROM asset 
 			WHERE trashed = 1 
-			OR entity_id IN (SELECT id FROM trashed_entities)
+			OR collection_id IN (SELECT id FROM trashed_collections)
 		);
 
-		-- Delete tasks
-		WITH RECURSIVE trashed_entities AS (
-			SELECT id FROM entity WHERE trashed = 1
+		-- Delete assets
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
 			UNION
-			SELECT e.id FROM entity e
-			INNER JOIN trashed_entities te ON e.parent_id = te.id
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM task 
+		DELETE FROM asset 
 		WHERE trashed = 1 
-		OR entity_id IN (SELECT id FROM trashed_entities);
+		OR collection_id IN (SELECT id FROM trashed_collections);
 
 		-- Delete templates
 		DELETE FROM template WHERE trashed = 1;
 
-		-- Delete entities
-		WITH RECURSIVE trashed_entities AS (
-			SELECT id FROM entity WHERE trashed = 1
+		-- Delete collections
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
 			UNION
-			SELECT e.id FROM entity e
-			INNER JOIN trashed_entities te ON e.parent_id = te.id
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM entity WHERE id IN (SELECT id FROM trashed_entities);
+		DELETE FROM collection WHERE id IN (SELECT id FROM trashed_collections);
 
 		-- Clean up hanging references
-		DELETE FROM task WHERE entity_id != '' AND entity_id NOT IN (SELECT id FROM entity);
-		DELETE FROM task_checkpoint WHERE task_id NOT IN (SELECT id FROM task);
-		DELETE FROM task_dependency WHERE task_id NOT IN (SELECT id FROM task) OR dependency_id NOT IN (SELECT id FROM task);
-		DELETE FROM entity_dependency WHERE task_id NOT IN (SELECT id FROM task) OR dependency_id NOT IN (SELECT id FROM entity);
-		DELETE FROM task_tag WHERE task_id NOT IN (SELECT id FROM task) OR tag_id NOT IN (SELECT id FROM tag);
+		DELETE FROM asset WHERE collection_id != '' AND collection_id NOT IN (SELECT id FROM collection);
+		DELETE FROM asset_checkpoint WHERE asset_id NOT IN (SELECT id FROM asset);
+		DELETE FROM asset_dependency WHERE asset_id NOT IN (SELECT id FROM asset) OR dependency_id NOT IN (SELECT id FROM asset);
+		DELETE FROM collection_dependency WHERE asset_id NOT IN (SELECT id FROM asset) OR dependency_id NOT IN (SELECT id FROM collection);
+		DELETE FROM asset_tag WHERE asset_id NOT IN (SELECT id FROM asset) OR tag_id NOT IN (SELECT id FROM tag);
 	`
 
-	_, err := tx.Exec(deleteTaskAndEntities)
+	_, err := tx.Exec(deleteAssetAndCollections)
 	if err != nil {
 		return err
 	}
@@ -598,9 +598,9 @@ func Purge(projectPath string) error {
 		FROM template, json_each('["' || REPLACE(chunks, ',', '","') || '"]')
 		WHERE chunks != ''
 		UNION
-		-- Chunks used in task_checkpoints
+		-- Chunks used in asset_checkpoints
 		SELECT DISTINCT TRIM(value) as hash
-		FROM task_checkpoint, json_each('["' || REPLACE(chunks, ',', '","') || '"]')
+		FROM asset_checkpoint, json_each('["' || REPLACE(chunks, ',', '","') || '"]')
 		WHERE chunks != ''
 	)
 	DELETE FROM chunk 
@@ -655,68 +655,68 @@ func ClearProjectOrphans(projectPath string) error {
 	defer tx.Rollback()
 
 	query := `
-		CREATE TEMPORARY TABLE IF NOT EXISTS temp_orphan_entities (id TEXT PRIMARY KEY);
-		CREATE TEMPORARY TABLE IF NOT EXISTS temp_orphan_tasks (id TEXT PRIMARY KEY);
+		CREATE TEMPORARY TABLE IF NOT EXISTS temp_orphan_collections (id TEXT PRIMARY KEY);
+		CREATE TEMPORARY TABLE IF NOT EXISTS temp_orphan_assets (id TEXT PRIMARY KEY);
 
-		DELETE FROM temp_orphan_entities;
-		DELETE FROM temp_orphan_tasks;
+		DELETE FROM temp_orphan_collections;
+		DELETE FROM temp_orphan_assets;
 
-		INSERT OR REPLACE INTO temp_orphan_entities
-		WITH RECURSIVE orphan_entities AS (
-			-- Base case: entities with non-empty parent_id that doesn't exist in entity table
+		INSERT OR REPLACE INTO temp_orphan_collections
+		WITH RECURSIVE orphan_collections AS (
+			-- Base case: collections with non-empty parent_id that doesn't exist in collection table
 			SELECT DISTINCT id
-			FROM entity
+			FROM collection
 			WHERE parent_id != '' 
-			AND NOT EXISTS (SELECT 1 FROM entity parent WHERE parent.id = entity.parent_id)
+			AND NOT EXISTS (SELECT 1 FROM collection parent WHERE parent.id = collection.parent_id)
 			
 			UNION
 			
-			-- Recursive case: entities whose parent is an orphan
+			-- Recursive case: collections whose parent is an orphan
 			SELECT DISTINCT e.id
-			FROM entity e
-			JOIN orphan_entities oe ON e.parent_id = oe.id
+			FROM collection e
+			JOIN orphan_collections oe ON e.parent_id = oe.id
 		)
-		SELECT id FROM orphan_entities;
+		SELECT id FROM orphan_collections;
 
-		-- Find orphan tasks and store in temp table
-		INSERT OR REPLACE INTO temp_orphan_tasks
+		-- Find orphan assets and store in temp table
+		INSERT OR REPLACE INTO temp_orphan_assets
 		SELECT DISTINCT id
-		FROM task
+		FROM asset
 		WHERE 
-			-- Tasks with non-empty entity_id that doesn't exist
-			(entity_id != '' AND NOT EXISTS (SELECT 1 FROM entity e WHERE e.id = entity_id))
-			-- Or tasks whose entity is an orphan
-			OR (entity_id IN (SELECT id FROM temp_orphan_entities));
+			-- Assets with non-empty collection_id that doesn't exist
+			(collection_id != '' AND NOT EXISTS (SELECT 1 FROM collection e WHERE e.id = collection_id))
+			-- Or assets whose collection is an orphan
+			OR (collection_id IN (SELECT id FROM temp_orphan_collections));
 
-		-- Delete task_checkpoint records related to orphan tasks
-		DELETE FROM task_checkpoint
-		WHERE task_id IN (SELECT id FROM temp_orphan_tasks);
+		-- Delete asset_checkpoint records related to orphan assets
+		DELETE FROM asset_checkpoint
+		WHERE asset_id IN (SELECT id FROM temp_orphan_assets);
 
-		-- Delete task_tag records related to orphan tasks
-		DELETE FROM task_tag
-		WHERE task_id IN (SELECT id FROM temp_orphan_tasks);
+		-- Delete asset_tag records related to orphan assets
+		DELETE FROM asset_tag
+		WHERE asset_id IN (SELECT id FROM temp_orphan_assets);
 
-		-- Delete task_dependency records where either task is an orphan
-		DELETE FROM task_dependency
-		WHERE task_id IN (SELECT id FROM temp_orphan_tasks)
-		OR dependency_id IN (SELECT id FROM temp_orphan_tasks);
+		-- Delete asset_dependency records where either asset is an orphan
+		DELETE FROM asset_dependency
+		WHERE asset_id IN (SELECT id FROM temp_orphan_assets)
+		OR dependency_id IN (SELECT id FROM temp_orphan_assets);
 
-		-- Delete entity_dependency records related to orphan tasks or entities
-		DELETE FROM entity_dependency
-		WHERE task_id IN (SELECT id FROM temp_orphan_tasks)
-		OR dependency_id IN (SELECT id FROM temp_orphan_entities);
+		-- Delete collection_dependency records related to orphan assets or collections
+		DELETE FROM collection_dependency
+		WHERE asset_id IN (SELECT id FROM temp_orphan_assets)
+		OR dependency_id IN (SELECT id FROM temp_orphan_collections);
 
-		-- Now delete the orphan tasks
-		DELETE FROM task
-		WHERE id IN (SELECT id FROM temp_orphan_tasks);
+		-- Now delete the orphan assets
+		DELETE FROM asset
+		WHERE id IN (SELECT id FROM temp_orphan_assets);
 
-		-- Delete orphan entities
-		DELETE FROM entity
-		WHERE id IN (SELECT id FROM temp_orphan_entities);
+		-- Delete orphan collections
+		DELETE FROM collection
+		WHERE id IN (SELECT id FROM temp_orphan_collections);
 
 		-- Clean up temporary tables
-		DROP TABLE IF EXISTS temp_orphan_entities;
-		DROP TABLE IF EXISTS temp_orphan_tasks;
+		DROP TABLE IF EXISTS temp_orphan_collections;
+		DROP TABLE IF EXISTS temp_orphan_assets;
 	`
 	_, err = tx.Exec(query)
 	if err != nil {
@@ -744,9 +744,9 @@ func VerifyProjectIntegrity(projectPath string) (bool, error) {
 	// tx.Commit()
 	tableNames := []string{
 		"config", "template", "tag", "status",
-		"entity", "entity_type", "task", "task_type",
-		"dependency_type", "task_dependency", "task_tag",
-		"task_checkpoint", "chunk",
+		"collection", "collection_type", "asset", "asset_type",
+		"dependency_type", "asset_dependency", "asset_tag",
+		"asset_checkpoint", "chunk",
 		"user",
 	}
 	for _, tableName := range tableNames {
@@ -793,13 +793,13 @@ func AutoGroupCheckpoints(tx *sqlx.Tx) error {
 	timeline := []GroupedTimeline{}
 	checkpoints := []MiniCheckpoint{}
 	query := `SELECT 
-		task_checkpoint.id,
-		task_checkpoint.created_at,
-		task_checkpoint.comment,
-		task_checkpoint.author_id
+		asset_checkpoint.id,
+		asset_checkpoint.created_at,
+		asset_checkpoint.comment,
+		asset_checkpoint.author_id
 	FROM 
-		task_checkpoint
-	ORDER BY task_checkpoint.created_at DESC;`
+		asset_checkpoint
+	ORDER BY asset_checkpoint.created_at DESC;`
 	err := tx.Select(&checkpoints, query)
 	if err != nil && err == sql.ErrNoRows {
 		return errors.New("no checkpoints")
@@ -852,7 +852,7 @@ func AutoGroupCheckpoints(tx *sqlx.Tx) error {
 
 	for _, group := range timeline {
 		for _, checkpointId := range group.CheckpointIds {
-			_, err := tx.Exec("UPDATE task_checkpoint SET group_id = ? WHERE id = ?", group.GroupId, checkpointId)
+			_, err := tx.Exec("UPDATE asset_checkpoint SET group_id = ? WHERE id = ?", group.GroupId, checkpointId)
 			if err != nil {
 				return err
 			}
@@ -894,12 +894,12 @@ func UpdateProject(projectPath string) error {
 	// }
 
 	if projectVersion == 1.2 {
-		err = utils.RenameColumn(db, "task_checkpoint", "entity_id", "task_id")
+		err = utils.RenameColumn(db, "asset_checkpoint", "collection_id", "asset_id")
 		if err != nil {
 			return err
 		}
 
-		err = utils.AddColumnIfNotExist(db, "task", "is_resource", "BOOLEAN", "0", false)
+		err = utils.AddColumnIfNotExist(db, "asset", "is_resource", "BOOLEAN", "0", false)
 		if err != nil {
 			return err
 		}
@@ -909,7 +909,7 @@ func UpdateProject(projectPath string) error {
 			return err
 		}
 
-		err = utils.AddColumnIfNotExist(db, "entity", "is_library", "BOOLEAN", "0", false)
+		err = utils.AddColumnIfNotExist(db, "collection", "is_library", "BOOLEAN", "0", false)
 		if err != nil {
 			return err
 		}
@@ -945,28 +945,28 @@ func UpdateProject(projectPath string) error {
 			"sequence":             "film-strip",
 			"episode":              "film-reel",
 		}
-		taskTypes, err := GetTaskTypes(tx)
+		assetTypes, err := GetAssetTypes(tx)
 		if err != nil {
 			return err
 		}
-		entityTypes, err := GetEntityTypes(tx)
+		collectionTypes, err := GetCollectionTypes(tx)
 		if err != nil {
 			return err
 		}
-		for _, taskType := range taskTypes {
-			if icon, exists := iconMap[taskType.Icon]; exists {
-				if _, err = UpdateTaskType(tx, taskType.Id, taskType.Name, icon); err != nil {
-					if err.Error() == "UNIQUE constraint failed: task_type.icon" {
+		for _, assetType := range assetTypes {
+			if icon, exists := iconMap[assetType.Icon]; exists {
+				if _, err = UpdateAssetType(tx, assetType.Id, assetType.Name, icon); err != nil {
+					if err.Error() == "UNIQUE constraint failed: asset_type.icon" {
 						continue
 					}
 					return err
 				}
 			}
 		}
-		for _, entityType := range entityTypes {
-			if icon, exists := iconMap[entityType.Icon]; exists {
-				if _, err = UpdateEntityType(tx, entityType.Id, entityType.Name, icon); err != nil {
-					if err.Error() == "UNIQUE constraint failed: entity_type.icon" {
+		for _, collectionType := range collectionTypes {
+			if icon, exists := iconMap[collectionType.Icon]; exists {
+				if _, err = UpdateCollectionType(tx, collectionType.Id, collectionType.Name, icon); err != nil {
+					if err.Error() == "UNIQUE constraint failed: collection_type.icon" {
 						continue
 					}
 					return err
@@ -1035,7 +1035,7 @@ func UpdateProject(projectPath string) error {
 	}
 
 	if projectVersion <= 1.4 {
-		err = utils.AddColumnIfNotExist(db, "task_checkpoint", "group_id", "TEXT", "", false)
+		err = utils.AddColumnIfNotExist(db, "asset_checkpoint", "group_id", "TEXT", "", false)
 		if err != nil {
 			return err
 		}
@@ -1059,12 +1059,12 @@ func UpdateProject(projectPath string) error {
 	}
 
 	if projectVersion <= 1.5 {
-		err = utils.AddColumnIfNotExist(db, "entity", "entity_path", "TEXT", "", false)
+		err = utils.AddColumnIfNotExist(db, "collection", "collection_path", "TEXT", "", false)
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Exec("CREATE INDEX IF NOT EXISTS idx_entity_path ON entity(entity_path);")
+		_, err = db.Exec("CREATE INDEX IF NOT EXISTS idx_collection_path ON collection(collection_path);")
 		if err != nil {
 			return err
 		}
@@ -1075,26 +1075,26 @@ func UpdateProject(projectPath string) error {
 		}
 		defer tx.Rollback()
 
-		type EntityPath struct {
-			Id         string `db:"id" json:"id"`
-			EntityPath string `db:"entity_path" json:"entity_path"`
+		type CollectionPath struct {
+			Id             string `db:"id" json:"id"`
+			CollectionPath string `db:"collection_path" json:"collection_path"`
 		}
-		entitiesPath := []EntityPath{}
-		err = tx.Select(&entitiesPath, "SELECT id, entity_path FROM entity_hierarchy")
+		collectionsPath := []CollectionPath{}
+		err = tx.Select(&collectionsPath, "SELECT id, collection_path FROM collection_hierarchy")
 		if err != nil {
 			return err
 		}
 
-		updateEntityPathQuery := `
-		UPDATE entity SET entity_path = ? WHERE id = ?;
+		updateCollectionPathQuery := `
+		UPDATE collection SET collection_path = ? WHERE id = ?;
 	`
-		updateEntityPathStmt, err := tx.Prepare(updateEntityPathQuery)
+		updateCollectionPathStmt, err := tx.Prepare(updateCollectionPathQuery)
 		if err != nil {
 			return err
 		}
 
-		for _, entityPathData := range entitiesPath {
-			_, err := updateEntityPathStmt.Exec(entityPathData.EntityPath, entityPathData.Id)
+		for _, collectionPathData := range collectionsPath {
+			_, err := updateCollectionPathStmt.Exec(collectionPathData.CollectionPath, collectionPathData.Id)
 			if err != nil {
 				return err
 			}
@@ -1109,30 +1109,30 @@ func UpdateProject(projectPath string) error {
 
 	if projectVersion <= 1.6 {
 		_, err = db.Exec(`
-			DROP TRIGGER IF EXISTS entity_path_update;
+			DROP TRIGGER IF EXISTS collection_path_update;
 			
-			CREATE TRIGGER entity_path_update 
-			AFTER UPDATE OF name, parent_id ON entity
+			CREATE TRIGGER collection_path_update 
+			AFTER UPDATE OF name, parent_id ON collection
 			FOR EACH ROW
 			WHEN OLD.name != NEW.name OR OLD.parent_id != NEW.parent_id
 			BEGIN
-				-- Recalculate this entity's path
-			UPDATE entity
-			SET entity_path =
+				-- Recalculate this collection's path
+			UPDATE collection
+			SET collection_path =
 				CASE
 				WHEN NEW.parent_id IS NULL THEN '/' || NEW.name || '/'
 				ELSE COALESCE(
-					(SELECT entity_path || NEW.name || '/' FROM entity WHERE id = NEW.parent_id),
+					(SELECT collection_path || NEW.name || '/' FROM collection WHERE id = NEW.parent_id),
 					'/' || NEW.name || '/'
 				)
 				END
 			WHERE id = NEW.id;
 
 			-- Recalculate all descendant paths
-			UPDATE entity
-			SET entity_path =
-				(SELECT entity_path FROM entity WHERE id = NEW.id) || substr(entity_path, length(OLD.entity_path) + 1)
-			WHERE entity_path LIKE OLD.entity_path || '%'
+			UPDATE collection
+			SET collection_path =
+				(SELECT collection_path FROM collection WHERE id = NEW.id) || substr(collection_path, length(OLD.collection_path) + 1)
+			WHERE collection_path LIKE OLD.collection_path || '%'
 				AND id != NEW.id;
 			END;
 		`)
@@ -1925,11 +1925,11 @@ func LoadProjectTemplateData(projectPath, templatePath string) error {
 	}
 	defer templateTx.Rollback()
 
-	templateTaskTypes, err := GetTaskTypes(templateTx)
+	templateAssetTypes, err := GetAssetTypes(templateTx)
 	if err != nil {
 		return err
 	}
-	templateEntityTypes, err := GetEntityTypes(templateTx)
+	templateCollectionTypes, err := GetCollectionTypes(templateTx)
 	if err != nil {
 		return err
 	}
@@ -1938,7 +1938,7 @@ func LoadProjectTemplateData(projectPath, templatePath string) error {
 		return err
 	}
 
-	templateTaskTemplates, err := GetTemplates(templateTx, false)
+	templateAssetTemplates, err := GetTemplates(templateTx, false)
 	if err != nil {
 		return err
 	}
@@ -1959,19 +1959,19 @@ func LoadProjectTemplateData(projectPath, templatePath string) error {
 		return err
 	}
 
-	for _, templateTaskType := range templateTaskTypes {
-		_, err = GetOrCreateTaskType(projectTx, templateTaskType.Name, templateTaskType.Icon)
+	for _, templateAssetType := range templateAssetTypes {
+		_, err = GetOrCreateAssetType(projectTx, templateAssetType.Name, templateAssetType.Icon)
 		if err != nil {
-			if err.Error() == "UNIQUE constraint failed: task_type.icon" {
+			if err.Error() == "UNIQUE constraint failed: asset_type.icon" {
 				continue
 			}
 			return err
 		}
 	}
-	for _, templateEntityType := range templateEntityTypes {
-		_, err = GetOrCreateEntityType(projectTx, templateEntityType.Name, templateEntityType.Icon)
+	for _, templateCollectionType := range templateCollectionTypes {
+		_, err = GetOrCreateCollectionType(projectTx, templateCollectionType.Name, templateCollectionType.Icon)
 		if err != nil {
-			if err.Error() == "UNIQUE constraint failed: entity_type.icon" {
+			if err.Error() == "UNIQUE constraint failed: collection_type.icon" {
 				continue
 			}
 			return err
@@ -1979,8 +1979,8 @@ func LoadProjectTemplateData(projectPath, templatePath string) error {
 	}
 
 	chunks := []string{}
-	for _, taskTemplate := range templateTaskTemplates {
-		chunkHashes := strings.Split(taskTemplate.Chunks, ",")
+	for _, assetTemplate := range templateAssetTemplates {
+		chunkHashes := strings.Split(assetTemplate.Chunks, ",")
 		for _, chunkHash := range chunkHashes {
 			if !utils.Contains(chunks, chunkHash) {
 				chunks = append(chunks, chunkHash)
@@ -2020,12 +2020,12 @@ func LoadProjectTemplateData(projectPath, templatePath string) error {
 	}
 	defer projectTx.Rollback()
 
-	for _, templateTaskTemplate := range templateTaskTemplates {
-		_, err := GetTemplateByName(projectTx, templateTaskTemplate.Name)
+	for _, templateAssetTemplate := range templateAssetTemplates {
+		_, err := GetTemplateByName(projectTx, templateAssetTemplate.Name)
 		if err == nil {
 			continue
 		}
-		_, err = AddTemplate(projectTx, templateTaskTemplate.Id, templateTaskTemplate.Name, templateTaskTemplate.Extension, templateTaskTemplate.Chunks, templateTaskTemplate.XxhashChecksum, templateTaskTemplate.FileSize)
+		_, err = AddTemplate(projectTx, templateAssetTemplate.Id, templateAssetTemplate.Name, templateAssetTemplate.Extension, templateAssetTemplate.Chunks, templateAssetTemplate.XxhashChecksum, templateAssetTemplate.FileSize)
 		if err != nil {
 			return err
 		}

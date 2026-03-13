@@ -33,17 +33,17 @@ func TestGetStatuses(t *testing.T) {
 }
 func TestUpdatestatus(t *testing.T) {
 	testutils.Setup()
-	testutils.GenerateFixtureTaskType()
+	testutils.GenerateFixtureAssetType()
 	testutils.GenerateFixtureTemplate()
-	testutils.GenerateFixtureEntityType()
-	testutils.GenerateFixtureEntity()
-	testutils.GenerateFixtureTask()
+	testutils.GenerateFixtureCollectionType()
+	testutils.GenerateFixtureCollection()
+	testutils.GenerateFixtureAsset()
 	defer testutils.Teardown()
 	newstatus, err := repository.CreateStatus(testutils.Tx, "", "new status", "pink", "nst")
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	err = repository.Updatestatus(testutils.Tx, testutils.Task.Id, newstatus.Id)
+	err = repository.Updatestatus(testutils.Tx, testutils.Asset.Id, newstatus.Id)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
