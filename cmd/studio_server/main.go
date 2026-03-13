@@ -5,6 +5,7 @@ import (
 	"clustta/internal/repository"
 	"clustta/internal/server/models"
 	"clustta/internal/server/session_service"
+	"clustta/internal/server/user_service"
 	"clustta/internal/settings"
 	"clustta/internal/studio_users_service"
 	"clustta/internal/utils"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -23,6 +25,57 @@ import (
 var Version = "dev"
 
 var Users = map[string]models.StudioUserInfo{}
+
+// createDefaultAdmin creates a default admin user if no users exist in the database.
+func createDefaultAdmin(dbPath string) error {
+	db, err := sqlx.Open("sqlite3", dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	var userCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM user").Scan(&userCount)
+	if err != nil {
+		return fmt.Errorf("failed to count users: %w", err)
+	}
+	if userCount > 0 {
+		return nil
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	createdUser, err := user_service.CreateUser(tx, "", "Admin", "User", "admin", "admin@email.com", "password")
+	if err != nil {
+		return fmt.Errorf("failed to create default admin: %w", err)
+	}
+
+	err = user_service.ActivateUser(tx, createdUser.Id)
+	if err != nil {
+		return fmt.Errorf("failed to activate default admin: %w", err)
+	}
+
+	adminRole, err := studio_users_service.GetOrCreateRole(tx, "admin")
+	if err != nil {
+		return fmt.Errorf("failed to get admin role: %w", err)
+	}
+
+	_, err = tx.Exec("UPDATE user SET role_id = ? WHERE id = ?", adminRole.Id, createdUser.Id)
+	if err != nil {
+		return fmt.Errorf("failed to assign admin role: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	log.Println("Default admin user created (admin@email.com)")
+	return nil
+}
 
 func GetUsers() error {
 	users, err := GetStudioUsers()
@@ -103,6 +156,11 @@ func main() {
 	// Initialize studio users database early (needed for private mode user lookup)
 	if err := studio_users_service.InitDB(CONFIG.StudioUsersDB); err != nil {
 		log.Fatalf("Failed to initialize studio users database: %v", err)
+	}
+
+	// Create default admin user if no users exist
+	if err := createDefaultAdmin(CONFIG.StudioUsersDB); err != nil {
+		log.Printf("Warning: Could not create default admin: %v", err)
 	}
 
 	// Only register with global server if not in private mode
