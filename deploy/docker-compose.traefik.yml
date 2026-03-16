@@ -41,8 +41,7 @@ services:
       - "--entrypoints.websecure.address=:443"
 
       ## ── TLS / Let's Encrypt (uncomment to enable) ──
-      # - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      # - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      # - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       # - "--certificatesresolvers.myresolver.acme.email=you@example.com"
       # - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
