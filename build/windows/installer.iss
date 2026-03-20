@@ -94,12 +94,12 @@ begin
 
   PortEdit := TNewEdit.Create(ConfigPage);
   PortEdit.Parent := ConfigPage.Surface;
-  PortEdit.Top := TopPos + 16;
+  PortEdit.Top := TopPos + 20;
   PortEdit.Left := 0;
   PortEdit.Width := 100;
   PortEdit.Text := '7774';
 
-  TopPos := TopPos + 46;
+  TopPos := TopPos + 56;
 
   { Projects Directory }
   LabelProjects := TNewStaticText.Create(ConfigPage);
@@ -110,21 +110,21 @@ begin
 
   ProjectsDirEdit := TNewEdit.Create(ConfigPage);
   ProjectsDirEdit.Parent := ConfigPage.Surface;
-  ProjectsDirEdit.Top := TopPos + 16;
+  ProjectsDirEdit.Top := TopPos + 20;
   ProjectsDirEdit.Left := 0;
   ProjectsDirEdit.Width := ConfigPage.SurfaceWidth - 90;
   ProjectsDirEdit.Text := DefaultProjectsDir;
 
   ProjectsDirBrowse := TNewButton.Create(ConfigPage);
   ProjectsDirBrowse.Parent := ConfigPage.Surface;
-  ProjectsDirBrowse.Top := TopPos + 14;
+  ProjectsDirBrowse.Top := TopPos + 18;
   ProjectsDirBrowse.Left := ConfigPage.SurfaceWidth - 85;
   ProjectsDirBrowse.Width := 80;
   ProjectsDirBrowse.Height := 23;
   ProjectsDirBrowse.Caption := 'Browse...';
   ProjectsDirBrowse.OnClick := @BrowseProjectsDir;
 
-  TopPos := TopPos + 46;
+  TopPos := TopPos + 56;
 
   { Server URL (optional, for non-private mode) }
   LabelServerURL := TNewStaticText.Create(ConfigPage);
@@ -135,12 +135,12 @@ begin
 
   ServerURLEdit := TNewEdit.Create(ConfigPage);
   ServerURLEdit.Parent := ConfigPage.Surface;
-  ServerURLEdit.Top := TopPos + 16;
+  ServerURLEdit.Top := TopPos + 20;
   ServerURLEdit.Left := 0;
   ServerURLEdit.Width := ConfigPage.SurfaceWidth;
   ServerURLEdit.Text := '';
 
-  TopPos := TopPos + 46;
+  TopPos := TopPos + 56;
 
   { Server Name }
   LabelServerName := TNewStaticText.Create(ConfigPage);
@@ -151,12 +151,12 @@ begin
 
   ServerNameEdit := TNewEdit.Create(ConfigPage);
   ServerNameEdit.Parent := ConfigPage.Surface;
-  ServerNameEdit.Top := TopPos + 16;
+  ServerNameEdit.Top := TopPos + 20;
   ServerNameEdit.Left := 0;
   ServerNameEdit.Width := ConfigPage.SurfaceWidth;
   ServerNameEdit.Text := '';
 
-  TopPos := TopPos + 46;
+  TopPos := TopPos + 56;
 
   { API Key }
   LabelAPIKey := TNewStaticText.Create(ConfigPage);
@@ -167,12 +167,12 @@ begin
 
   APIKeyEdit := TNewEdit.Create(ConfigPage);
   APIKeyEdit.Parent := ConfigPage.Surface;
-  APIKeyEdit.Top := TopPos + 16;
+  APIKeyEdit.Top := TopPos + 20;
   APIKeyEdit.Left := 0;
   APIKeyEdit.Width := ConfigPage.SurfaceWidth;
   APIKeyEdit.Text := '';
 
-  TopPos := TopPos + 46;
+  TopPos := TopPos + 56;
 
   { Private Mode }
   PrivateCheckbox := TNewCheckBox.Create(ConfigPage);
