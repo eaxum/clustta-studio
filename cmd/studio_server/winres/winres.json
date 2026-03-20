@@ -1,0 +1,61 @@
+{
+  "RT_GROUP_ICON": {
+    "APP": {
+      "0000": [
+        "icon_256.png",
+        "icon_64.png",
+        "icon_48.png",
+        "icon_32.png",
+        "icon_16.png"
+      ]
+    }
+  },
+  "RT_MANIFEST": {
+    "#1": {
+      "0409": {
+        "identity": {
+          "name": "Eaxum.ClusttaStudioServer",
+          "version": "0.4.24.0"
+        },
+        "description": "Clustta Studio Server",
+        "minimum-os": "win10",
+        "execution-level": "requireAdministrator",
+        "ui-access": false,
+        "auto-elevate": false,
+        "dpi-awareness": "system",
+        "disable-theming": false,
+        "disable-window-filtering": false,
+        "high-resolution-scrolling-aware": false,
+        "ultra-high-resolution-scrolling-aware": false,
+        "long-path-aware": true,
+        "printer-driver-isolation": false,
+        "gdi-scaling": false,
+        "segment-heap": false,
+        "use-common-controls-v6": false
+      }
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "0.4.24.0",
+          "product_version": "0.4.24.0"
+        },
+        "info": {
+          "0409": {
+            "Comments": "Clustta Studio Server - Distributed version control for creative workflows",
+            "CompanyName": "Eaxum",
+            "FileDescription": "Clustta Studio Server",
+            "FileVersion": "0.4.24.0",
+            "InternalName": "clustta-studio-server",
+            "LegalCopyright": "© 2026 Eaxum",
+            "OriginalFilename": "clustta-studio-server.exe",
+            "ProductName": "Clustta Studio",
+            "ProductVersion": "0.4.24.0"
+          }
+        }
+      }
+    }
+  }
+}
