@@ -26,7 +26,9 @@ type Config struct {
 	RegisteredAt      string `json:"registered_at,omitempty"`
 }
 
-var CONFIG Config = Config{}
+var CONFIG Config = Config{
+	Private: true,
+}
 
 func processError(err error) {
 	fmt.Println(err)

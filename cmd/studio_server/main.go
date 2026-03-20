@@ -24,7 +24,20 @@ import (
 // Version is set at build time via -ldflags "-X main.Version=x.x.x"
 var Version = "dev"
 
+// DesktopMode is set at build time for production Windows builds.
+// When "true", enables chdir to exe directory and file logging.
+var DesktopMode string
+
 var Users = map[string]models.StudioUserInfo{}
+
+// exeDir returns the directory containing the running executable.
+func exeDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "."
+	}
+	return filepath.Dir(exe)
+}
 
 // createDefaultAdmin creates a default admin user if no users exist in the database.
 func createDefaultAdmin(dbPath string) error {
@@ -89,6 +102,11 @@ func GetUsers() error {
 	return nil
 }
 func main() {
+	// Platform-specific initialization (chdir + file logging on Windows, no-op elsewhere)
+	initDesktop()
+
+	log.Printf("Clustta Studio v%s starting...", Version)
+
 	//get first argument
 	if len(os.Args) < 2 {
 		println("must provide studio or personal argument")
@@ -101,6 +119,14 @@ func main() {
 		return
 	}
 
+	// Wrap the server startup in the system tray (Windows) or run directly (other platforms)
+	runWithTray(func() {
+		startServer(serverType)
+	})
+}
+
+// startServer contains all server initialization and run logic.
+func startServer(serverType string) {
 	if err := settings.InitializeServer(); err != nil {
 		log.Fatalf("Failed to initialize server: %v", err)
 	}
