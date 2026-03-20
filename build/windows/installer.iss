@@ -31,6 +31,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 WizardSizePercent=100
 WizardResizable=no
+LicenseFile=..\..\LICENSE
 PrivilegesRequired=admin
 MinVersion=10.0
 UninstallDisplayName=Uninstall {#MyAppName}
