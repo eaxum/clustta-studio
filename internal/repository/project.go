@@ -19,6 +19,7 @@ import (
 	"clustta/internal/chunk_service"
 	"clustta/internal/constants"
 	"clustta/internal/error_service"
+	"clustta/internal/repository/migrations"
 	"clustta/internal/repository/models"
 	"clustta/internal/settings"
 	"clustta/internal/utils"
@@ -161,7 +162,7 @@ func InitDB(projectPath string, studioName, workingDir string, user auth_service
 	if err != nil {
 		return err
 	}
-	err = utils.SetProjectVersion(tx, 1.8)
+	err = utils.SetProjectVersion(tx, migrations.LatestVersion)
 	if err != nil {
 		return err
 	}
@@ -872,296 +873,15 @@ func UpdateProject(projectPath string) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
-
-	err = utils.CreateSchema(db, ProjectSchema)
-	if err != nil {
-		return err
-	}
 
 	projectVersion, err := utils.GetProjectVersion(tx)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	err = tx.Rollback()
-	if err != nil {
-		return err
-	}
+	tx.Rollback()
 
-	// if projectVersion <= 1.1 {
-	// 	return errors.New("unsupported project file")
-	// }
-
-	if projectVersion == 1.2 {
-		err = utils.RenameColumn(db, "asset_checkpoint", "collection_id", "asset_id")
-		if err != nil {
-			return err
-		}
-
-		err = utils.AddColumnIfNotExist(db, "asset", "is_resource", "BOOLEAN", "0", false)
-		if err != nil {
-			return err
-		}
-
-		err = utils.AddColumnIfNotExist(db, "config", "synced", "BOOLEAN", "0", false)
-		if err != nil {
-			return err
-		}
-
-		err = utils.AddColumnIfNotExist(db, "collection", "is_library", "BOOLEAN", "0", false)
-		if err != nil {
-			return err
-		}
-
-		tx, err := db.Beginx()
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-		iconMap := map[string]string{
-			"hdri":                 "image",
-			"character creation":   "masks",
-			"prop creation":        "drum",
-			"environment creation": "stall",
-			"concept art":          "palette",
-			"modeling":             "cube",
-			"rigging":              "bone",
-			"texturing":            "texture",
-			"lookdev":              "mystery-ball",
-			"editing":              "scissors",
-			"previz":               "video-camera",
-			"layout":               "shapes",
-			"animation":            "man-running",
-			"fx":                   "fire",
-			"lighting":             "bulb",
-			"rendering":            "camera-flash",
-			"compositing":          "flow-chart",
-			"character":            "masks",
-			"prop":                 "drum",
-			"environment":          "stall",
-			"scene":                "tree",
-			"shot":                 "clapboard",
-			"sequence":             "film-strip",
-			"episode":              "film-reel",
-		}
-		assetTypes, err := GetAssetTypes(tx)
-		if err != nil {
-			return err
-		}
-		collectionTypes, err := GetCollectionTypes(tx)
-		if err != nil {
-			return err
-		}
-		for _, assetType := range assetTypes {
-			if icon, exists := iconMap[assetType.Icon]; exists {
-				if _, err = UpdateAssetType(tx, assetType.Id, assetType.Name, icon); err != nil {
-					if err.Error() == "UNIQUE constraint failed: asset_type.icon" {
-						continue
-					}
-					return err
-				}
-			}
-		}
-		for _, collectionType := range collectionTypes {
-			if icon, exists := iconMap[collectionType.Icon]; exists {
-				if _, err = UpdateCollectionType(tx, collectionType.Id, collectionType.Name, icon); err != nil {
-					if err.Error() == "UNIQUE constraint failed: collection_type.icon" {
-						continue
-					}
-					return err
-				}
-			}
-		}
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-	}
-
-	if projectVersion <= 1.3 {
-		tx, err := db.Beginx()
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-		projectWorkingDir := ""
-		if !settings.IsServer() {
-			user, err := auth_service.GetActiveUser()
-			if err != nil {
-				return err
-			}
-
-			workingDir, err := settings.GetUserDataFolder(user)
-			if err != nil {
-				return err
-			}
-			studioName, err := utils.GetStudioName(tx)
-			if err != nil {
-				return err
-			}
-			projectName, err := utils.GetProjectName(tx)
-			if err != nil {
-				return err
-			}
-			filePath := filepath.Join(workingDir, studioName, projectName)
-			projectWorkingDir = filePath
-		} else {
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				return err
-			}
-			workingDir := filepath.Join(homeDir, "Documents", "clustta")
-			os.MkdirAll(workingDir, os.ModePerm)
-
-			projectName, err := utils.GetProjectName(tx)
-			if err != nil {
-				return err
-			}
-			filePath := filepath.Join(workingDir, projectName)
-			projectWorkingDir = filePath
-		}
-
-		err = utils.SetProjectWorkingDir(tx, projectWorkingDir)
-		if err != nil {
-			return err
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if projectVersion <= 1.4 {
-		err = utils.AddColumnIfNotExist(db, "asset_checkpoint", "group_id", "TEXT", "", false)
-		if err != nil {
-			return err
-		}
-
-		tx, err := db.Beginx()
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-
-		err = AutoGroupCheckpoints(tx)
-		if err != nil {
-			return err
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if projectVersion <= 1.5 {
-		err = utils.AddColumnIfNotExist(db, "collection", "collection_path", "TEXT", "", false)
-		if err != nil {
-			return err
-		}
-
-		_, err = db.Exec("CREATE INDEX IF NOT EXISTS idx_collection_path ON collection(collection_path);")
-		if err != nil {
-			return err
-		}
-
-		tx, err := db.Beginx()
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-
-		type CollectionPath struct {
-			Id             string `db:"id" json:"id"`
-			CollectionPath string `db:"collection_path" json:"collection_path"`
-		}
-		collectionsPath := []CollectionPath{}
-		err = tx.Select(&collectionsPath, "SELECT id, collection_path FROM collection_hierarchy")
-		if err != nil {
-			return err
-		}
-
-		updateCollectionPathQuery := `
-		UPDATE collection SET collection_path = ? WHERE id = ?;
-	`
-		updateCollectionPathStmt, err := tx.Prepare(updateCollectionPathQuery)
-		if err != nil {
-			return err
-		}
-
-		for _, collectionPathData := range collectionsPath {
-			_, err := updateCollectionPathStmt.Exec(collectionPathData.CollectionPath, collectionPathData.Id)
-			if err != nil {
-				return err
-			}
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if projectVersion <= 1.6 {
-		_, err = db.Exec(`
-			DROP TRIGGER IF EXISTS collection_path_update;
-			
-			CREATE TRIGGER collection_path_update 
-			AFTER UPDATE OF name, parent_id ON collection
-			FOR EACH ROW
-			WHEN OLD.name != NEW.name OR OLD.parent_id != NEW.parent_id
-			BEGIN
-				-- Recalculate this collection's path
-			UPDATE collection
-			SET collection_path =
-				CASE
-				WHEN NEW.parent_id IS NULL THEN '/' || NEW.name || '/'
-				ELSE COALESCE(
-					(SELECT collection_path || NEW.name || '/' FROM collection WHERE id = NEW.parent_id),
-					'/' || NEW.name || '/'
-				)
-				END
-			WHERE id = NEW.id;
-
-			-- Recalculate all descendant paths
-			UPDATE collection
-			SET collection_path =
-				(SELECT collection_path FROM collection WHERE id = NEW.id) || substr(collection_path, length(OLD.collection_path) + 1)
-			WHERE collection_path LIKE OLD.collection_path || '%'
-				AND id != NEW.id;
-			END;
-		`)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Version 1.8: Integration tables (Kitsu, ShotGrid, etc.)
-	// Running schema adds new tables without affecting existing ones (CREATE TABLE IF NOT EXISTS)
-	if projectVersion <= 1.7 {
-		err = utils.CreateSchema(db, ProjectSchema)
-		if err != nil {
-			return err
-		}
-	}
-
-	tx, err = db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	err = utils.SetProjectVersion(tx, 1.8)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return migrations.RunMigrations(db, projectVersion, ProjectSchema)
 }
 
 func CreateProject(projectUri, studioName, workingDir, templateName string, user auth_service.User) (ProjectInfo, error) {
