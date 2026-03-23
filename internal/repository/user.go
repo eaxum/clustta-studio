@@ -5,8 +5,8 @@ import (
 	"reflect"
 
 	"clustta/internal/auth_service"
-	"clustta/internal/base_service"
-	"clustta/internal/error_service"
+	"github.com/eaxum/clustta-core/base_service"
+	error_service "github.com/eaxum/clustta-core/errors"
 	"clustta/internal/repository/models"
 	"clustta/internal/utils"
 	"clustta/output"

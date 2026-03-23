@@ -5,12 +5,13 @@ import (
 	"reflect"
 
 	"clustta/internal/auth_service"
-	"clustta/internal/base_service"
-	"clustta/internal/error_service"
 	"clustta/internal/repository"
 	"clustta/internal/repository/models"
 	"clustta/internal/utils"
 	"clustta/output"
+
+	"github.com/eaxum/clustta-core/base_service"
+	error_service "github.com/eaxum/clustta-core/errors"
 
 	"github.com/jmoiron/sqlx"
 )

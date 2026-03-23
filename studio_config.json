@@ -3,11 +3,12 @@
   "port": "7774",
   "projects_dir": "./data/projects",
   "shared_projects_dir": "./data/shared_projects",
+  "server_url": "http://127.0.0.1",
+  "server_alt_url": "http://192.168.0.116",
+  "server_name": "Tigers",
+  "studio_api_key": "LP842XNRY1HH5Y3C3AM5766K8RZX1A2R4TIPTR5L84ODGPNALAY388J38XW7YIRV",
   "studio_users_db": "./data/studio_users.db",
   "session_db": "./data/sessions.db",
-  "server_url": "",
-  "server_alt_url": "http://192.168.0.116",
-  "server_name": "Baby",
-  "studio_api_key": "PR0QR9E9892955K4ALULOUHALZPATGE4WX5I89LBFARPU4UQ6KF6R9NSXNJU7LWX", 
-  "private": true
+  "private": false,
+  "registered_at": "2026-03-23T11:45:03Z"
 }

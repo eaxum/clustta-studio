@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"clustta/internal/base_service"
+	"github.com/eaxum/clustta-core/base_service"
 	"clustta/internal/repository/models"
 
 	"github.com/jmoiron/sqlx"

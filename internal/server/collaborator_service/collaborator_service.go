@@ -1,7 +1,7 @@
 package collaborator_service
 
 import (
-	"clustta/internal/base_service"
+	"github.com/eaxum/clustta-core/base_service"
 	"clustta/internal/server/models"
 	"database/sql"
 

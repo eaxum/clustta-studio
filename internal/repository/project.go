@@ -18,11 +18,12 @@ import (
 	"clustta/internal/auth_service"
 	"clustta/internal/chunk_service"
 	"clustta/internal/constants"
-	"clustta/internal/error_service"
 	"clustta/internal/repository/migrations"
 	"clustta/internal/repository/models"
 	"clustta/internal/settings"
 	"clustta/internal/utils"
+
+	error_service "github.com/eaxum/clustta-core/errors"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"

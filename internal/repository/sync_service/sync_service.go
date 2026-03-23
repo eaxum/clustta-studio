@@ -5,7 +5,7 @@ import (
 	"clustta/internal/auth_service"
 	"clustta/internal/chunk_service"
 	"clustta/internal/constants"
-	"clustta/internal/error_service"
+	error_service "github.com/eaxum/clustta-core/errors"
 	"clustta/internal/repository"
 	"clustta/internal/repository/models"
 	"clustta/internal/repository/repositorypb"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"clustta/internal/error_service"
+	error_service "github.com/eaxum/clustta-core/errors"
 	"clustta/internal/server/models"
 	"clustta/internal/server/user_service"
 	"database/sql"

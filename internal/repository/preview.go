@@ -2,9 +2,9 @@ package repository
 
 import (
 	"bytes"
-	"clustta/internal/base_service"
+	"github.com/eaxum/clustta-core/base_service"
 	"clustta/internal/constants"
-	"clustta/internal/error_service"
+	error_service "github.com/eaxum/clustta-core/errors"
 	"clustta/internal/repository/models"
 	"clustta/internal/repository/repositorypb"
 	"clustta/internal/utils"

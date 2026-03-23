@@ -2,7 +2,6 @@ package sync_service
 
 import (
 	"clustta/internal/auth_service"
-	"clustta/internal/error_service"
 	"clustta/internal/repository"
 	"clustta/internal/repository/sync_service"
 	"clustta/internal/testutils"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	error_service "github.com/eaxum/clustta-core/errors"
 )
 
 func TestMain(m *testing.M) {

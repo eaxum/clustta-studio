@@ -12,25 +12,16 @@ import (
 	"strings"
 
 	"clustta/internal/constants"
-	"clustta/internal/error_service"
 	"clustta/internal/repository/models"
 
+	error_service "github.com/eaxum/clustta-core/errors"
+
+	"github.com/eaxum/clustta-core/auth"
 	"github.com/zalando/go-keyring"
 )
 
-type Token struct {
-	SessionId string `json:"session_id"`
-	User      User   `json:"user"`
-}
-
-type User struct {
-	Id        string `db:"id" json:"id"`
-	Username  string `db:"username" json:"username"`
-	Email     string `db:"email" json:"email"`
-	FirstName string `db:"first_name" json:"first_name"`
-	LastName  string `db:"last_name" json:"last_name"`
-	Photo     []byte `db:"photo" json:"photo"`
-}
+type Token = auth.Token
+type User = auth.User
 
 func GetActiveUser() (User, error) {
 	token, err := GetToken()
