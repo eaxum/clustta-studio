@@ -33,3 +33,18 @@ CREATE TABLE IF NOT EXISTS user (
 
 CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
 CREATE INDEX IF NOT EXISTS idx_user_username ON user(username);
+
+CREATE TABLE IF NOT EXISTS api_token (
+    id TEXT PRIMARY KEY NOT NULL,
+    token_hash TEXT UNIQUE NOT NULL,
+    user_id TEXT NOT NULL REFERENCES user(id),
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS studio_project_user (
+    project_name TEXT NOT NULL COLLATE NOCASE,
+    user_id TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+    added_at INTEGER NOT NULL,
+    PRIMARY KEY (project_name, user_id)
+);

@@ -114,6 +114,13 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /projects", GetProjectsHandler)
 
 	// ============================================
+	// Project Collaborator Endpoints
+	// ============================================
+	router.HandleFunc("POST /{project}/collaborators", AddProjectCollaboratorHandler)
+	router.HandleFunc("DELETE /{project}/collaborators/{user_id}", RemoveProjectCollaboratorHandler)
+	router.HandleFunc("GET /{project}/collaborators", GetProjectCollaboratorsHandler)
+
+	// ============================================
 	// Share Endpoints
 	// ============================================
 	router.HandleFunc("POST /{project}/share", CreateShareLinkHandler)
@@ -135,7 +142,8 @@ func (s *APIServer) Run() error {
 
 	// Wrap with session manager for auth endpoints
 	handlerWithSession := sessionManager.LoadAndSave(c.Handler(router))
-	handlerWithLogging := RequestLoggerMiddleware(handlerWithSession)
+	handlerWithApiToken := ApiTokenMiddleware(handlerWithSession)
+	handlerWithLogging := RequestLoggerMiddleware(handlerWithApiToken)
 
 	server := http.Server{
 		Addr:         s.addr,
