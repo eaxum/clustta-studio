@@ -114,9 +114,8 @@ func GetStudioUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify the user is authenticated
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
@@ -146,20 +145,17 @@ func ChangeStudioUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify the user is authenticated
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	// Check the requesting user is admin
 	var requestingUser UserInfo
-	if userBytes, ok := userData.([]byte); ok {
-		if err := json.Unmarshal(userBytes, &requestingUser); err != nil {
-			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
-			return
-		}
+	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
+		return
 	}
 	serverUser := Users[requestingUser.Id]
 	if serverUser.RoleName != "admin" {
@@ -227,20 +223,17 @@ func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify the user is authenticated
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	// Check the requesting user is admin
 	var requestingUser UserInfo
-	if userBytes, ok := userData.([]byte); ok {
-		if err := json.Unmarshal(userBytes, &requestingUser); err != nil {
-			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
-			return
-		}
+	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
+		return
 	}
 	serverUser := Users[requestingUser.Id]
 	if serverUser.RoleName != "admin" {

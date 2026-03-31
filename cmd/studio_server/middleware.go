@@ -21,8 +21,21 @@ const apiUserContextKey contextKey = "api_user"
 // If found, it validates against the api_token table and injects user data
 // into the context so downstream handlers work transparently.
 // If no bearer token is present, the request passes through for cookie-based auth.
+// publicPaths are endpoints that do not require authentication.
+var publicPaths = map[string]bool{
+	"/ping":        true,
+	"/version":     true,
+	"/studio-key":  true,
+	"/studio-info": true,
+}
+
 func ApiTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if publicPaths[r.URL.Path] {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			rawToken := strings.TrimPrefix(authHeader, "Bearer ")
@@ -61,8 +74,11 @@ func ApiTokenMiddleware(next http.Handler) http.Handler {
 					Email:     user.Email,
 				}
 
-				// Serialize and store in context (same format as session data)
+				// Inject UserData/UserId headers so downstream handlers work transparently
 				userBytes, _ := json.Marshal(userInfo)
+				r.Header.Set("UserData", string(userBytes))
+				r.Header.Set("UserId", userInfo.Id)
+
 				ctx := context.WithValue(r.Context(), apiUserContextKey, userBytes)
 				ctx = context.WithValue(ctx, apiTokenContextKey, rawToken)
 				next.ServeHTTP(w, r.WithContext(ctx))

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"clustta/internal/constants"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
+	"clustta/internal/server/api_token_service"
 	"clustta/internal/server/user_service"
 	"clustta/internal/utils"
 
@@ -251,16 +253,41 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Desktop client: create an API token instead of a session cookie
+	if r.Header.Get("Clustta-Agent") != "" {
+		tokenDb, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
+		if err != nil {
+			SendErrorResponse(w, "Error creating token: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer tokenDb.Close()
+
+		apiToken, err := api_token_service.CreateToken(tokenDb, authUser.Id)
+		if err != nil {
+			SendErrorResponse(w, "Error creating token: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := LoginResponse{
+			Login:     true,
+			User:      userInfo,
+			SessionId: apiToken,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// Web client: use session cookie
 	sessionManager.Put(r.Context(), "user", userData)
-	// The session is automatically saved by LoadAndSave middleware
-	// Renew the session token to prevent session fixation
 	err = sessionManager.RenewToken(r.Context())
 	if err != nil {
 		SendErrorResponse(w, "Error creating session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Get the session token
 	sessionToken := sessionManager.Token(r.Context())
 
 	response := LoginResponse{
@@ -291,20 +318,15 @@ func LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // UserAuthenticatedHandler checks if the current session is valid
 func UserAuthenticatedHandler(w http.ResponseWriter, r *http.Request) {
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	var userInfo UserInfo
-	if userBytes, ok := userData.([]byte); ok {
-		if err := json.Unmarshal(userBytes, &userInfo); err != nil {
-			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		SendErrorResponse(w, "Invalid session data type", http.StatusInternalServerError)
+	if err := json.Unmarshal([]byte(UserData), &userInfo); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
 		return
 	}
 
@@ -384,20 +406,15 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetCurrentUserHandler returns the current authenticated user's info
 func GetCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	var userInfo UserInfo
-	if userBytes, ok := userData.([]byte); ok {
-		if err := json.Unmarshal(userBytes, &userInfo); err != nil {
-			SendErrorResponse(w, "Invalid session data", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		SendErrorResponse(w, "Invalid session data type", http.StatusInternalServerError)
+	if err := json.Unmarshal([]byte(UserData), &userInfo); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
 		return
 	}
 
