@@ -206,6 +206,16 @@ func SetProjectIcon(tx *sqlx.Tx, projectIcon string) error {
 	return err
 }
 
+// SetProjectName stores the project display name in the config table.
+func SetProjectName(tx *sqlx.Tx, name string) error {
+	_, err := tx.Exec(`
+		INSERT INTO config (name, value, mtime)
+		VALUES ('project_name', $1, $2)
+		ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value, mtime = EXCLUDED.mtime
+	`, name, GetEpochTime())
+	return err
+}
+
 func SetProjectIgnoreList(tx *sqlx.Tx, ignoreList []string) error {
 	ignoreListJson, err := json.Marshal(ignoreList)
 	if err != nil {

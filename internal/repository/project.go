@@ -127,6 +127,13 @@ func InitDB(projectPath string, studioName, workingDir string, user auth_service
 	if err != nil {
 		return err
 	}
+
+	// Store project display name from filename
+	projectName := strings.TrimSuffix(filepath.Base(projectPath), filepath.Ext(projectPath))
+	err = utils.SetProjectName(tx, projectName)
+	if err != nil {
+		return err
+	}
 	// if err != nil && err.Error() == "UNIQUE constraint failed: config.name" {
 	// 	//do nothing
 	// } else if err != nil {
@@ -1260,7 +1267,23 @@ func RenameProject(projectUri, studioName, newName string, user auth_service.Use
 		if err != nil {
 			return err
 		}
-		return nil
+
+		// Update project_name in config table
+		dbConn, err := utils.OpenDb(newProjectPath)
+		if err != nil {
+			return err
+		}
+		defer dbConn.Close()
+		tx, err := dbConn.Beginx()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		err = utils.SetProjectName(tx, newName)
+		if err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 
 }
