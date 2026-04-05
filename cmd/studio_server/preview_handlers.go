@@ -7,6 +7,7 @@ import (
 	"clustta/internal/utils"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/DataDog/zstd"
@@ -39,13 +40,15 @@ func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -57,14 +60,16 @@ func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 	var data previewsStruct
 	err = decoder.Decode(&data)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	previews := []models.Preview{}
 	for _, previewHash := range data.Previews {
 		preview, err := repository.GetPreview(tx, previewHash)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 			return
 		}
 		previews = append(previews, preview)
@@ -74,12 +79,14 @@ func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 	pbPreviewsList := &repositorypb.Previews{Previews: pbPreviews}
 	pbPreviewsListByte, err := proto.Marshal(pbPreviewsList)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	compressedData, err := zstd.CompressLevel(nil, pbPreviewsListByte, 3)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -100,45 +107,55 @@ func PostPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
 
 	previewsData, err := io.ReadAll(io.LimitReader(r.Body, 10<<20))
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	decompressedData, err := zstd.Decompress(nil, previewsData)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		http.Error(w, "Failed to decompress data", 400)
+		return
+	}
+	if len(decompressedData) > 50<<20 {
+		http.Error(w, "Decompressed data exceeds size limit", 413)
 		return
 	}
 
 	previewList := repositorypb.Previews{}
 	err = proto.Unmarshal(decompressedData, &previewList)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	previews := repository.FromPbPreviews(previewList.Previews)
 
 	err = repository.AddPreviews(tx, previews)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	err = tx.Commit()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 }
@@ -162,13 +179,15 @@ func PreviewsExistHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -177,7 +196,8 @@ func PreviewsExistHandler(w http.ResponseWriter, r *http.Request) {
 	var data []string
 	err = decoder.Decode(&data)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		// errMessage := ErrorStruct{
 		// 	Message: err.Error(),
 		// }
@@ -196,7 +216,8 @@ func PreviewsExistHandler(w http.ResponseWriter, r *http.Request) {
 
 	objJson, err := json.Marshal(missingPreviews)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	w.Write(objJson)
@@ -215,14 +236,16 @@ func GetProjectPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 
 	tx, err := dbConn.Beginx()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Request error: %v", err)
+	http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -233,7 +256,8 @@ func GetProjectPreview(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte{})
 			return
 		}
-		SendErrorResponse(w, "Error getting preview: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error getting preview: %v", err)
+	SendErrorResponse(w, "Error getting preview", http.StatusInternalServerError)
 		return
 	}
 	w.Write(projectPreview.Preview)

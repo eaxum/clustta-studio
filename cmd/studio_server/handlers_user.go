@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -23,14 +24,16 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -41,7 +44,8 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 			SendErrorResponse(w, "User not found", http.StatusNotFound)
 			return
 		}
-		SendErrorResponse(w, "Error getting user: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error getting user: %v", err)
+	SendErrorResponse(w, "Error getting user", http.StatusInternalServerError)
 		return
 	}
 
@@ -73,14 +77,16 @@ func GetUserByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -91,7 +97,8 @@ func GetUserByIdHandler(w http.ResponseWriter, r *http.Request) {
 			SendErrorResponse(w, "User not found", http.StatusNotFound)
 			return
 		}
-		SendErrorResponse(w, "Error getting user: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error getting user: %v", err)
+	SendErrorResponse(w, "Error getting user", http.StatusInternalServerError)
 		return
 	}
 
@@ -123,14 +130,16 @@ func GetUserPhotoHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -142,7 +151,8 @@ func GetUserPhotoHandler(w http.ResponseWriter, r *http.Request) {
 			SendErrorResponse(w, "User not found", http.StatusNotFound)
 			return
 		}
-		SendErrorResponse(w, "Error getting user photo: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error getting user photo: %v", err)
+	SendErrorResponse(w, "Error getting user photo", http.StatusInternalServerError)
 		return
 	}
 

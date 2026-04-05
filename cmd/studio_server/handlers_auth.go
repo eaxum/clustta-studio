@@ -4,6 +4,7 @@ import (
 	"clustta/internal/constants"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -92,14 +93,16 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -107,7 +110,8 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if email already exists
 	exists, err := user_service.EmailExists(tx, email)
 	if err != nil {
-		SendErrorResponse(w, "Error checking email: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error checking email: %v", err)
+	SendErrorResponse(w, "Error checking email", http.StatusInternalServerError)
 		return
 	}
 	if exists {
@@ -118,7 +122,8 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if username already exists
 	exists, err = user_service.UsernameExists(tx, username)
 	if err != nil {
-		SendErrorResponse(w, "Error checking username: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error checking username: %v", err)
+	SendErrorResponse(w, "Error checking username", http.StatusInternalServerError)
 		return
 	}
 	if exists {
@@ -129,14 +134,16 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Create the user (auto-activate for studio server - no email verification required)
 	createdUser, err := user_service.CreateUser(tx, "", firstName, lastName, username, email, password)
 	if err != nil {
-		SendErrorResponse(w, "Error creating user: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error creating user: %v", err)
+	SendErrorResponse(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
 
 	// Activate the user immediately (studio servers don't require email verification)
 	err = user_service.ActivateUser(tx, createdUser.Id)
 	if err != nil {
-		SendErrorResponse(w, "Error activating user: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error activating user: %v", err)
+	SendErrorResponse(w, "Error activating user", http.StatusInternalServerError)
 		return
 	}
 
@@ -154,7 +161,8 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil && roleId != "" {
 			_, err = tx.Exec("UPDATE user SET role_id = ? WHERE id = ?", roleId, createdUser.Id)
 			if err != nil {
-				SendErrorResponse(w, "Error assigning role: "+err.Error(), http.StatusInternalServerError)
+				log.Printf("Error assigning role: %v", err)
+	SendErrorResponse(w, "Error assigning role", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -162,7 +170,8 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = tx.Commit()
 	if err != nil {
-		SendErrorResponse(w, "Error committing transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error committing transaction: %v", err)
+	SendErrorResponse(w, "Error committing transaction", http.StatusInternalServerError)
 		return
 	}
 
@@ -200,21 +209,24 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
 	authUser, authenticated, err := user_service.AuthenticateUser(tx, emailOrUsername, password)
 	if err != nil {
-		SendErrorResponse(w, "Error during authentication: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error during authentication: %v", err)
+	SendErrorResponse(w, "Error during authentication", http.StatusInternalServerError)
 		return
 	}
 
@@ -230,13 +242,15 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = user_service.UpdateUser(tx, authUser.Id, params)
 	if err != nil {
-		SendErrorResponse(w, "Error updating user: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error updating user: %v", err)
+	SendErrorResponse(w, "Error updating user", http.StatusInternalServerError)
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		SendErrorResponse(w, "Error committing transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error committing transaction: %v", err)
+	SendErrorResponse(w, "Error committing transaction", http.StatusInternalServerError)
 		return
 	}
 
@@ -250,7 +264,8 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userData, err := json.Marshal(userInfo)
 	if err != nil {
-		SendErrorResponse(w, "Error marshaling user data: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error marshaling user data: %v", err)
+	SendErrorResponse(w, "Error marshaling user data", http.StatusInternalServerError)
 		return
 	}
 
@@ -258,14 +273,16 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Clustta-Agent") != "" {
 		tokenDb, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
 		if err != nil {
-			SendErrorResponse(w, "Error creating token: "+err.Error(), http.StatusInternalServerError)
+			log.Printf("Error creating token: %v", err)
+	SendErrorResponse(w, "Error creating token", http.StatusInternalServerError)
 			return
 		}
 		defer tokenDb.Close()
 
 		apiToken, err := api_token_service.CreateToken(tokenDb, authUser.Id)
 		if err != nil {
-			SendErrorResponse(w, "Error creating token: "+err.Error(), http.StatusInternalServerError)
+			log.Printf("Error creating token: %v", err)
+	SendErrorResponse(w, "Error creating token", http.StatusInternalServerError)
 			return
 		}
 
@@ -285,7 +302,8 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	sessionManager.Put(r.Context(), "user", userData)
 	err = sessionManager.RenewToken(r.Context())
 	if err != nil {
-		SendErrorResponse(w, "Error creating session: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error creating session: %v", err)
+	SendErrorResponse(w, "Error creating session", http.StatusInternalServerError)
 		return
 	}
 
@@ -306,7 +324,8 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 func LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
 	err := sessionManager.Destroy(r.Context())
 	if err != nil {
-		SendErrorResponse(w, "Error destroying session: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error destroying session: %v", err)
+	SendErrorResponse(w, "Error destroying session", http.StatusInternalServerError)
 		return
 	}
 
@@ -349,21 +368,24 @@ func CheckEmailExistHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
 	exists, err := user_service.EmailExists(tx, email)
 	if err != nil {
-		SendErrorResponse(w, "Error checking email: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error checking email: %v", err)
+	SendErrorResponse(w, "Error checking email", http.StatusInternalServerError)
 		return
 	}
 
@@ -382,21 +404,24 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
 	exists, err := user_service.UsernameExists(tx, username)
 	if err != nil {
-		SendErrorResponse(w, "Error checking username: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error checking username: %v", err)
+	SendErrorResponse(w, "Error checking username", http.StatusInternalServerError)
 		return
 	}
 
@@ -422,21 +447,24 @@ func GetCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Get full user details from database
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
-		SendErrorResponse(w, "Error connecting to database: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error connecting to database: %v", err)
+	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
 
 	tx, err := db.Beginx()
 	if err != nil {
-		SendErrorResponse(w, "Error starting transaction: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error starting transaction: %v", err)
+	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
 	user, err := user_service.GetUser(tx, userInfo.Id)
 	if err != nil {
-		SendErrorResponse(w, "Error getting user: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error getting user: %v", err)
+	SendErrorResponse(w, "Error getting user", http.StatusInternalServerError)
 		return
 	}
 
