@@ -3,11 +3,11 @@
   "port": "7774",
   "projects_dir": "./data/projects",
   "shared_projects_dir": "./data/shared_projects",
+  "server_url": "http://127.0.0.1:7774",
+  "server_name": "Brownies",
+  "studio_api_key": "QZR8T2T7NXMDZ1GE3K1HOVEP4UQKL6M8JNOMJHSLM3WX8CCM31TN3DQ4YL7QZQ82",
   "studio_users_db": "./data/studio_users.db",
   "session_db": "./data/sessions.db",
-  "server_url": "",
-  "server_alt_url": "http://192.168.0.116",
-  "server_name": "Baby",
-  "studio_api_key": "PR0QR9E9892955K4ALULOUHALZPATGE4WX5I89LBFARPU4UQ6KF6R9NSXNJU7LWX", 
-  "private": true
+  "private": true,
+  "secure_cookies": false
 }

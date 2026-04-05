@@ -6,7 +6,7 @@ import (
 	gomail "gopkg.in/mail.v2"
 )
 
-func SendEmail(subject, body, html, recipient_email string) {
+func SendEmail(subject, body, html, recipient_email string) error {
 	// Create a new message
 	message := gomail.NewMessage()
 
@@ -26,8 +26,8 @@ func SendEmail(subject, body, html, recipient_email string) {
 	// Send the email
 	if err := dialer.DialAndSend(message); err != nil {
 		fmt.Println("Error:", err)
-		panic(err)
-	} else {
-		fmt.Println("Email sent successfully!")
+		return err
 	}
+
+	return nil
 }

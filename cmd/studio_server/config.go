@@ -23,6 +23,7 @@ type Config struct {
 	StudioUsersDB     string `json:"studio_users_db" envconfig:"STUDIO_USERS_DB"`
 	SessionDB         string `json:"session_db" envconfig:"SESSION_DB"`
 	Private           bool   `json:"private" envconfig:"PRIVATE"`
+	SecureCookies     bool   `json:"secure_cookies" envconfig:"SECURE_COOKIES"`
 	RegisteredAt      string `json:"registered_at,omitempty"`
 }
 

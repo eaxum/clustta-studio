@@ -127,11 +127,7 @@ func GetStudioUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[GetStudioUsers] Returning %d users:", len(users))
-	for i, u := range users {
-		log.Printf("  [%d] id=%s name=%s %s username=%s email=%s role=%s role_id=%s active=%v",
-			i, u.Id, u.FirstName, u.LastName, u.UserName, u.Email, u.RoleName, u.RoleId, u.Active)
-	}
+	log.Printf("[GetStudioUsers] Returning %d users", len(users))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

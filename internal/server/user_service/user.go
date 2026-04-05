@@ -7,6 +7,7 @@ import (
 	"clustta/internal/utils"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
@@ -254,9 +255,29 @@ func ValidateUser(user models.User) (bool, string) {
 	if !utils.ValidateEmail(user.Email) {
 		return false, "Invalid email format"
 	}
-	// if isValid, errMsg := ValidatePassword(user.Password); !isValid {
-	// 	return false, errMsg
-	// }
+	if isValid, errMsg := ValidatePassword(user.Password); !isValid {
+		return false, errMsg
+	}
 
+	return true, ""
+}
+
+// ValidatePassword checks password strength requirements.
+func ValidatePassword(password string) (bool, string) {
+	if len(password) < 8 {
+		return false, "Password must be at least 8 characters long"
+	}
+	if matched, _ := regexp.MatchString(`[A-Z]`, password); !matched {
+		return false, "Password must contain at least one uppercase letter"
+	}
+	if matched, _ := regexp.MatchString(`[a-z]`, password); !matched {
+		return false, "Password must contain at least one lowercase letter"
+	}
+	if matched, _ := regexp.MatchString(`\d`, password); !matched {
+		return false, "Password must contain at least one number"
+	}
+	if matched, _ := regexp.MatchString(`[@$!%*?&]`, password); !matched {
+		return false, "Password must contain at least one special character (@$!%*?&)"
+	}
 	return true, ""
 }

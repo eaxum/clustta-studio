@@ -297,7 +297,7 @@ func startServer(serverType string) {
 	defer sessionDb.Close()
 
 	// Initialize session manager
-	InitSessionManager(sessionDb)
+	InitSessionManager(sessionDb, CONFIG.SecureCookies)
 
 	addr := fmt.Sprintf("%s:%s", CONFIG.Host, CONFIG.Port)
 	server := NewAPIServer(addr)

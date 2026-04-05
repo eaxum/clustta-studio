@@ -19,13 +19,14 @@ import (
 var sessionManager *scs.SessionManager
 
 // InitSessionManager initializes the SCS session manager with SQLite store
-func InitSessionManager(sessionDb *sql.DB) {
+func InitSessionManager(sessionDb *sql.DB, secureCookies bool) {
 	sessionManager = scs.New()
 	sessionManager.Store = sqlite3store.New(sessionDb)
 	sessionManager.Lifetime = 30 * 24 * time.Hour
 	sessionManager.Cookie.Name = "session"
 	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
-	sessionManager.Cookie.Secure = false // Set to true in production with HTTPS
+	sessionManager.Cookie.Secure = secureCookies
+	sessionManager.Cookie.HttpOnly = true
 	expireTime := 7 * 24 * time.Hour
 	sqlite3store.NewWithCleanupInterval(sessionDb, expireTime)
 }
