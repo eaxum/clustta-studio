@@ -176,7 +176,7 @@ func getRemoteStudioUsers() ([]models.StudioUserInfo, error) {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return users, err

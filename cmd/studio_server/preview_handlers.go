@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"path/filepath"
 
 	"github.com/DataDog/zstd"
 	"google.golang.org/protobuf/proto"
@@ -28,9 +27,11 @@ func SendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
 
 func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -87,9 +88,11 @@ func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 
 func PostPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -108,7 +111,7 @@ func PostPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	previewsData, err := io.ReadAll(r.Body)
+	previewsData, err := io.ReadAll(io.LimitReader(r.Body, 10<<20))
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
@@ -142,9 +145,11 @@ func PostPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 
 func PreviewsExistHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		// errMessage := ErrorStruct{
 		// 	Message: "Project Not Found",
@@ -199,8 +204,11 @@ func PreviewsExistHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetProjectPreview(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return

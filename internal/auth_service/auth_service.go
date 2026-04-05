@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strings"
+	"time"
 
 	"clustta/internal/constants"
 	"clustta/internal/error_service"
@@ -59,7 +60,7 @@ func IsAuthenticated() (bool, error) {
 	req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return false, err
@@ -120,7 +121,7 @@ func FetchUserPhoto(userId string) ([]byte, error) {
 
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return []byte{}, err
@@ -191,7 +192,7 @@ func FetchUserData(email string) (models.User, error) {
 	// req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return models.User{}, err
@@ -280,7 +281,8 @@ func DeleteToken() error {
 func Login(username string, password string) (Token, error) {
 	url := constants.HOST + "/auth/login"
 	jsonBody := fmt.Sprintf("{\"email\": \"%s\", \"password\": \"%s\"}", username, password)
-	response, err := http.Post(url, "application/json", strings.NewReader(jsonBody))
+	client := &http.Client{Timeout: 30 * time.Second}
+	response, err := client.Post(url, "application/json", strings.NewReader(jsonBody))
 	if err != nil {
 		return Token{}, err
 	}
@@ -321,7 +323,8 @@ func Register(firstName, lastName, username, email, password, confirmPassword st
 	url := constants.HOST + "/auth/register"
 	jsonBody := fmt.Sprintf("{\"first_name\": \"%s\", \"last_name\": \"%s\", \"username\": \"%s\", \"email\": \"%s\", \"password\": \"%s\", \"confirm_password\": \"%s\"}",
 		firstName, lastName, username, email, password, confirmPassword)
-	response, err := http.Post(url, "application/json", strings.NewReader(jsonBody))
+	client := &http.Client{Timeout: 30 * time.Second}
+	response, err := client.Post(url, "application/json", strings.NewReader(jsonBody))
 	if err != nil {
 		return User{}, err
 	}
@@ -369,7 +372,7 @@ func UpdateUser(firstName, lastName, username, email string) (User, error) {
 	}
 	req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return User{}, err
@@ -412,7 +415,7 @@ func Logout() error {
 	req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	response, err := client.Do(req)
 	if err != nil {
 		return err
@@ -446,7 +449,7 @@ func CheckUsernameExists(username string) (bool, error) {
 		return false, err
 	}
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
@@ -476,7 +479,7 @@ func CheckEmailExists(email string) (bool, error) {
 		return false, err
 	}
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
@@ -527,7 +530,7 @@ func UpdateUserPhoto(photo []byte) error {
 	}
 	req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -556,7 +559,7 @@ func DeactivateUserAccount() error {
 	req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 	req.Header.Set("Clustta-Agent", constants.USER_AGENT)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -604,7 +607,7 @@ func SendInvitationEmail(email, studioName, projectName string) error {
 	}
 	req.Header.Set("Cookie", fmt.Sprintf("session=%s", token.SessionId))
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %v", err)

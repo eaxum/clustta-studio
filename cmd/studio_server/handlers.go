@@ -8,6 +8,7 @@ import (
 	"clustta/internal/repository/sync_service"
 	"clustta/internal/utils"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -22,6 +23,21 @@ import (
 
 type ErrorStruct struct {
 	Message string `json:"error"`
+}
+
+// safeProjectPath validates a project name and returns the safe .clst file path.
+// Rejects names containing path separators or traversal sequences.
+func safeProjectPath(baseDir, projectName string) (string, error) {
+	if strings.ContainsAny(projectName, `/\`) || strings.Contains(projectName, "..") || projectName == "" {
+		return "", fmt.Errorf("invalid project name")
+	}
+	resolved := filepath.Join(baseDir, projectName+".clst")
+	absBase, _ := filepath.Abs(baseDir)
+	absResolved, _ := filepath.Abs(resolved)
+	if !strings.HasPrefix(absResolved, absBase+string(filepath.Separator)) {
+		return "", fmt.Errorf("path escapes base directory")
+	}
+	return resolved, nil
 }
 
 type dataStruct struct {
@@ -285,8 +301,11 @@ func PostProjectHandler(
 	}
 
 	projectName := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, projectName+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	if utils.FileExists(projectPath) {
 		http.Error(w, "Project Already Exist", 400)
@@ -343,8 +362,11 @@ func PostProjectHandler(
 func RenameProjectHandler(
 	w http.ResponseWriter, r *http.Request) {
 	projectName := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, projectName+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	var data map[string]string
 	json.NewDecoder(r.Body).Decode(&data)
@@ -395,8 +417,11 @@ func RenameProjectHandler(
 // Only admins can delete projects. This operation cannot be undone.
 func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	projectName := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, projectName+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 404)
@@ -438,8 +463,11 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 func ToggleProjectCloseHandler(
 	w http.ResponseWriter, r *http.Request) {
 	projectName := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, projectName+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
@@ -479,8 +507,11 @@ func ToggleProjectCloseHandler(
 func SetProjectIconHandler(
 	w http.ResponseWriter, r *http.Request) {
 	projectName := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, projectName+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	var data map[string]string
 	json.NewDecoder(r.Body).Decode(&data)
@@ -528,8 +559,11 @@ func SetProjectIconHandler(
 func SetProjectIgnoreListHandler(
 	w http.ResponseWriter, r *http.Request) {
 	projectName := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, projectName+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	var ignoreList []string
 	json.NewDecoder(r.Body).Decode(&ignoreList)
@@ -571,9 +605,11 @@ func SetProjectIgnoreListHandler(
 
 func GetProjectHandler(
 	w http.ResponseWriter, r *http.Request) {
-	projectFolder := CONFIG.ProjectsDir
-
-	projectPath := filepath.Join(projectFolder, r.PathValue("project")+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, r.PathValue("project"))
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	project := repository.ProjectInfo{}
 
 	//check if project exists
@@ -614,8 +650,11 @@ func GetProjectHandler(
 
 func GetProjectSyncTokenHandler(
 	w http.ResponseWriter, r *http.Request) {
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, r.PathValue("project")+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, r.PathValue("project"))
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 
 	UserId := r.Header.Get("UserId")
 	UserData := r.Header.Get("UserData")
@@ -734,9 +773,11 @@ func GetProjectsHandler(
 func GetDataHandler(
 	w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
-	// w.Write([]byte(projectPath))
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -789,8 +830,11 @@ func PostDataHandler(
 		return
 	}
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -808,7 +852,7 @@ func PostDataHandler(
 	}
 	defer tx.Rollback()
 
-	body, err := io.ReadAll(r.Body)
+	body, err := io.ReadAll(io.LimitReader(r.Body, 50<<20))
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
@@ -907,8 +951,11 @@ func PostDataHandler(
 
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -962,8 +1009,11 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -1027,14 +1077,17 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
 	}
 
-	chunks, err := io.ReadAll(r.Body)
+	chunks, err := io.ReadAll(io.LimitReader(r.Body, 100<<20))
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
@@ -1059,8 +1112,11 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
@@ -1106,8 +1162,11 @@ func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PathValue("project")
-	projectFolder := CONFIG.ProjectsDir
-	projectPath := filepath.Join(projectFolder, project+".clst")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
 		return
