@@ -5,6 +5,7 @@ import (
 	"clustta/internal/repository"
 	"clustta/internal/utils"
 	"encoding/json"
+	"log"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -75,6 +76,7 @@ func AddProjectCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []addResult{}
+	addedUserIds := []string{}
 	now := time.Now().Unix()
 
 	for _, userId := range body.UserIds {
@@ -111,18 +113,28 @@ func AddProjectCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Add to studio_project_user for fast lookup
-		sudb, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
-		if err == nil {
-			sudb.Exec("INSERT OR IGNORE INTO studio_project_user (project_name, user_id, added_at) VALUES (?, ?, ?)",
-				projectName, userId, now)
-			sudb.Close()
-		}
-
+		addedUserIds = append(addedUserIds, userId)
 		results = append(results, addResult{UserId: userId, Status: "added"})
 	}
 
 	ptx.Commit()
+
+	// Add to studio_project_user for fast lookup (after .clst commit to avoid DB lock)
+	if len(addedUserIds) > 0 {
+		sudb, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
+		if err != nil {
+			log.Printf("[AddProjectCollaborator] Failed to open studio_users DB at %q: %v", constants.StudioUsersDBPath, err)
+		} else {
+			for _, userId := range addedUserIds {
+				_, execErr := sudb.Exec("INSERT OR IGNORE INTO studio_project_user (project_name, user_id, added_at) VALUES (?, ?, ?)",
+					projectName, userId, now)
+				if execErr != nil {
+					log.Printf("[AddProjectCollaborator] Failed to insert into studio_project_user (project=%s, user=%s): %v", projectName, userId, execErr)
+				}
+			}
+			sudb.Close()
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -181,8 +193,13 @@ func RemoveProjectCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Remove from studio_project_user
 	sudb, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
-	if err == nil {
-		sudb.Exec("DELETE FROM studio_project_user WHERE project_name = ? AND user_id = ?", projectName, collabUserId)
+	if err != nil {
+		log.Printf("[RemoveProjectCollaborator] Failed to open studio_users DB: %v", err)
+	} else {
+		_, execErr := sudb.Exec("DELETE FROM studio_project_user WHERE project_name = ? AND user_id = ?", projectName, collabUserId)
+		if execErr != nil {
+			log.Printf("[RemoveProjectCollaborator] Failed to delete from studio_project_user: %v", execErr)
+		}
 		sudb.Close()
 	}
 

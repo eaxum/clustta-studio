@@ -45,22 +45,24 @@ func ApiTokenMiddleware(next http.Handler) http.Handler {
 					http.Error(w, `{"error": "Internal server error"}`, http.StatusInternalServerError)
 					return
 				}
-				defer db.Close()
 
 				userId, err := api_token_service.ValidateToken(db, rawToken)
 				if err != nil {
+					db.Close()
 					http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
 					return
 				}
 
 				tx, err := db.Beginx()
 				if err != nil {
+					db.Close()
 					http.Error(w, `{"error": "Internal server error"}`, http.StatusInternalServerError)
 					return
 				}
-				defer tx.Rollback()
 
 				user, err := user_service.GetUser(tx, userId)
+				tx.Rollback()
+				db.Close()
 				if err != nil {
 					http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
 					return
