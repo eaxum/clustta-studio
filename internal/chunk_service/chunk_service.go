@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
@@ -19,6 +20,33 @@ import (
 	kzstd "github.com/klauspost/compress/zstd"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+// idleTimeoutConn wraps a net.Conn and resets the read deadline on every Read call.
+// If no data arrives within the idle duration, the connection is closed.
+type idleTimeoutConn struct {
+	net.Conn
+	idle time.Duration
+}
+
+func (c *idleTimeoutConn) Read(b []byte) (int, error) {
+	c.Conn.SetReadDeadline(time.Now().Add(c.idle))
+	return c.Conn.Read(b)
+}
+
+// streamTransport returns an HTTP transport suited for long-running downloads.
+// It enforces a 30s header wait and kills reads that stall for more than 60s.
+func streamTransport() *http.Transport {
+	return &http.Transport{
+		ResponseHeaderTimeout: 30 * time.Second,
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			conn, err := (&net.Dialer{Timeout: 15 * time.Second}).DialContext(ctx, network, addr)
+			if err != nil {
+				return nil, err
+			}
+			return &idleTimeoutConn{Conn: conn, idle: 60 * time.Second}, nil
+		},
+	}
+}
 
 type Chunk struct {
 	Hash string `db:"hash" json:"hash"`
@@ -263,7 +291,7 @@ func PullChunks(ctx context.Context, projectPath, remoteUrl string, chunkInfos [
 	}
 
 	dataUrl := remoteUrl + "/chunks"
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Transport: streamTransport()}
 
 	totalChunksSize := 0
 	for _, chunkInfo := range chunkInfos {
@@ -533,7 +561,7 @@ func PullStreamChunks(ctx context.Context, projectPath, remoteUrl string, missin
 	}
 
 	dataUrl := remoteUrl + "/stream-chunks"
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Transport: streamTransport()}
 
 	if utils.IsValidURL(remoteUrl) {
 		if ctx.Err() != nil {
