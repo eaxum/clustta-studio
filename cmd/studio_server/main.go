@@ -2,6 +2,7 @@ package main
 
 import (
 	"clustta/internal/constants"
+	"clustta/internal/email_service"
 	"clustta/internal/repository"
 	"clustta/internal/server/models"
 	"clustta/internal/server/session_service"
@@ -298,6 +299,9 @@ func startServer(serverType string) {
 
 	// Initialize session manager
 	InitSessionManager(sessionDb, CONFIG.SecureCookies)
+
+	// Initialize email service
+	email_service.Init(CONFIG.SMTPHost, CONFIG.SMTPPort, CONFIG.SMTPUser, CONFIG.SMTPPassword, CONFIG.SMTPFrom)
 
 	addr := fmt.Sprintf("%s:%s", CONFIG.Host, CONFIG.Port)
 	server := NewAPIServer(addr)

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/rs/cors"
 )
@@ -35,6 +36,18 @@ func (lrw *loggingResponseWriter) Flush() {
 	if flusher, ok := lrw.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
+}
+
+func RecoveryMiddleware(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("PANIC recovered: %v [%s %s]", err, r.Method, r.URL.Path)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }
 
 func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
@@ -143,13 +156,15 @@ func (s *APIServer) Run() error {
 	// Wrap with session manager for auth endpoints
 	handlerWithSession := sessionManager.LoadAndSave(c.Handler(router))
 	handlerWithApiToken := ApiTokenMiddleware(handlerWithSession)
-	handlerWithLogging := RequestLoggerMiddleware(handlerWithApiToken)
+	handlerWithRecovery := RecoveryMiddleware(handlerWithApiToken)
+	handlerWithLogging := RequestLoggerMiddleware(handlerWithRecovery)
 
 	server := http.Server{
 		Addr:         s.addr,
 		Handler:      handlerWithLogging,
-		ReadTimeout:  0,
-		WriteTimeout: 0,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	log.Printf("Server has started %s", s.addr)

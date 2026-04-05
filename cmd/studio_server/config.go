@@ -24,6 +24,11 @@ type Config struct {
 	SessionDB         string `json:"session_db" envconfig:"SESSION_DB"`
 	Private           bool   `json:"private" envconfig:"PRIVATE"`
 	SecureCookies     bool   `json:"secure_cookies" envconfig:"SECURE_COOKIES"`
+	SMTPHost          string `json:"smtp_host" envconfig:"SMTP_HOST"`
+	SMTPPort          int    `json:"smtp_port" envconfig:"SMTP_PORT"`
+	SMTPUser          string `json:"smtp_user" envconfig:"SMTP_USER"`
+	SMTPPassword      string `json:"smtp_password" envconfig:"SMTP_PASSWORD"`
+	SMTPFrom          string `json:"smtp_from" envconfig:"SMTP_FROM"`
 	RegisteredAt      string `json:"registered_at,omitempty"`
 }
 
