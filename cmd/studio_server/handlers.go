@@ -140,7 +140,7 @@ func GetStudioUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[GetStudioUsers] Error: %v", err)
 		log.Printf("Error fetching studio users: %v", err)
-	SendErrorResponse(w, "Error fetching studio users", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error fetching studio users", http.StatusInternalServerError)
 		return
 	}
 
@@ -196,7 +196,7 @@ func ChangeStudioUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
@@ -213,7 +213,7 @@ func ChangeStudioUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 	result, err := db.Exec("UPDATE user SET role_id = ? WHERE id = ?", roleId, userId)
 	if err != nil {
 		log.Printf("Error updating user role: %v", err)
-	SendErrorResponse(w, "Error updating user role", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error updating user role", http.StatusInternalServerError)
 		return
 	}
 
@@ -271,7 +271,7 @@ func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
@@ -280,7 +280,7 @@ func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
 	result, err := db.Exec("UPDATE user SET is_deleted = 1, active = 0 WHERE id = ?", userId)
 	if err != nil {
 		log.Printf("Error removing user: %v", err)
-	SendErrorResponse(w, "Error removing user", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error removing user", http.StatusInternalServerError)
 		return
 	}
 
@@ -323,7 +323,7 @@ func PostProjectHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	serverUser := Users[user.Id]
@@ -346,21 +346,21 @@ func PostProjectHandler(
 			err := os.Remove(projectPath)
 			if err != nil {
 				log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+				http.Error(w, "Internal server error", 400)
 				return
 			}
 			if utils.FileExists(journal) {
 				err = os.Remove(journal)
 				if err != nil {
 					log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+					http.Error(w, "Internal server error", 400)
 					return
 				}
 			}
 
 		}
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -396,7 +396,7 @@ func RenameProjectHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	serverUser := Users[user.Id]
@@ -408,7 +408,7 @@ func RenameProjectHandler(
 	err = repository.RenameProject(projectPath, "", newProjectName, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -417,7 +417,7 @@ func RenameProjectHandler(
 	projectInfo, err := repository.GetProjectInfo(newProjectPath, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -446,7 +446,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -459,7 +459,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	// Delete the .clst file
 	if err := os.Remove(projectPath); err != nil {
 		log.Printf("Failed to delete project: %v", err)
-	http.Error(w, "Failed to delete project", 500)
+		http.Error(w, "Failed to delete project", 500)
 		return
 	}
 
@@ -494,7 +494,7 @@ func ToggleProjectCloseHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	serverUser := Users[user.Id]
@@ -506,14 +506,14 @@ func ToggleProjectCloseHandler(
 	err = repository.ToggleCloseProject(projectPath, "", user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	projectInfo, err := repository.GetProjectInfo(projectPath, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -549,7 +549,7 @@ func SetProjectIconHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	serverUser := Users[user.Id]
@@ -561,14 +561,14 @@ func SetProjectIconHandler(
 	err = repository.SetIcon(projectPath, "", newProjectIcon, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	projectInfo, err := repository.GetProjectInfo(projectPath, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -599,7 +599,7 @@ func SetProjectIgnoreListHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	serverUser := Users[user.Id]
@@ -611,14 +611,14 @@ func SetProjectIgnoreListHandler(
 	err = repository.SetIgnoreList(projectPath, "", ignoreList, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	projectInfo, err := repository.GetProjectInfo(projectPath, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -648,21 +648,21 @@ func GetProjectHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	userInProject, err := repository.UserInProject(projectPath, UserId)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	if userInProject {
 		projectInfo, err := repository.GetProjectInfo(projectPath, user)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		project = projectInfo
@@ -689,28 +689,28 @@ func GetProjectSyncTokenHandler(
 	err := json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	userInProject, err := repository.UserInProject(projectPath, UserId)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	if userInProject {
 		db, err := utils.OpenDb(projectPath)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		defer db.Close()
 		tx, err := db.Beginx()
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		defer tx.Rollback()
@@ -718,7 +718,7 @@ func GetProjectSyncTokenHandler(
 		syncToken, err := utils.GetProjectSyncToken(tx)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		// jsonStr := map[string]string{"sync_token": syncToken}
@@ -743,7 +743,7 @@ func GetProjectsHandler(
 	entries, err := os.ReadDir(projectFolder)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -753,7 +753,7 @@ func GetProjectsHandler(
 	err = json.Unmarshal([]byte(UserData), &user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -768,7 +768,7 @@ func GetProjectsHandler(
 			fileInfo, err := entry.Info()
 			if err != nil {
 				log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 500)
+				http.Error(w, "Internal server error", 500)
 				return
 			}
 			if fileInfo.Size() == 0 {
@@ -783,14 +783,14 @@ func GetProjectsHandler(
 			userInProject, err := repository.UserInProject(projectPath, user.Id)
 			if err != nil {
 				log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+				http.Error(w, "Internal server error", 400)
 				return
 			}
 			if userInProject {
 				projectInfo, err := repository.GetProjectInfo(projectPath, user)
 				if err != nil {
 					log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+					http.Error(w, "Internal server error", 400)
 					return
 				}
 				projects = append(projects, projectInfo)
@@ -808,6 +808,10 @@ func GetProjectsHandler(
 
 func GetDataHandler(
 	w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -822,14 +826,14 @@ func GetDataHandler(
 	db, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer db.Close()
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -839,27 +843,27 @@ func GetDataHandler(
 	err = decoder.Decode(&data)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	userData, err := sync_service.LoadUserDataPb(tx, data.UserId)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 500)
+		http.Error(w, "Internal server error", 500)
 		return
 	}
 
 	compressedData, err := zstd.CompressLevel(nil, userData, 3)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 500)
+		http.Error(w, "Internal server error", 500)
 		return
 	}
 
 	_, err = w.Write(compressedData)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -867,8 +871,8 @@ func GetDataHandler(
 
 func PostDataHandler(
 	w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Clustta-Agent") != "Clustta/0.2" {
-		http.Error(w, "Invalid Client", 500)
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	project := r.PathValue("project")
@@ -884,14 +888,14 @@ func PostDataHandler(
 	db, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer db.Close()
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -899,7 +903,7 @@ func PostDataHandler(
 	body, err := io.ReadAll(io.LimitReader(r.Body, 50<<20))
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -917,7 +921,7 @@ func PostDataHandler(
 	err = proto.Unmarshal(decompressedData, &userDataPb)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -959,7 +963,7 @@ func PostDataHandler(
 	conflictResult, err := sync_service.CheckForConflicts(tx, requestData)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 500)
+		http.Error(w, "Internal server error", 500)
 		return
 	}
 
@@ -973,39 +977,43 @@ func PostDataHandler(
 	err = sync_service.WriteProjectData(tx, requestData, true)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	err = repository.UpdateUsersPhoto(tx)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	err = repository.AddItemsToTomb(tx, requestData.Tombs)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	newSyncToken := utils.GenerateToken()
 	err = utils.SetProjectSyncToken(tx, newSyncToken)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	utils.RunPassiveCheckpoint(db)
 }
 
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -1020,14 +1028,14 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -1040,7 +1048,7 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&data)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	chunks := []chunk_service.Chunk{}
@@ -1049,7 +1057,7 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 		err = tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		chunk := chunk_service.Chunk{
@@ -1062,13 +1070,17 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	encodedChunks, err := chunk_service.EncodeChunks(chunks)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	w.Write(encodedChunks)
 }
 
 func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -1083,14 +1095,14 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -1103,7 +1115,7 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&data)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -1122,7 +1134,7 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 		err = tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		chunk := chunk_service.Chunk{
@@ -1132,7 +1144,7 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 		encodedChunk, err := chunk_service.EncodeChunk(chunk)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		// Send chunk data to client
@@ -1142,6 +1154,10 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -1156,13 +1172,13 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 	chunks, err := io.ReadAll(io.LimitReader(r.Body, 100<<20))
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	failedChunks, err := chunk_service.WriteChunks(projectPath, chunks)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	chunk_service.RunPassiveCheckpointForProject(projectPath)
@@ -1173,13 +1189,17 @@ func PostChunksHandler(w http.ResponseWriter, r *http.Request) {
 	objJson, err := json.Marshal(data)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	w.Write(objJson)
 }
 
 func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -1194,14 +1214,14 @@ func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -1211,7 +1231,7 @@ func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&data)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -1227,7 +1247,7 @@ func ChunksMissingHandler(w http.ResponseWriter, r *http.Request) {
 	objJson, err := json.Marshal(missingChunks)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	w.Write(objJson)
@@ -1248,14 +1268,14 @@ func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 	dbConn, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer dbConn.Close()
 	tx, err := dbConn.Beginx()
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	defer tx.Rollback()
@@ -1265,7 +1285,7 @@ func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&data)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 
@@ -1275,7 +1295,7 @@ func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 		chunkInfo, err := chunk_service.GetChunkInfo(tx, chunkHash)
 		if err != nil {
 			log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+			http.Error(w, "Internal server error", 400)
 			return
 		}
 		chunksInfo = append(chunksInfo, chunkInfo)
@@ -1284,7 +1304,7 @@ func GetChunksInfoHandler(w http.ResponseWriter, r *http.Request) {
 	objJson, err := json.Marshal(chunksInfo)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-	http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", 400)
 		return
 	}
 	w.Write(objJson)

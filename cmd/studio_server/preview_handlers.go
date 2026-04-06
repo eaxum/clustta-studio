@@ -27,6 +27,10 @@ func SendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
 }
 
 func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -94,6 +98,10 @@ func GetPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostPreviewsHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -161,6 +169,10 @@ func PostPreviewsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PreviewsExistHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
