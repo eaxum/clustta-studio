@@ -7,7 +7,6 @@ import (
 	"clustta/internal/constants"
 	"clustta/internal/utils"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -210,7 +209,8 @@ func ShareDownloadHandler(w http.ResponseWriter, r *http.Request) {
 		var chunkData []byte
 		err = tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Chunk %s not found", chunkHash), http.StatusInternalServerError)
+			log.Printf("Chunk %s not found: %v", chunkHash, err)
+			http.Error(w, "Chunk not found", http.StatusInternalServerError)
 			return
 		}
 		chunk := chunk_service.Chunk{Hash: chunkHash, Data: chunkData}

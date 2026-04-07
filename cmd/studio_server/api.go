@@ -69,11 +69,14 @@ func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 
+	// Rate limiter for auth endpoints
+	authLimiter := newIPRateLimiter(5, time.Minute)
+
 	// ============================================
 	// Authentication Endpoints
 	// ============================================
-	router.HandleFunc("POST /auth/register", RegisterUserHandler)
-	router.HandleFunc("POST /auth/login", LoginUserHandler)
+	router.HandleFunc("POST /auth/register", rateLimitHandler(authLimiter, RegisterUserHandler))
+	router.HandleFunc("POST /auth/login", rateLimitHandler(authLimiter, LoginUserHandler))
 	router.HandleFunc("GET /auth/logout", LogoutUserHandler)
 	router.HandleFunc("GET /auth/authenticated", UserAuthenticatedHandler)
 	router.HandleFunc("GET /auth/email-exists/{email}", CheckEmailExistHandler)
@@ -144,7 +147,7 @@ func (s *APIServer) Run() error {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
-			"https://app.clustta.com",
+			"https://*.clustta.com",
 			"http://localhost:1420",
 			"http://wails.localhost:*",
 		},
