@@ -823,6 +823,12 @@ func GetDataHandler(
 		return
 	}
 
+	if err := repository.UpdateProject(projectPath); err != nil {
+		log.Printf("Request error: %v", err)
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+
 	db, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
@@ -885,6 +891,13 @@ func PostDataHandler(
 		http.Error(w, "Project Not Found", 400)
 		return
 	}
+
+	if err := repository.UpdateProject(projectPath); err != nil {
+		log.Printf("Request error: %v", err)
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+
 	db, err := utils.OpenDb(projectPath)
 	if err != nil {
 		log.Printf("Request error: %v", err)
