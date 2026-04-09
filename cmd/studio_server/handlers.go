@@ -339,7 +339,7 @@ func PostProjectHandler(
 		LastName:  serverUser.LastName,
 	}
 
-	projectInfo, err := repository.CreateProject(projectPath, "", "", "No Template", user)
+	projectInfo, err := repository.CreateProject(projectPath, "", "", "No Template", "", user)
 	if err != nil {
 		if utils.FileExists(projectPath) {
 			journal := projectPath + "-journal"
