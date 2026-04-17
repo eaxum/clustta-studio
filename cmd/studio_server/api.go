@@ -136,14 +136,6 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("DELETE /{project}/collaborators/{user_id}", RemoveProjectCollaboratorHandler)
 	router.HandleFunc("GET /{project}/collaborators", GetProjectCollaboratorsHandler)
 
-	// ============================================
-	// Share Endpoints
-	// ============================================
-	router.HandleFunc("POST /{project}/share", CreateShareLinkHandler)
-	router.HandleFunc("GET /share/{token}/download", ShareDownloadHandler)
-	router.HandleFunc("GET /share/{token}/download/{checkpoint_id}", ShareDownloadHandler)
-	router.HandleFunc("GET /share/{token}/metadata", ShareMetadataHandler)
-
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
