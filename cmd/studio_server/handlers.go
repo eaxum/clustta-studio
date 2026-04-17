@@ -1022,6 +1022,80 @@ func PostDataHandler(
 	utils.RunPassiveCheckpoint(db)
 }
 
+// UpdateStatusHandler updates asset statuses in a studio project.
+// Accepts a JSON body with "assets" (array of {asset_id, status_id}).
+func UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := getAuthUser(r); !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	project := r.PathValue("project")
+	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
+	if pathErr != nil {
+		http.Error(w, "Invalid project name", http.StatusBadRequest)
+		return
+	}
+	if !utils.FileExists(projectPath) {
+		http.Error(w, "Project Not Found", http.StatusNotFound)
+		return
+	}
+
+	var body struct {
+		Assets []struct {
+			AssetId  string `json:"asset_id"`
+			StatusId string `json:"status_id"`
+		} `json:"assets"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil || len(body.Assets) == 0 {
+		http.Error(w, "assets array is required", http.StatusBadRequest)
+		return
+	}
+
+	dbConn, err := utils.OpenDb(projectPath)
+	if err != nil {
+		http.Error(w, "Error opening project file", http.StatusInternalServerError)
+		return
+	}
+	defer dbConn.Close()
+
+	tx, err := dbConn.Beginx()
+	if err != nil {
+		http.Error(w, "Error opening transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	type statusResult struct {
+		AssetId  string `json:"asset_id"`
+		StatusId string `json:"status_id"`
+		Status   string `json:"status"`
+		Message  string `json:"message,omitempty"`
+	}
+	results := []statusResult{}
+
+	for _, item := range body.Assets {
+		err := repository.UpdateStatus(tx, item.AssetId, item.StatusId)
+		if err != nil {
+			results = append(results, statusResult{AssetId: item.AssetId, StatusId: item.StatusId, Status: "error", Message: err.Error()})
+			continue
+		}
+		results = append(results, statusResult{AssetId: item.AssetId, StatusId: item.StatusId, Status: "updated"})
+	}
+
+	newSyncToken := utils.GenerateToken()
+	utils.SetProjectSyncToken(tx, newSyncToken)
+	err = tx.Commit()
+	if err != nil {
+		http.Error(w, "Error committing status changes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(results)
+}
+
 func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := getAuthUser(r); !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)

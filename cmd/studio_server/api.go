@@ -130,6 +130,11 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /projects", GetProjectsHandler)
 
 	// ============================================
+	// Project Status
+	// ============================================
+	router.HandleFunc("PUT /{project}/status", UpdateStatusHandler)
+
+	// ============================================
 	// Project Collaborator Endpoints
 	// ============================================
 	router.HandleFunc("POST /{project}/collaborators", AddProjectCollaboratorHandler)
