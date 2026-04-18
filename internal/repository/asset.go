@@ -1193,9 +1193,9 @@ func GetUserAssets(tx *sqlx.Tx, userId string) ([]models.Asset, error) {
 		return nil, err
 	}
 
-	libraryCollections := []string{}
-	query = "select id from collection where is_library = 1"
-	err = tx.Select(&libraryCollections, query)
+	sharedCollections := []string{}
+	query = "select id from collection where is_shared = 1"
+	err = tx.Select(&sharedCollections, query)
 	if err != nil {
 		return nil, err
 	}
@@ -1224,7 +1224,7 @@ func GetUserAssets(tx *sqlx.Tx, userId string) ([]models.Asset, error) {
 		}
 	}
 
-	for _, collectionId := range libraryCollections {
+	for _, collectionId := range sharedCollections {
 		entityAssets := getAllCollectionAssets(collectionId, allAssetInfo, allCollectionInfo)
 		for _, entityAsset := range entityAssets {
 			dependencies[entityAsset] = struct{}{}
@@ -1389,9 +1389,9 @@ func GetUserAssetsMinimal(tx *sqlx.Tx, userId string) ([]models.Asset, error) {
 		return nil, err
 	}
 
-	libraryCollections := []string{}
-	query = "select id from collection where is_library = 1"
-	err = tx.Select(&libraryCollections, query, userId)
+	sharedCollections := []string{}
+	query = "select id from collection where is_shared = 1"
+	err = tx.Select(&sharedCollections, query, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -1419,7 +1419,7 @@ func GetUserAssetsMinimal(tx *sqlx.Tx, userId string) ([]models.Asset, error) {
 			}
 		}
 
-		for _, collectionId := range libraryCollections {
+		for _, collectionId := range sharedCollections {
 			entityAssets := getAllCollectionAssets(collectionId, allAssetInfo, allCollectionInfo)
 			for _, entityAsset := range entityAssets {
 				dependencies[entityAsset] = struct{}{}
