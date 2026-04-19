@@ -877,7 +877,8 @@ func GetDataHandler(
 
 func PostDataHandler(
 	w http.ResponseWriter, r *http.Request) {
-	if _, ok := getAuthUser(r); !ok {
+	authUser, ok := getAuthUser(r)
+	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -984,6 +985,12 @@ func PostDataHandler(
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(conflictResult)
+		return
+	}
+
+	if err := sync_service.AuthorizeProjectDataWrite(tx, authUser.Id, false, requestData); err != nil {
+		log.Printf("AUDIT: user=%s action=sync_denied project=%s reason=%v", authUser.Id, project, err)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
