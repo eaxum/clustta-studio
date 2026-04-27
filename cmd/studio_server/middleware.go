@@ -108,14 +108,24 @@ func getAuthUser(r *http.Request) (UserInfo, bool) {
 
 	// Fall back to session
 	userData := sessionManager.Get(r.Context(), "user")
-	if userData == nil {
-		return UserInfo{}, false
-	}
-	if userBytes, ok := userData.([]byte); ok {
-		var user UserInfo
-		if err := json.Unmarshal(userBytes, &user); err == nil {
-			return user, true
+	if userData != nil {
+		if userBytes, ok := userData.([]byte); ok {
+			var user UserInfo
+			if err := json.Unmarshal(userBytes, &user); err == nil {
+				return user, true
+			}
 		}
 	}
+
+	// Fall back to UserData header when legacy auth is enabled
+	if CONFIG.UseLegacyAuth {
+		if headerData := r.Header.Get("UserData"); headerData != "" {
+			var user UserInfo
+			if err := json.Unmarshal([]byte(headerData), &user); err == nil && user.Id != "" {
+				return user, true
+			}
+		}
+	}
+
 	return UserInfo{}, false
 }
