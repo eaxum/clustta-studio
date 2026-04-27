@@ -9,5 +9,6 @@
   "studio_users_db": "./data/studio_users.db",
   "session_db": "./data/sessions.db",
   "private": true,
+  "use_legacy_auth": false,
   "secure_cookies": false
 }

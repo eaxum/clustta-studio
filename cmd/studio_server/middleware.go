@@ -49,6 +49,10 @@ func ApiTokenMiddleware(next http.Handler) http.Handler {
 				userId, err := api_token_service.ValidateToken(db, rawToken)
 				if err != nil {
 					db.Close()
+					if CONFIG.UseLegacyAuth {
+						next.ServeHTTP(w, r)
+						return
+					}
 					http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
 					return
 				}
