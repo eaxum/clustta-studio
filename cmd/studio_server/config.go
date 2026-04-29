@@ -23,7 +23,6 @@ type Config struct {
 	StudioUsersDB     string `json:"studio_users_db" envconfig:"STUDIO_USERS_DB"`
 	SessionDB         string `json:"session_db" envconfig:"SESSION_DB"`
 	Private           bool   `json:"private" envconfig:"PRIVATE"`
-	UseLegacyAuth     bool   `json:"use_legacy_auth" envconfig:"USE_LEGACY_AUTH"`
 	SecureCookies     bool   `json:"secure_cookies" envconfig:"SECURE_COOKIES"`
 	SMTPHost          string `json:"smtp_host" envconfig:"SMTP_HOST"`
 	SMTPPort          int    `json:"smtp_port" envconfig:"SMTP_PORT"`

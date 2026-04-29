@@ -4,11 +4,17 @@
   "projects_dir": "./data/projects",
   "shared_projects_dir": "./data/shared_projects",
   "server_url": "http://127.0.0.1:7774",
+  "server_alt_url": "",
   "server_name": "Brownies",
   "studio_api_key": "QZR8T2T7NXMDZ1GE3K1HOVEP4UQKL6M8JNOMJHSLM3WX8CCM31TN3DQ4YL7QZQ82",
   "studio_users_db": "./data/studio_users.db",
   "session_db": "./data/sessions.db",
-  "private": true,
-  "use_legacy_auth": false,
-  "secure_cookies": false
+  "private": false,
+  "secure_cookies": false,
+  "smtp_host": "",
+  "smtp_port": 0,
+  "smtp_user": "",
+  "smtp_password": "",
+  "smtp_from": "",
+  "registered_at": "2026-04-29T16:33:16Z"
 }
