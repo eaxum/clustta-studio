@@ -2,7 +2,9 @@ package main
 
 import (
 	"clustta/internal/constants"
+	"clustta/internal/cryptoutil"
 	"clustta/internal/email_service"
+	"clustta/internal/integration_listener"
 	"clustta/internal/repository"
 	"clustta/internal/server/models"
 	"clustta/internal/server/session_service"
@@ -10,6 +12,7 @@ import (
 	"clustta/internal/settings"
 	"clustta/internal/studio_users_service"
 	"clustta/internal/utils"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -302,6 +305,27 @@ func startServer(serverType string) {
 
 	// Initialize email service
 	email_service.Init(CONFIG.SMTPHost, CONFIG.SMTPPort, CONFIG.SMTPUser, CONFIG.SMTPPassword, CONFIG.SMTPFrom)
+
+	// Start the integration listener manager when an encryption key is set.
+	if CONFIG.IntegrationSecretKey != "" {
+		masterKey, keyErr := cryptoutil.DecodeKey(CONFIG.IntegrationSecretKey)
+		if keyErr != nil {
+			log.Printf("Warning: INTEGRATION_SECRET_KEY is invalid: %v (integrations disabled)", keyErr)
+		} else {
+			usersDb, dbErr := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
+			if dbErr != nil {
+				log.Printf("Warning: could not open studio users DB for integrations: %v", dbErr)
+			} else {
+				if d, parseErr := time.ParseDuration(CONFIG.IntegrationReconcileInterval); parseErr == nil {
+					integration_listener.SetReconcileInterval(d)
+				}
+				ListenerManager = integration_listener.NewManager(usersDb, masterKey, CONFIG.ProjectsDir)
+				go ListenerManager.StartAll(context.Background())
+				defer ListenerManager.StopAll()
+				defer usersDb.Close()
+			}
+		}
+	}
 
 	addr := fmt.Sprintf("%s:%s", CONFIG.Host, CONFIG.Port)
 	server := NewAPIServer(addr)

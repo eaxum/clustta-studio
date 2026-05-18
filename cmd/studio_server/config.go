@@ -29,7 +29,12 @@ type Config struct {
 	SMTPUser          string `json:"smtp_user" envconfig:"SMTP_USER"`
 	SMTPPassword      string `json:"smtp_password" envconfig:"SMTP_PASSWORD"`
 	SMTPFrom          string `json:"smtp_from" envconfig:"SMTP_FROM"`
-	RegisteredAt      string `json:"registered_at,omitempty"`
+	// IntegrationSecretKey is the base64-encoded 32-byte AES-GCM master key
+	// for encrypting integration credentials. Empty disables integrations.
+	IntegrationSecretKey string `json:"integration_secret_key" envconfig:"INTEGRATION_SECRET_KEY"`
+	// IntegrationReconcileInterval overrides the default 30m reconcile cadence.
+	IntegrationReconcileInterval string `json:"integration_reconcile_interval" envconfig:"INTEGRATION_RECONCILE_INTERVAL"`
+	RegisteredAt                 string `json:"registered_at,omitempty"`
 }
 
 var CONFIG Config = Config{

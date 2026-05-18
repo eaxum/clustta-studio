@@ -9,12 +9,14 @@
   "studio_api_key": "QZR8T2T7NXMDZ1GE3K1HOVEP4UQKL6M8JNOMJHSLM3WX8CCM31TN3DQ4YL7QZQ82",
   "studio_users_db": "./data/studio_users.db",
   "session_db": "./data/sessions.db",
-  "private": false,
+  "private": true,
   "secure_cookies": false,
   "smtp_host": "",
   "smtp_port": 0,
   "smtp_user": "",
   "smtp_password": "",
   "smtp_from": "",
+  "integration_secret_key": "",
+  "integration_reconcile_interval": "30m",
   "registered_at": "2026-04-29T16:33:16Z"
 }

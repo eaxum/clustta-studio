@@ -7,6 +7,7 @@ import (
 	"clustta/internal/repository/repositorypb"
 	"clustta/internal/repository/sync_service"
 	"clustta/internal/utils"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -1027,6 +1028,27 @@ func PostDataHandler(
 		return
 	}
 	utils.RunPassiveCheckpoint(db)
+
+	// Notify integration listeners when sync touched integration_project rows
+	// so they reconcile within seconds instead of waiting for the next tick.
+	if ListenerManager != nil && len(requestData.IntegrationProjects) > 0 {
+		seen := make(map[string]struct{}, len(requestData.IntegrationProjects))
+		for _, ip := range requestData.IntegrationProjects {
+			if ip.IntegrationId == "" {
+				continue
+			}
+			if _, dup := seen[ip.IntegrationId]; dup {
+				continue
+			}
+			seen[ip.IntegrationId] = struct{}{}
+			integrationId := ip.IntegrationId
+			go func() {
+				if err := ListenerManager.Restart(context.Background(), "", integrationId); err != nil {
+					log.Printf("integration listener restart failed integration=%s err=%v", integrationId, err)
+				}
+			}()
+		}
+	}
 }
 
 // UpdateStatusHandler updates asset statuses in a studio project.

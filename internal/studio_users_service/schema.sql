@@ -48,3 +48,20 @@ CREATE TABLE IF NOT EXISTS studio_project_user (
     added_at INTEGER NOT NULL,
     PRIMARY KEY (project_name, user_id)
 );
+
+-- External integration configuration (Kitsu, etc.) for this studio.
+-- Single-tenant: studio_id is always '' here; column kept for schema parity.
+CREATE TABLE IF NOT EXISTS studio_integration_config (
+    id TEXT PRIMARY KEY NOT NULL,
+    studio_id TEXT NOT NULL DEFAULT '',
+    integration_id TEXT NOT NULL,
+    api_url TEXT NOT NULL,
+    encrypted_credentials TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    last_validated_at INTEGER,
+    last_error TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    UNIQUE (studio_id, integration_id)
+);
+CREATE INDEX IF NOT EXISTS idx_studio_integration_config_studio ON studio_integration_config(studio_id);

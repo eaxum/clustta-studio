@@ -72,6 +72,9 @@ func (s *APIServer) Run() error {
 	// Rate limiter for auth endpoints
 	authLimiter := newIPRateLimiter(5, time.Minute)
 
+	// Studio integration /test issues outbound HTTP per call; cap it.
+	integrationTestLimiter := newIPRateLimiter(10, time.Minute)
+
 	// ============================================
 	// Authentication Endpoints
 	// ============================================
@@ -141,6 +144,16 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("DELETE /{project}/collaborators/{user_id}", RemoveProjectCollaboratorHandler)
 	router.HandleFunc("GET /{project}/collaborators", GetProjectCollaboratorsHandler)
 
+	// ============================================
+	// Studio Integrations (Kitsu, etc.)
+	// 4-segment shape under /studio/ avoids any collision with /{project}/... routes;
+	// {studio_id} is accepted but ignored (single-tenant).
+	// ============================================
+	router.HandleFunc("GET /studio/integrations/{studio_id}/{integration_id}", GetStudioIntegrationHandler)
+	router.HandleFunc("PUT /studio/integrations/{studio_id}/{integration_id}", SaveStudioIntegrationHandler)
+	router.HandleFunc("DELETE /studio/integrations/{studio_id}/{integration_id}", DeleteStudioIntegrationHandler)
+	router.HandleFunc("POST /studio/integrations/{studio_id}/{integration_id}/test", rateLimitHandler(integrationTestLimiter, TestStudioIntegrationHandler))
+	router.HandleFunc("PATCH /studio/integrations/{studio_id}/{integration_id}/enabled", SetStudioIntegrationEnabledHandler)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
@@ -148,7 +161,7 @@ func (s *APIServer) Run() error {
 			"http://localhost:1420",
 			"http://wails.localhost:*",
 		},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData", "Cookie"},
 		AllowCredentials: true,
 	})
