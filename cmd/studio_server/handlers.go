@@ -15,6 +15,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/DataDog/zstd"
@@ -113,6 +115,120 @@ func GetStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 		studioId = "private-studio"
 	}
 
+	response := StudioInfoResponse{
+		Id:     studioId,
+		Name:   CONFIG.ServerName,
+		Url:    CONFIG.ServerURL,
+		AltUrl: CONFIG.ServerAltURL,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// studioNameRegex enforces the allowed character set for a self-hosted studio name.
+var studioNameRegex = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
+
+// reservedStudioNames are values that must not be used as a studio name.
+var reservedStudioNames = map[string]struct{}{
+	"personal": {},
+	"admin":    {},
+	"clustta":  {},
+}
+
+// UpdateStudioInfoHandler updates the local studio config (name, URL, alt URL, port)
+// and persists it to studio_config.json. Admin role required. Self-hosted only —
+// the global Clustta server is not contacted.
+func UpdateStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
+		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var requestingUser UserInfo
+	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusBadRequest)
+		return
+	}
+	serverUser := Users[requestingUser.Id]
+	if serverUser.RoleName != "admin" {
+		SendErrorResponse(w, "Only admins can update studio info", http.StatusForbidden)
+		return
+	}
+
+	var payload struct {
+		Name   *string `json:"name"`
+		Url    *string `json:"url"`
+		AltUrl *string `json:"alt_url"`
+		Port   *string `json:"port"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		SendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	configMutex.Lock()
+	defer configMutex.Unlock()
+
+	updated := CONFIG
+
+	if payload.Name != nil {
+		name := strings.TrimSpace(*payload.Name)
+		if name == "" {
+			SendErrorResponse(w, "name must not be empty", http.StatusBadRequest)
+			return
+		}
+		if len(name) < 2 || len(name) > 64 {
+			SendErrorResponse(w, "name must be 2-64 characters", http.StatusBadRequest)
+			return
+		}
+		if !studioNameRegex.MatchString(name) {
+			SendErrorResponse(w, "name may only contain letters, digits, '.', '_', '-'", http.StatusBadRequest)
+			return
+		}
+		if _, reserved := reservedStudioNames[strings.ToLower(name)]; reserved {
+			SendErrorResponse(w, "name is reserved", http.StatusBadRequest)
+			return
+		}
+		updated.ServerName = name
+	}
+
+	if payload.Url != nil {
+		updated.ServerURL = strings.TrimSpace(*payload.Url)
+	}
+	if payload.AltUrl != nil {
+		updated.ServerAltURL = strings.TrimSpace(*payload.AltUrl)
+	}
+	if payload.Port != nil {
+		port := strings.TrimSpace(*payload.Port)
+		if port != "" {
+			n, err := strconv.Atoi(port)
+			if err != nil || n < 1 || n > 65535 {
+				SendErrorResponse(w, "port must be a number between 1 and 65535", http.StatusBadRequest)
+				return
+			}
+		}
+		updated.Port = port
+	}
+
+	if err := saveConfig(&updated); err != nil {
+		log.Printf("[UpdateStudioInfo] saveConfig failed: %v", err)
+		SendErrorResponse(w, "Failed to persist studio config", http.StatusInternalServerError)
+		return
+	}
+
+	CONFIG = updated
+
+	studioId := CONFIG.ServerName
+	if studioId == "" {
+		studioId = "private-studio"
+	}
 	response := StudioInfoResponse{
 		Id:     studioId,
 		Name:   CONFIG.ServerName,

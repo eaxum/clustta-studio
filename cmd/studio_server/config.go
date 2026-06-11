@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -40,6 +41,10 @@ type Config struct {
 var CONFIG Config = Config{
 	Private: true,
 }
+
+// configMutex serializes concurrent read-modify-write cycles on CONFIG/studio_config.json
+// (e.g. admin-triggered renames hitting PUT /studio-info at the same time).
+var configMutex sync.Mutex
 
 func processError(err error) {
 	fmt.Println(err)

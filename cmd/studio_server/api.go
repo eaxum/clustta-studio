@@ -93,6 +93,7 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /version", VersionHandler)
 	router.HandleFunc("GET /studio-key", GetStudioKeyHandler)
 	router.HandleFunc("GET /studio-info", GetStudioInfoHandler)
+	router.HandleFunc("PUT /studio-info", UpdateStudioInfoHandler)
 
 	// ============================================
 	// Studio User Management Endpoints
