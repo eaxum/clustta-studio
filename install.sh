@@ -27,7 +27,7 @@ BOLD='\033[1m'
 print_banner() {
   echo -e "${CYAN}"
   echo "  ╔═══════════════════════════════════════╗"
-  echo "  ║         Clustta Studio Installer       ║"
+  echo "  ║         Clustta Studio Installer      ║"
   echo "  ╚═══════════════════════════════════════╝"
   echo -e "${NC}"
 }
@@ -158,10 +158,8 @@ configure_env() {
     echo -e "${BOLD}Studio Name${NC}: "
     read -r server_name
 
-    # Auto-detect host IP for server URL
-    local host_ip
-    host_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "0.0.0.0")
-    local default_url="http://${host_ip}/clustta"
+    # Default to loopback; override with a real LAN IP/domain to expose externally.
+    local default_url="http://127.0.0.1/clustta"
     echo -e "${BOLD}Server URL${NC} [${default_url}]: "
     read -r input
     server_url="${input:-$default_url}"
@@ -290,9 +288,14 @@ main() {
     port="80"
   fi
 
-  local host_ip
-  host_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
-  echo -e "  ${BOLD}URL:${NC}         http://${host_ip}:${port}"
+  echo -e "  ${BOLD}Local URL:${NC}   http://127.0.0.1:${port}"
+
+  # Best-effort routable LAN address (skips loopback/Docker bridges).
+  local lan_ip
+  lan_ip=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -Ev '^(127\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.)' | head -n1 || true)
+  if [[ -n "$lan_ip" ]]; then
+    echo -e "  ${BOLD}LAN URL:${NC}     http://${lan_ip}:${port}  ${CYAN}# reachable from other machines${NC}"
+  fi
   echo ""
   echo -e "  Manage with:"
   echo -e "    cd ${INSTALL_DIR}"
