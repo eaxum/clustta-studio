@@ -391,7 +391,7 @@ func CheckEmailExistHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]bool{"exists": exists})
+	json.NewEncoder(w).Encode(map[string]bool{"email_exist": exists})
 }
 
 // CheckUsernameExistHandler checks if a username is already taken
@@ -427,7 +427,7 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]bool{"exists": exists})
+	json.NewEncoder(w).Encode(map[string]bool{"username_exist": exists})
 }
 
 // GetCurrentUserHandler returns the current authenticated user's info

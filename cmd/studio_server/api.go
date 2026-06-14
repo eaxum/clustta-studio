@@ -87,6 +87,13 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /auth/user", GetCurrentUserHandler)
 
 	// ============================================
+	// User Profile Endpoints (basic fields only)
+	// ============================================
+	router.HandleFunc("PUT /auth/user/profile", UpdateCurrentUserHandler)
+	router.HandleFunc("POST /auth/user/photo", UpdateCurrentUserPhotoHandler)
+	router.HandleFunc("POST /auth/change-password", rateLimitHandler(authLimiter, ChangeUserPasswordHandler))
+
+	// ============================================
 	// System Endpoints
 	// ============================================
 	router.HandleFunc("GET /ping", PingHandler)
