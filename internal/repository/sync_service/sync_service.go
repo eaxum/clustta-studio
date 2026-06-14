@@ -870,6 +870,9 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 			if errors.Is(err, error_service.ErrAssetTagNotFound) {
 				err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
 				if err != nil {
+					if err.Error() == "UNIQUE constraint failed: asset_tag.asset_id, asset_tag.tag_id" {
+						continue
+					}
 					return err
 				}
 			} else {
@@ -1222,6 +1225,9 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	for _, assetTag := range data.AssetsTags {
 		err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
 		if err != nil {
+			if err.Error() == "UNIQUE constraint failed: asset_tag.asset_id, asset_tag.tag_id" {
+				continue
+			}
 			return err
 		}
 	}
