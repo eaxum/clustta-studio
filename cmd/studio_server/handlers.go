@@ -70,6 +70,13 @@ type VersionResponse struct {
 	Version string `json:"version"`
 }
 
+type UsageResponse struct {
+	ProjectCount          int   `json:"project_count"`
+	StorageBytes          int64 `json:"storage_bytes"`
+	StorageAvailableBytes int64 `json:"storage_available_bytes"`
+	StorageTotalBytes     int64 `json:"storage_total_bytes"`
+}
+
 func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -77,6 +84,81 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := VersionResponse{Version: Version}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetUsageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	UserData := r.Header.Get("UserData")
+	if UserData == "" {
+		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var requestingUser UserInfo
+	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
+		SendErrorResponse(w, "Invalid user data", http.StatusBadRequest)
+		return
+	}
+	serverUser := Users[requestingUser.Id]
+	if serverUser.RoleName != "admin" {
+		SendErrorResponse(w, "Only admins can view studio usage", http.StatusForbidden)
+		return
+	}
+
+	projectsDir := CONFIG.ProjectsDir
+	if projectsDir == "" {
+		SendErrorResponse(w, "Projects directory is not configured", http.StatusInternalServerError)
+		return
+	}
+
+	var storageBytes int64
+	projectCount := 0
+	cleanProjectsDir := filepath.Clean(projectsDir)
+	err := filepath.WalkDir(projectsDir, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			storageBytes += info.Size()
+			if filepath.Dir(filepath.Clean(path)) == cleanProjectsDir && strings.EqualFold(filepath.Ext(info.Name()), ".clst") {
+				projectCount++
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Printf("[GetUsage] failed to inspect projects directory %q: %v", projectsDir, err)
+		SendErrorResponse(w, "Failed to inspect projects directory", http.StatusInternalServerError)
+		return
+	}
+
+	diskStats, err := getDiskStats(projectsDir)
+	if err != nil {
+		log.Printf("[GetUsage] failed to inspect disk for %q: %v", projectsDir, err)
+		SendErrorResponse(w, "Failed to inspect storage volume", http.StatusInternalServerError)
+		return
+	}
+
+	response := UsageResponse{
+		ProjectCount:          projectCount,
+		StorageBytes:          storageBytes,
+		StorageAvailableBytes: diskStats.AvailableBytes,
+		StorageTotalBytes:     diskStats.TotalBytes,
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
