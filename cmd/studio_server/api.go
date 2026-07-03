@@ -38,6 +38,10 @@ func (lrw *loggingResponseWriter) Flush() {
 	}
 }
 
+func (lrw *loggingResponseWriter) Unwrap() http.ResponseWriter {
+	return lrw.ResponseWriter
+}
+
 func RecoveryMiddleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {

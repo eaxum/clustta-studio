@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/DataDog/zstd"
 	"github.com/jmoiron/sqlx"
@@ -1395,6 +1396,11 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	rc := http.NewResponseController(w)
+	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+		log.Printf("Stream chunks: failed to clear write deadline: %v", err)
+	}
+
 	project := r.PathValue("project")
 	projectPath, pathErr := safeProjectPath(CONFIG.ProjectsDir, project)
 	if pathErr != nil {
@@ -1437,13 +1443,17 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
-	flusher, ok := w.(http.Flusher)
-	if !ok {
+	if _, ok := w.(http.Flusher); !ok {
 		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
 		return
 	}
 
 	for _, chunkHash := range data.Chunks {
+		if err := r.Context().Err(); err != nil {
+			log.Printf("Stream chunks: request cancelled for project %s after client disconnect: %v", project, err)
+			return
+		}
+
 		var chunkData []byte
 		err = tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
 		if err != nil {
@@ -1462,8 +1472,14 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Send chunk data to client
-		_, _ = w.Write(encodedChunk)
-		flusher.Flush() // Flush to stream each chunk immediately
+		if _, err := w.Write(encodedChunk); err != nil {
+			log.Printf("Stream chunks: write failed for project %s chunk %s: %v", project, chunkHash, err)
+			return
+		}
+		if err := rc.Flush(); err != nil {
+			log.Printf("Stream chunks: flush failed for project %s chunk %s: %v", project, chunkHash, err)
+			return
+		}
 	}
 }
 
