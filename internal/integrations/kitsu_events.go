@@ -14,6 +14,8 @@ type ExternalAssignment struct {
 	IntegrationId string
 	ProjectId     string
 	TaskId        string
+	TaskTypeId    string
+	TaskTypeName  string
 	PersonIds     []string
 	Status        string
 }
@@ -54,6 +56,8 @@ func (k *KitsuClient) GetTask(token, apiUrl, taskId string) (ExternalAssignment,
 		IntegrationId: "kitsu",
 		ProjectId:     task.ProjectID,
 		TaskId:        task.ID,
+		TaskTypeId:    task.TaskTypeID,
+		TaskTypeName:  task.TaskTypeName,
 		PersonIds:     task.Assignees,
 		Status:        task.TaskStatusID,
 	}, nil
@@ -98,6 +102,8 @@ func (k *KitsuClient) GetProjectAssignments(token, apiUrl, projectId string) ([]
 			IntegrationId: "kitsu",
 			ProjectId:     projectId,
 			TaskId:        t.ID,
+			TaskTypeId:    t.TaskTypeID,
+			TaskTypeName:  t.TaskTypeName,
 			PersonIds:     t.Assignees,
 			Status:        t.TaskStatusID,
 		})

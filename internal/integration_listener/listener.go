@@ -488,6 +488,9 @@ func (l *StudioListener) applyToProject(projectPath string, a integrations.Exter
 		}
 		return "mapping-only-asset-missing", nil
 	}
+	if !assignmentMatchesActiveAssetType(a, mapping.ExternalType, asset.AssetTypeName) {
+		return "skipped-inactive-task-type:" + activeAssignmentType(a, mapping.ExternalType) + "!=" + asset.AssetTypeName, nil
+	}
 
 	assigneeChanged := false
 	statusChanged := false
@@ -572,6 +575,29 @@ func resolveStatusId(syncOptionsJSON, externalStatusId string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func assignmentMatchesActiveAssetType(a integrations.ExternalAssignment, mappingExternalType, assetTypeName string) bool {
+	incomingType := normalizeTaskTypeName(activeAssignmentType(a, mappingExternalType))
+	activeType := normalizeTaskTypeName(assetTypeName)
+	if incomingType == "" || activeType == "" {
+		return true
+	}
+	return incomingType == activeType
+}
+
+func activeAssignmentType(a integrations.ExternalAssignment, mappingExternalType string) string {
+	if a.TaskTypeName != "" {
+		return a.TaskTypeName
+	}
+	return mappingExternalType
+}
+
+func normalizeTaskTypeName(value string) string {
+	value = strings.TrimSpace(strings.ToLower(value))
+	value = strings.ReplaceAll(value, "_", " ")
+	value = strings.ReplaceAll(value, "-", " ")
+	return strings.Join(strings.Fields(value), " ")
 }
 
 // spawnReconcile runs reconcile in a separate goroutine so the main
