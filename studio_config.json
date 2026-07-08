@@ -16,7 +16,7 @@
   "smtp_user": "",
   "smtp_password": "",
   "smtp_from": "",
-  "integration_secret_key": "",
+  "integration_secret_key": "cQdn/mXA0zAwE996z8Tkxr3nVcWAKQhkyZmCxnFbTDI=",
   "integration_reconcile_interval": "30m",
   "registered_at": "2026-04-29T16:33:16Z"
 }
