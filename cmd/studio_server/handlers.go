@@ -3,6 +3,7 @@ package main
 import (
 	"clustta/internal/auth_service"
 	"clustta/internal/chunk_service"
+	"clustta/internal/metadata_service"
 	"clustta/internal/repository"
 	"clustta/internal/repository/repositorypb"
 	"clustta/internal/repository/sync_service"
@@ -1253,7 +1254,8 @@ func PostDataHandler(
 // UpdateStatusHandler updates asset statuses in a studio project.
 // Accepts a JSON body with "assets" (array of {asset_id, status_id}).
 func UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
-	if _, ok := getAuthUser(r); !ok {
+	authUser, ok := getAuthUser(r)
+	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -1293,26 +1295,23 @@ func UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-
 	type statusResult struct {
 		AssetId  string `json:"asset_id"`
 		StatusId string `json:"status_id"`
 		Status   string `json:"status"`
 		Message  string `json:"message,omitempty"`
 	}
-	results := []statusResult{}
-
+	request := metadata_service.AssetRequest{Assets: make([]metadata_service.AssetPatch, 0, len(body.Assets))}
+	results := make([]statusResult, 0, len(body.Assets))
 	for _, item := range body.Assets {
-		err := repository.UpdateStatus(tx, item.AssetId, item.StatusId)
-		if err != nil {
-			results = append(results, statusResult{AssetId: item.AssetId, StatusId: item.StatusId, Status: "error", Message: err.Error()})
-			continue
-		}
+		statusId := item.StatusId
+		request.Assets = append(request.Assets, metadata_service.AssetPatch{Id: item.AssetId, StatusId: &statusId})
 		results = append(results, statusResult{AssetId: item.AssetId, StatusId: item.StatusId, Status: "updated"})
 	}
-
-	newSyncToken := utils.GenerateToken()
-	utils.SetProjectSyncToken(tx, newSyncToken)
+	if _, err = metadata_service.ApplyAssets(tx, authUser.Id, request); err != nil {
+		writeMutationError(w, err)
+		return
+	}
 	err = tx.Commit()
 	if err != nil {
 		http.Error(w, "Error committing status changes", http.StatusInternalServerError)

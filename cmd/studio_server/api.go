@@ -149,6 +149,8 @@ func (s *APIServer) Run() error {
 	// Project Status
 	// ============================================
 	router.HandleFunc("PUT /{project}/status", UpdateStatusHandler)
+	router.HandleFunc("PATCH /{project}/assets", PatchAssetsHandler)
+	router.HandleFunc("PATCH /{project}/collections", PatchCollectionsHandler)
 
 	// ============================================
 	// Project Collaborator Endpoints
