@@ -1,6 +1,7 @@
 package metadata_service
 
 import (
+	"clustta/internal/error_service"
 	"clustta/internal/repository"
 	"clustta/internal/repository/models"
 	"clustta/internal/utils"
@@ -13,10 +14,11 @@ import (
 var ErrForbidden = errors.New("forbidden")
 
 type AssetPatch struct {
-	Id         string  `json:"id"`
-	StatusId   *string `json:"status_id,omitempty"`
-	AssigneeId *string `json:"assignee_id,omitempty"`
-	IsTask     *bool   `json:"is_task,omitempty"`
+	Id          string  `json:"id"`
+	StatusId    *string `json:"status_id,omitempty"`
+	AssigneeId  *string `json:"assignee_id,omitempty"`
+	IsTask      *bool   `json:"is_task,omitempty"`
+	AssetTypeId *string `json:"asset_type_id,omitempty"`
 }
 
 // UnmarshalJSON preserves the distinction between an omitted assignee_id
@@ -56,6 +58,7 @@ type AssetResponse struct {
 type CollectionPatch struct {
 	Id                string   `json:"id"`
 	IsShared          *bool    `json:"is_shared,omitempty"`
+	CollectionTypeId  *string  `json:"collection_type_id,omitempty"`
 	AddAssigneeIds    []string `json:"add_assignee_ids,omitempty"`
 	RemoveAssigneeIds []string `json:"remove_assignee_ids,omitempty"`
 }
@@ -66,6 +69,22 @@ type CollectionResponse struct {
 	Collections         []models.Collection         `json:"collections"`
 	CollectionAssignees []models.CollectionAssignee `json:"collection_assignees"`
 	SyncToken           string                      `json:"sync_token"`
+}
+
+type TypePutRequest struct {
+	Id   string `json:"-"`
+	Name string `json:"name"`
+	Icon string `json:"icon"`
+}
+
+type AssetTypeResponse struct {
+	AssetType models.AssetType `json:"asset_type"`
+	SyncToken string           `json:"sync_token"`
+}
+
+type CollectionTypeResponse struct {
+	CollectionType models.CollectionType `json:"collection_type"`
+	SyncToken      string                `json:"sync_token"`
 }
 
 func ApplyAssets(tx *sqlx.Tx, actorId string, req AssetRequest) (AssetResponse, error) {
@@ -88,6 +107,14 @@ func ApplyAssets(tx *sqlx.Tx, actorId string, req AssetRequest) (AssetResponse, 
 		}
 		if p.IsTask != nil && !actor.Role.UpdateAsset {
 			return AssetResponse{}, ErrForbidden
+		}
+		if p.AssetTypeId != nil {
+			if !actor.Role.UpdateAsset {
+				return AssetResponse{}, ErrForbidden
+			}
+			if _, err = repository.GetAssetType(tx, *p.AssetTypeId); err != nil {
+				return AssetResponse{}, err
+			}
 		}
 		if p.AssigneeId != nil {
 			if *p.AssigneeId == "" && !actor.Role.UnassignAsset {
@@ -128,6 +155,11 @@ func ApplyAssets(tx *sqlx.Tx, actorId string, req AssetRequest) (AssetResponse, 
 				return AssetResponse{}, err
 			}
 		}
+		if p.AssetTypeId != nil {
+			if err = repository.ChangeAssetType(tx, p.Id, *p.AssetTypeId); err != nil {
+				return AssetResponse{}, err
+			}
+		}
 		a, e := repository.GetSimpleAsset(tx, p.Id)
 		if e != nil {
 			return AssetResponse{}, e
@@ -155,6 +187,11 @@ func ApplyCollections(tx *sqlx.Tx, actorId string, req CollectionRequest) (Colle
 		if err = tx.Get(&n, "SELECT COUNT(*) FROM collection WHERE id=? AND trashed=0", p.Id); err != nil || n == 0 {
 			return CollectionResponse{}, fmt.Errorf("collection_not_found: %s", p.Id)
 		}
+		if p.CollectionTypeId != nil {
+			if _, err = repository.GetCollectionType(tx, *p.CollectionTypeId); err != nil {
+				return CollectionResponse{}, err
+			}
+		}
 		for _, uid := range p.AddAssigneeIds {
 			if _, err = repository.GetUser(tx, uid); err != nil {
 				return CollectionResponse{}, fmt.Errorf("assignee_not_collaborator: %s", uid)
@@ -165,6 +202,11 @@ func ApplyCollections(tx *sqlx.Tx, actorId string, req CollectionRequest) (Colle
 	for _, p := range req.Collections {
 		if p.IsShared != nil {
 			if err = repository.ChangeIsShared(tx, p.Id, *p.IsShared); err != nil {
+				return CollectionResponse{}, err
+			}
+		}
+		if p.CollectionTypeId != nil {
+			if err = repository.ChangeCollectionType(tx, p.Id, *p.CollectionTypeId); err != nil {
 				return CollectionResponse{}, err
 			}
 		}
@@ -201,6 +243,52 @@ func ApplyCollections(tx *sqlx.Tx, actorId string, req CollectionRequest) (Colle
 		out.CollectionAssignees = append(out.CollectionAssignees, rows...)
 	}
 	out.SyncToken = utils.GenerateToken()
+	err = utils.SetProjectSyncToken(tx, out.SyncToken)
+	return out, err
+}
+
+func PutAssetType(tx *sqlx.Tx, actorId string, req TypePutRequest) (AssetTypeResponse, error) {
+	actor, err := repository.GetUser(tx, actorId)
+	if err != nil || actor.Role.Name != "admin" {
+		return AssetTypeResponse{}, ErrForbidden
+	}
+	if req.Id == "" || req.Name == "" {
+		return AssetTypeResponse{}, fmt.Errorf("id and name are required")
+	}
+	assetType, err := repository.GetAssetType(tx, req.Id)
+	if errors.Is(err, error_service.ErrAssetTypeNotFound) {
+		assetType, err = repository.CreateAssetType(tx, req.Id, req.Name, req.Icon)
+	} else if err == nil && (assetType.Name != req.Name || assetType.Icon != req.Icon) {
+		assetType, err = repository.UpdateAssetType(tx, req.Id, req.Name, req.Icon)
+	}
+	if err != nil {
+		return AssetTypeResponse{}, err
+	}
+	assetType.Synced = true
+	out := AssetTypeResponse{AssetType: assetType, SyncToken: utils.GenerateToken()}
+	err = utils.SetProjectSyncToken(tx, out.SyncToken)
+	return out, err
+}
+
+func PutCollectionType(tx *sqlx.Tx, actorId string, req TypePutRequest) (CollectionTypeResponse, error) {
+	actor, err := repository.GetUser(tx, actorId)
+	if err != nil || actor.Role.Name != "admin" {
+		return CollectionTypeResponse{}, ErrForbidden
+	}
+	if req.Id == "" || req.Name == "" {
+		return CollectionTypeResponse{}, fmt.Errorf("id and name are required")
+	}
+	collectionType, err := repository.GetCollectionType(tx, req.Id)
+	if errors.Is(err, error_service.ErrCollectionTypeNotFound) {
+		collectionType, err = repository.CreateCollectionType(tx, req.Id, req.Name, req.Icon)
+	} else if err == nil && (collectionType.Name != req.Name || collectionType.Icon != req.Icon) {
+		collectionType, err = repository.UpdateCollectionType(tx, req.Id, req.Name, req.Icon)
+	}
+	if err != nil {
+		return CollectionTypeResponse{}, err
+	}
+	collectionType.Synced = true
+	out := CollectionTypeResponse{CollectionType: collectionType, SyncToken: utils.GenerateToken()}
 	err = utils.SetProjectSyncToken(tx, out.SyncToken)
 	return out, err
 }

@@ -96,3 +96,65 @@ func PatchCollectionsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(out)
 }
+
+func PutAssetTypeHandler(w http.ResponseWriter, r *http.Request) {
+	id, db, ok := openMutationProject(w, r)
+	if !ok {
+		return
+	}
+	defer db.Close()
+	var req metadata_service.TypePutRequest
+	if json.NewDecoder(r.Body).Decode(&req) != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	req.Id = r.PathValue("type_id")
+	tx, e := db.Beginx()
+	if e != nil {
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+	defer tx.Rollback()
+	out, e := metadata_service.PutAssetType(tx, id, req)
+	if e != nil {
+		writeMutationError(w, e)
+		return
+	}
+	if e = tx.Commit(); e != nil {
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
+}
+
+func PutCollectionTypeHandler(w http.ResponseWriter, r *http.Request) {
+	id, db, ok := openMutationProject(w, r)
+	if !ok {
+		return
+	}
+	defer db.Close()
+	var req metadata_service.TypePutRequest
+	if json.NewDecoder(r.Body).Decode(&req) != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	req.Id = r.PathValue("type_id")
+	tx, e := db.Beginx()
+	if e != nil {
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+	defer tx.Rollback()
+	out, e := metadata_service.PutCollectionType(tx, id, req)
+	if e != nil {
+		writeMutationError(w, e)
+		return
+	}
+	if e = tx.Commit(); e != nil {
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
+}
