@@ -52,8 +52,9 @@ type AssetRequest struct {
 	Assets []AssetPatch `json:"assets"`
 }
 type AssetResponse struct {
-	Assets    []models.Asset `json:"assets"`
-	SyncToken string         `json:"sync_token"`
+	Assets            []models.Asset `json:"assets"`
+	PreviousSyncToken string         `json:"previous_sync_token"`
+	SyncToken         string         `json:"sync_token"`
 }
 type CollectionPatch struct {
 	Id                string   `json:"id"`
@@ -68,6 +69,7 @@ type CollectionRequest struct {
 type CollectionResponse struct {
 	Collections         []models.Collection         `json:"collections"`
 	CollectionAssignees []models.CollectionAssignee `json:"collection_assignees"`
+	PreviousSyncToken   string                      `json:"previous_sync_token"`
 	SyncToken           string                      `json:"sync_token"`
 }
 
@@ -78,13 +80,15 @@ type TypePutRequest struct {
 }
 
 type AssetTypeResponse struct {
-	AssetType models.AssetType `json:"asset_type"`
-	SyncToken string           `json:"sync_token"`
+	AssetType         models.AssetType `json:"asset_type"`
+	PreviousSyncToken string           `json:"previous_sync_token"`
+	SyncToken         string           `json:"sync_token"`
 }
 
 type CollectionTypeResponse struct {
-	CollectionType models.CollectionType `json:"collection_type"`
-	SyncToken      string                `json:"sync_token"`
+	CollectionType    models.CollectionType `json:"collection_type"`
+	PreviousSyncToken string                `json:"previous_sync_token"`
+	SyncToken         string                `json:"sync_token"`
 }
 
 func ApplyAssets(tx *sqlx.Tx, actorId string, req AssetRequest) (AssetResponse, error) {
@@ -133,7 +137,11 @@ func ApplyAssets(tx *sqlx.Tx, actorId string, req AssetRequest) (AssetResponse, 
 			return AssetResponse{}, fmt.Errorf("assigned_asset_must_be_task: %s", p.Id)
 		}
 	}
-	out := AssetResponse{Assets: make([]models.Asset, 0, len(req.Assets))}
+	previousSyncToken, err := utils.GetProjectSyncToken(tx)
+	if err != nil {
+		return AssetResponse{}, err
+	}
+	out := AssetResponse{Assets: make([]models.Asset, 0, len(req.Assets)), PreviousSyncToken: previousSyncToken}
 	for _, p := range req.Assets {
 		if p.StatusId != nil {
 			if err = repository.UpdateStatus(tx, p.Id, *p.StatusId); err != nil {
@@ -198,7 +206,11 @@ func ApplyCollections(tx *sqlx.Tx, actorId string, req CollectionRequest) (Colle
 			}
 		}
 	}
-	out := CollectionResponse{Collections: make([]models.Collection, 0, len(req.Collections))}
+	previousSyncToken, err := utils.GetProjectSyncToken(tx)
+	if err != nil {
+		return CollectionResponse{}, err
+	}
+	out := CollectionResponse{Collections: make([]models.Collection, 0, len(req.Collections)), PreviousSyncToken: previousSyncToken}
 	for _, p := range req.Collections {
 		if p.IsShared != nil {
 			if err = repository.ChangeIsShared(tx, p.Id, *p.IsShared); err != nil {
@@ -255,6 +267,10 @@ func PutAssetType(tx *sqlx.Tx, actorId string, req TypePutRequest) (AssetTypeRes
 	if req.Id == "" || req.Name == "" {
 		return AssetTypeResponse{}, fmt.Errorf("id and name are required")
 	}
+	previousSyncToken, err := utils.GetProjectSyncToken(tx)
+	if err != nil {
+		return AssetTypeResponse{}, err
+	}
 	assetType, err := repository.GetAssetType(tx, req.Id)
 	if errors.Is(err, error_service.ErrAssetTypeNotFound) {
 		assetType, err = repository.CreateAssetType(tx, req.Id, req.Name, req.Icon)
@@ -265,7 +281,7 @@ func PutAssetType(tx *sqlx.Tx, actorId string, req TypePutRequest) (AssetTypeRes
 		return AssetTypeResponse{}, err
 	}
 	assetType.Synced = true
-	out := AssetTypeResponse{AssetType: assetType, SyncToken: utils.GenerateToken()}
+	out := AssetTypeResponse{AssetType: assetType, PreviousSyncToken: previousSyncToken, SyncToken: utils.GenerateToken()}
 	err = utils.SetProjectSyncToken(tx, out.SyncToken)
 	return out, err
 }
@@ -278,6 +294,10 @@ func PutCollectionType(tx *sqlx.Tx, actorId string, req TypePutRequest) (Collect
 	if req.Id == "" || req.Name == "" {
 		return CollectionTypeResponse{}, fmt.Errorf("id and name are required")
 	}
+	previousSyncToken, err := utils.GetProjectSyncToken(tx)
+	if err != nil {
+		return CollectionTypeResponse{}, err
+	}
 	collectionType, err := repository.GetCollectionType(tx, req.Id)
 	if errors.Is(err, error_service.ErrCollectionTypeNotFound) {
 		collectionType, err = repository.CreateCollectionType(tx, req.Id, req.Name, req.Icon)
@@ -288,7 +308,7 @@ func PutCollectionType(tx *sqlx.Tx, actorId string, req TypePutRequest) (Collect
 		return CollectionTypeResponse{}, err
 	}
 	collectionType.Synced = true
-	out := CollectionTypeResponse{CollectionType: collectionType, SyncToken: utils.GenerateToken()}
+	out := CollectionTypeResponse{CollectionType: collectionType, PreviousSyncToken: previousSyncToken, SyncToken: utils.GenerateToken()}
 	err = utils.SetProjectSyncToken(tx, out.SyncToken)
 	return out, err
 }
