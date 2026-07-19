@@ -17,6 +17,7 @@ type Config struct {
 	Port              string `json:"port" envconfig:"CLUSTTA_PORT"`
 	ProjectsDir       string `json:"projects_dir" envconfig:"PROJECTS_DIR"`
 	SharedProjectsDir string `json:"shared_projects_dir" envconfig:"SHARED_PROJECTS_DIR"`
+	StorageDir        string `json:"storage_dir" envconfig:"STORAGE_DIR"`
 	ServerURL         string `json:"server_url" envconfig:"CLUSTTA_SERVER_URL"`
 	ServerAltURL      string `json:"server_alt_url" envconfig:"CLUSTTA_SERVER_ALT_URL"`
 	ServerName        string `json:"server_name" envconfig:"CLUSTTA_SERVER_NAME"`

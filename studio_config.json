@@ -3,6 +3,7 @@
   "port": "7774",
   "projects_dir": "./data/projects",
   "shared_projects_dir": "./data/shared_projects",
+  "storage_dir": "./data/storage",
   "server_url": "http://127.0.0.1:7774",
   "server_alt_url": "",
   "server_name": "Brownies",

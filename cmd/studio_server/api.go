@@ -1,8 +1,11 @@
 package main
 
 import (
+	"clustta/internal/chunk_service"
+	"clustta/internal/utils"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rs/cors"
@@ -59,6 +62,37 @@ func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 		lrw := NewLoggingResponseWriter(w)
 		next.ServeHTTP(lrw, r)
 		log.Printf("Method %s Path: %s, %d ", r.Method, r.URL.Path, lrw.statusCode)
+	})
+}
+
+// ProjectStorageMiddleware makes a Deflated project unavailable when its
+// Studio-wide storage root is not configured, instead of exposing partial data.
+func ProjectStorageMiddleware(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !chunk_service.StorageDirectoryAvailable() {
+			parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+			if len(parts) > 0 && parts[0] != "" {
+				projectPath, err := safeProjectPath(CONFIG.ProjectsDir, parts[0])
+				if err == nil && utils.FileExists(projectPath) {
+					db, openErr := utils.OpenDb(projectPath)
+					if openErr == nil {
+						tx, beginErr := db.Beginx()
+						if beginErr == nil {
+							mode, modeErr := chunk_service.GetProjectStorageMode(tx)
+							tx.Rollback()
+							db.Close()
+							if modeErr == nil && mode == chunk_service.StorageModeDeflated {
+								http.Error(w, "Project storage is unavailable", http.StatusServiceUnavailable)
+								return
+							}
+						} else {
+							db.Close()
+						}
+					}
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -184,7 +218,8 @@ func (s *APIServer) Run() error {
 	})
 
 	// Wrap with session manager for auth endpoints
-	handlerWithSession := sessionManager.LoadAndSave(c.Handler(router))
+	handlerWithStorage := ProjectStorageMiddleware(c.Handler(router))
+	handlerWithSession := sessionManager.LoadAndSave(handlerWithStorage)
 	handlerWithApiToken := ApiTokenMiddleware(handlerWithSession)
 	handlerWithRecovery := RecoveryMiddleware(handlerWithApiToken)
 	handlerWithLogging := RequestLoggerMiddleware(handlerWithRecovery)

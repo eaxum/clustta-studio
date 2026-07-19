@@ -1,6 +1,7 @@
 package main
 
 import (
+	"clustta/internal/chunk_service"
 	"clustta/internal/constants"
 	"clustta/internal/cryptoutil"
 	"clustta/internal/email_service"
@@ -178,6 +179,9 @@ func startServer(serverType string) {
 	}
 
 	loadDefaults(&CONFIG)
+	if err := chunk_service.ConfigureProjectStorage(CONFIG.StorageDir); err != nil {
+		log.Printf("Warning: Deflated storage unavailable: %v", err)
+	}
 
 	// Set private mode globals for internal packages
 	constants.PrivateMode = CONFIG.Private

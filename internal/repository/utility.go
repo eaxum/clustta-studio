@@ -82,13 +82,7 @@ func StoreFileChunks(tx *sqlx.Tx, filePath string, callback func(int, int, strin
 		// defer encoder.Close()
 		// compressedData := encoder.EncodeAll(data, nil)
 
-		size := len(compressedData)
-
-		_, err = tx.Exec("INSERT INTO chunk (hash, data, size) VALUES (?, ?, ?)",
-			hash,
-			compressedData,
-			size,
-		)
+		err = chunk_service.StoreChunk(tx, hash, compressedData, len(compressedData))
 		if err != nil {
 			return "", err
 		}
@@ -108,31 +102,10 @@ func CheckMissingChunks(tx *sqlx.Tx, chunkHashes []string) ([]string, error) {
 		return nil, nil // No hashes to check, return an empty result
 	}
 
-	quotedChunkHashes := make([]string, len(chunkHashes))
-	for i, hash := range chunkHashes {
-		quotedChunkHashes[i] = fmt.Sprintf("\"%s\"", hash)
-	}
-
-	query := fmt.Sprintf(`SELECT hash FROM chunk WHERE hash IN (%s)`, strings.Join(quotedChunkHashes, ","))
-
-	rows, err := tx.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query database: %w", err)
-	}
-	defer rows.Close()
-
-	existingHashes := make(map[string]struct{})
-	for rows.Next() {
-		var hash string
-		if err := rows.Scan(&hash); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
-		}
-		existingHashes[hash] = struct{}{}
-	}
-
 	var missingHashes []string
+	seen := make(map[string]bool)
 	for _, hash := range chunkHashes {
-		if _, found := existingHashes[hash]; !found {
+		if !chunk_service.ChunkExists(hash, tx, seen) {
 			missingHashes = append(missingHashes, hash)
 		}
 	}
@@ -164,8 +137,8 @@ func RebuildFile(tx *sqlx.Tx, chunks string, filePath string, timeModified int64
 	}
 	processedChunks := 0
 	for _, chunkHash := range chunkHashes {
-		var data []byte
-		err = tx.Get(&data, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
+		data, readErr := chunk_service.ReadChunk(tx, chunkHash)
+		err = readErr
 		if err != nil {
 			return err
 		}

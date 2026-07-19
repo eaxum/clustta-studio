@@ -549,6 +549,22 @@ CREATE TABLE IF NOT EXISTS chunk (
     size INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS project_storage (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    mode TEXT NOT NULL CHECK (mode IN ('compact', 'deflated', 'object_storage')),
+    updated_at INTEGER NOT NULL
+);
+
+INSERT OR IGNORE INTO project_storage (id, mode, updated_at)
+VALUES (1, 'compact', unixepoch());
+
+CREATE TABLE IF NOT EXISTS chunk_ref (
+    hash TEXT PRIMARY KEY NOT NULL,
+    storage_key TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS "role" (
     id TEXT PRIMARY KEY,
     mtime INTEGER NOT NULL,

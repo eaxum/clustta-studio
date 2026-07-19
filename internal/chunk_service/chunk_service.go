@@ -60,12 +60,7 @@ type ChunkInfo struct {
 }
 
 func GetChunkInfo(tx *sqlx.Tx, chunkHash string) (ChunkInfo, error) {
-	var chunkInfo ChunkInfo
-	err := tx.Get(&chunkInfo, "SELECT hash, size FROM chunk WHERE hash = ?", chunkHash)
-	if err != nil {
-		return chunkInfo, err
-	}
-	return chunkInfo, nil
+	return chunkInfoFromStore(tx, chunkHash)
 }
 
 func GetChunksInfo(tx *sqlx.Tx, chunkHashes []string) ([]ChunkInfo, error) {
@@ -106,11 +101,7 @@ func WriteChunkData(projectPath string, chunkData Chunk) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Exec("INSERT INTO chunk (hash, data, size) VALUES (?, ?, ?)",
-		chunkData.Hash,
-		chunkData.Data,
-		chunkData.Size,
-	)
+	err = StoreChunk(tx, chunkData.Hash, chunkData.Data, chunkData.Size)
 	if err != nil {
 		return err
 	}
@@ -172,12 +163,7 @@ func WriteChunks(projectPath string, chunks []byte) ([]string, error) {
 			continue
 		}
 
-		size := len(compressedValue)
-		_, err = tx.Exec("INSERT INTO chunk (hash, data, size) VALUES (?, ?, ?)",
-			hex.EncodeToString(tag),
-			compressedValue,
-			size,
-		)
+		err = StoreChunk(tx, hex.EncodeToString(tag), compressedValue, len(compressedValue))
 		if err != nil {
 			return failedChunks, err
 		}
@@ -362,11 +348,12 @@ func PullChunks(ctx context.Context, projectPath, remoteUrl string, chunkInfos [
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			var chunkData Chunk
-			err = remoteTx.Get(&chunkData, "SELECT * FROM chunk WHERE hash = ?", chunkInfo.Hash)
+			chunkBytes, readErr := ReadChunk(remoteTx, chunkInfo.Hash)
+			err = readErr
 			if err != nil {
 				return err
 			}
+			chunkData := Chunk{Hash: chunkInfo.Hash, Data: chunkBytes, Size: chunkInfo.Size}
 			err = WriteChunkData(projectPath, chunkData)
 			if err != nil {
 				return err
@@ -459,12 +446,7 @@ func processTLVStream(ctx context.Context, projectPath string, r io.Reader, down
 		}
 		compressedSize := len(compressedValue)
 		size := len(decompressedValue)
-		// Store chunk in SQLite
-		_, err = tx.Exec("INSERT INTO chunk (hash, data, size) VALUES (?, ?, ?)",
-			hex.EncodeToString(tag),
-			compressedValue,
-			size,
-		)
+		err = StoreChunk(tx, hex.EncodeToString(tag), compressedValue, size)
 		if err != nil {
 			return fmt.Errorf("error inserting into DB: %w", err)
 		}
@@ -527,12 +509,11 @@ func ProcessDownloadedChunksProgress(ctx context.Context, projectPath, remoteUrl
 		if missingChunksMap[hash] {
 			continue
 		}
-		var size int
-		err := tx.Get(&size, "SELECT size FROM chunk WHERE hash = ?", hash)
+		chunkInfo, err := GetChunkInfo(tx, hash)
 		if err != nil {
 			return downloadedSize, totalSize, chunksCountMap, err
 		}
-		downloadedSize += size * count
+		downloadedSize += chunkInfo.Size * count
 
 		message := fmt.Sprintf("Pulling data %s/%s", utils.BytesToHumanReadable(downloadedSize), utils.BytesToHumanReadable(totalSize))
 		extraMessage := ""
@@ -621,8 +602,7 @@ func PushChunks(tx *sqlx.Tx, remoteUrl string, userId string, chunkInfos []Chunk
 
 	if utils.IsValidURL(remoteUrl) {
 		for _, chunkInfo := range chunkInfos {
-			var chunkData []byte
-			err := tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkInfo.Hash)
+			chunkData, err := ReadChunk(tx, chunkInfo.Hash)
 			if err != nil {
 				return err
 			}
@@ -673,16 +653,12 @@ func PushChunks(tx *sqlx.Tx, remoteUrl string, userId string, chunkInfos []Chunk
 		}
 
 		for _, chunkInfo := range chunkInfos {
-			var chunkData Chunk
-			err = tx.Get(&chunkData, "SELECT * FROM chunk WHERE hash = ?", chunkInfo.Hash)
+			chunkBytes, readErr := ReadChunk(tx, chunkInfo.Hash)
+			err = readErr
 			if err != nil {
 				return err
 			}
-			_, err = remoteTx.Exec("INSERT INTO chunk (hash, data, size) VALUES (?, ?, ?)",
-				chunkData.Hash,
-				chunkData.Data,
-				chunkData.Size,
-			)
+			err = StoreChunk(remoteTx, chunkInfo.Hash, chunkBytes, chunkInfo.Size)
 			if err != nil {
 				return err
 			}
@@ -752,8 +728,7 @@ func PushChunksBatch(tx *sqlx.Tx, remoteUrl string, userId string, chunkInfos []
 		}
 
 		for _, chunkInfo := range chunkInfos {
-			var chunkData []byte
-			err := tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkInfo.Hash)
+			chunkData, err := ReadChunk(tx, chunkInfo.Hash)
 			if err != nil {
 				return err
 			}
@@ -798,16 +773,12 @@ func PushChunksBatch(tx *sqlx.Tx, remoteUrl string, userId string, chunkInfos []
 		}()
 
 		for _, chunkInfo := range chunkInfos {
-			var chunkData Chunk
-			err = tx.Get(&chunkData, "SELECT * FROM chunk WHERE hash = ?", chunkInfo.Hash)
+			chunkBytes, readErr := ReadChunk(tx, chunkInfo.Hash)
+			err = readErr
 			if err != nil {
 				return err
 			}
-			_, err = remoteTx.Exec("INSERT INTO chunk (hash, data, size) VALUES (?, ?, ?)",
-				chunkData.Hash,
-				chunkData.Data,
-				chunkData.Size,
-			)
+			err = StoreChunk(remoteTx, chunkInfo.Hash, chunkBytes, chunkInfo.Size)
 			if err != nil {
 				remoteTx.Rollback()
 				return err
@@ -829,7 +800,12 @@ func ChunkExists(chunkHash string, tx *sqlx.Tx, seenChunks map[string]bool) bool
 	if _, ok := seenChunks[chunkHash]; ok {
 		return true
 	}
-	var hash string
-	tx.Get(&hash, "SELECT hash FROM chunk WHERE hash = ?", chunkHash)
-	return hash != ""
+	exists, err := chunkExistsInStore(tx, chunkHash)
+	if err != nil {
+		return false
+	}
+	if exists {
+		seenChunks[chunkHash] = true
+	}
+	return exists
 }

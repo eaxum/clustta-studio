@@ -319,17 +319,17 @@ type Checkpoint struct {
 
 func (cp *Checkpoint) HasMissingChunks(tx *sqlx.Tx) (bool, error) {
 	chunkHashes := strings.Split(cp.Chunks, ",")
+	table := "chunk"
+	var storageMode string
+	if err := tx.Get(&storageMode, "SELECT mode FROM project_storage WHERE id = 1"); err == nil && storageMode == "deflated" {
+		table = "chunk_ref"
+	}
 	for _, chunkHash := range chunkHashes {
-		var hash string
-		err := tx.Get(&hash, "SELECT hash FROM chunk WHERE hash = ?", chunkHash)
-		if err != nil {
-			if err.Error() == "sql: no rows in result set" {
-				cp.IsDownloaded = false
-				return true, nil
-			}
+		var count int
+		if err := tx.Get(&count, "SELECT COUNT(*) FROM "+table+" WHERE hash = ?", chunkHash); err != nil {
 			return false, err
 		}
-		if hash != "" {
+		if count > 0 {
 			continue
 		}
 		cp.IsDownloaded = false

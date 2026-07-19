@@ -10,6 +10,7 @@ import (
 	"clustta/internal/utils"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -43,6 +44,14 @@ func safeProjectPath(baseDir, projectName string) (string, error) {
 		return "", fmt.Errorf("path escapes base directory")
 	}
 	return resolved, nil
+}
+
+func removeProjectDatabaseFiles(projectPath string) {
+	for _, suffix := range []string{"", "-journal", "-wal", "-shm"} {
+		if err := os.Remove(projectPath + suffix); err != nil && !errors.Is(err, os.ErrNotExist) {
+			log.Printf("Failed to clean project file %q: %v", projectPath+suffix, err)
+		}
+	}
 }
 
 type dataStruct struct {
@@ -148,6 +157,20 @@ func GetUsageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if chunk_service.StorageDirectoryAvailable() {
+		storageBytesOnDisk, err := directoryBytes(CONFIG.StorageDir)
+		if err != nil {
+			log.Printf("[GetUsage] failed to inspect storage directory %q: %v", CONFIG.StorageDir, err)
+			SendErrorResponse(w, "Failed to inspect storage directory", http.StatusInternalServerError)
+			return
+		}
+		if pathContains(CONFIG.StorageDir, projectsDir) {
+			storageBytes = storageBytesOnDisk
+		} else if !pathContains(projectsDir, CONFIG.StorageDir) {
+			storageBytes += storageBytesOnDisk
+		}
+	}
+
 	diskStats, err := getDiskStats(projectsDir)
 	if err != nil {
 		log.Printf("[GetUsage] failed to inspect disk for %q: %v", projectsDir, err)
@@ -166,6 +189,35 @@ func GetUsageHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func directoryBytes(root string) (int64, error) {
+	var size int64
+	err := filepath.WalkDir(root, func(_ string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		size += info.Size()
+		return nil
+	})
+	return size, err
+}
+
+func pathContains(parent, child string) bool {
+	parentAbs, parentErr := filepath.Abs(parent)
+	childAbs, childErr := filepath.Abs(child)
+	if parentErr != nil || childErr != nil {
+		return false
+	}
+	rel, err := filepath.Rel(parentAbs, childAbs)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
 func GetStudioKeyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -180,10 +232,21 @@ func GetStudioKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 // StudioInfoResponse represents studio metadata for client discovery
 type StudioInfoResponse struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	Url    string `json:"url"`
-	AltUrl string `json:"alt_url"`
+	Id           string                     `json:"id"`
+	Name         string                     `json:"name"`
+	Url          string                     `json:"url"`
+	AltUrl       string                     `json:"alt_url"`
+	HostingMode  string                     `json:"hosting_mode"`
+	Capabilities StudioCapabilitiesResponse `json:"capabilities"`
+}
+
+type StudioCapabilitiesResponse struct {
+	ProjectStorage ProjectStorageCapabilities `json:"project_storage"`
+}
+
+type ProjectStorageCapabilities struct {
+	SupportedModes []string `json:"supported_modes"`
+	AvailableModes []string `json:"available_modes"`
 }
 
 // GetStudioInfoHandler returns studio metadata for client discovery
@@ -200,10 +263,17 @@ func GetStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := StudioInfoResponse{
-		Id:     studioId,
-		Name:   CONFIG.ServerName,
-		Url:    CONFIG.ServerURL,
-		AltUrl: CONFIG.ServerAltURL,
+		Id:          studioId,
+		Name:        CONFIG.ServerName,
+		Url:         CONFIG.ServerURL,
+		AltUrl:      CONFIG.ServerAltURL,
+		HostingMode: "private",
+		Capabilities: StudioCapabilitiesResponse{
+			ProjectStorage: ProjectStorageCapabilities{
+				SupportedModes: chunk_service.SupportedStorageModes(),
+				AvailableModes: chunk_service.AvailableStorageModes(),
+			},
+		},
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -518,6 +588,23 @@ func PostProjectHandler(
 		return
 	}
 
+	var payload struct {
+		StorageMode string `json:"storage_mode"`
+	}
+	if r.Body != nil {
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil && err != io.EOF {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+	}
+	if payload.StorageMode == "" {
+		payload.StorageMode = chunk_service.StorageModeCompact
+	}
+	if err := chunk_service.ValidateStorageMode(payload.StorageMode); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	UserData := r.Header.Get("UserData")
 
 	user := auth_service.User{}
@@ -542,28 +629,39 @@ func PostProjectHandler(
 
 	projectInfo, err := repository.CreateProject(projectPath, "", "", "No Template", "", user)
 	if err != nil {
-		if utils.FileExists(projectPath) {
-			journal := projectPath + "-journal"
-			err := os.Remove(projectPath)
-			if err != nil {
-				log.Printf("Request error: %v", err)
-				http.Error(w, "Internal server error", 400)
-				return
-			}
-			if utils.FileExists(journal) {
-				err = os.Remove(journal)
-				if err != nil {
-					log.Printf("Request error: %v", err)
-					http.Error(w, "Internal server error", 400)
-					return
-				}
-			}
-
-		}
+		removeProjectDatabaseFiles(projectPath)
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
 		return
 	}
+	dbConn, err := utils.OpenDb(projectPath)
+	if err != nil {
+		removeProjectDatabaseFiles(projectPath)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	tx, err := dbConn.Beginx()
+	if err != nil {
+		dbConn.Close()
+		removeProjectDatabaseFiles(projectPath)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if err = chunk_service.SetProjectStorageMode(tx, payload.StorageMode); err != nil {
+		tx.Rollback()
+		dbConn.Close()
+		removeProjectDatabaseFiles(projectPath)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		dbConn.Close()
+		removeProjectDatabaseFiles(projectPath)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	dbConn.Close()
+	projectInfo.StorageMode = payload.StorageMode
 
 	objJson, _ := json.Marshal(projectInfo)
 	w.Write(objJson)
@@ -656,6 +754,27 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "You have no permission to delete this project", 403)
 		return
 	}
+
+	dbConn, err := utils.OpenDb(projectPath)
+	if err != nil {
+		http.Error(w, "Failed to open project", http.StatusInternalServerError)
+		return
+	}
+	tx, err := dbConn.Beginx()
+	if err != nil {
+		dbConn.Close()
+		http.Error(w, "Failed to open project", http.StatusInternalServerError)
+		return
+	}
+	if err := chunk_service.DeleteProjectStorage(tx); err != nil {
+		tx.Rollback()
+		dbConn.Close()
+		log.Printf("Failed to delete project storage: %v", err)
+		http.Error(w, "Failed to delete project storage", http.StatusInternalServerError)
+		return
+	}
+	tx.Rollback()
+	dbConn.Close()
 
 	// Delete the .clst file
 	if err := os.Remove(projectPath); err != nil {
@@ -1367,8 +1486,8 @@ func GetChunksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	chunks := []chunk_service.Chunk{}
 	for _, chunkHash := range data.Chunks {
-		var chunkData []byte
-		err = tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
+		chunkData, readErr := chunk_service.ReadChunk(tx, chunkHash)
+		err = readErr
 		if err != nil {
 			log.Printf("Request error: %v", err)
 			http.Error(w, "Internal server error", 400)
@@ -1453,8 +1572,8 @@ func StreamChunksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var chunkData []byte
-		err = tx.Get(&chunkData, "SELECT data FROM chunk WHERE hash = ?", chunkHash)
+		chunkData, readErr := chunk_service.ReadChunk(tx, chunkHash)
+		err = readErr
 		if err != nil {
 			log.Printf("Request error: %v", err)
 			http.Error(w, "Internal server error", 400)

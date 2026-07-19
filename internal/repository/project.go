@@ -53,6 +53,7 @@ type ProjectInfo struct {
 	IsClosed         bool     `json:"is_closed"`
 	IsOutdated       bool     `json:"is_outdated"`
 	IgnoreList       []string `json:"ignore_list"`
+	StorageMode      string   `json:"storage_mode"`
 }
 
 type ProjectConfig struct {
@@ -1112,6 +1113,10 @@ func GetProjectInfo(projectUri string, user auth_service.User) (ProjectInfo, err
 		if err != nil {
 			return ProjectInfo{}, err
 		}
+		storageMode, err := chunk_service.GetProjectStorageMode(tx)
+		if err != nil {
+			return ProjectInfo{}, err
+		}
 		return ProjectInfo{
 			Id:               projectId,
 			SyncToken:        syncToken,
@@ -1126,6 +1131,7 @@ func GetProjectInfo(projectUri string, user auth_service.User) (ProjectInfo, err
 			HasRemote:        false,
 			IsClosed:         isClosed,
 			IgnoreList:       ignoreList,
+			StorageMode:      storageMode,
 		}, nil
 	} else {
 		return ProjectInfo{}, fmt.Errorf("invalid url:%s", projectUri)
