@@ -65,15 +65,24 @@ func RequestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 	})
 }
 
-// ProjectStorageMiddleware makes a Deflated project unavailable when its
-// Studio-wide storage root is not configured, instead of exposing partial data.
+// ProjectStorageMiddleware serializes project access with storage conversion
+// and prevents a project from exposing a partial representation.
 func ProjectStorageMiddleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !chunk_service.StorageDirectoryAvailable() {
-			parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-			if len(parts) > 0 && parts[0] != "" {
-				projectPath, err := safeProjectPath(CONFIG.ProjectsDir, parts[0])
-				if err == nil && utils.FileExists(projectPath) {
+		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(parts) > 0 && parts[0] != "" {
+			projectPath, err := safeProjectPath(CONFIG.ProjectsDir, parts[0])
+			if err == nil && utils.FileExists(projectPath) {
+				isConversionRoute := len(parts) == 2 && parts[1] == "storage-conversion"
+				if !isConversionRoute {
+					if chunk_service.ProjectConversionActive(projectPath) {
+						http.Error(w, "Project is unavailable while its storage is being converted", http.StatusServiceUnavailable)
+						return
+					}
+					unlock := chunk_service.LockProjectRequest(projectPath)
+					defer unlock()
+				}
+				if !isConversionRoute && !chunk_service.StorageDirectoryAvailable() {
 					db, openErr := utils.OpenDb(projectPath)
 					if openErr == nil {
 						tx, beginErr := db.Beginx()
@@ -109,6 +118,7 @@ func (s *APIServer) Run() error {
 
 	// Rate limiter for auth endpoints
 	authLimiter := newIPRateLimiter(5, time.Minute)
+	storageConversionLimiter := newIPRateLimiter(5, time.Minute)
 
 	// Studio integration /test issues outbound HTTP per call; cap it.
 	integrationTestLimiter := newIPRateLimiter(10, time.Minute)
@@ -140,6 +150,7 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /studio-key", GetStudioKeyHandler)
 	router.HandleFunc("GET /studio-info", GetStudioInfoHandler)
 	router.HandleFunc("PUT /studio-info", UpdateStudioInfoHandler)
+	router.HandleFunc("GET /storage-conversions", GetStorageConversionsHandler)
 
 	// ============================================
 	// Studio User Management Endpoints
@@ -177,6 +188,8 @@ func (s *APIServer) Run() error {
 	router.HandleFunc("GET /{project}/preview", GetProjectPreview)
 	router.HandleFunc("POST /{project}/previews", PostPreviewsHandler)
 	router.HandleFunc("GET /{project}/previews-exist", PreviewsExistHandler)
+	router.HandleFunc("GET /{project}/storage-conversion", GetStorageConversionHandler)
+	router.HandleFunc("POST /{project}/storage-conversion", rateLimitHandler(storageConversionLimiter, StartStorageConversionHandler))
 	router.HandleFunc("GET /projects", GetProjectsHandler)
 
 	// ============================================

@@ -263,6 +263,9 @@ func startServer(serverType string) {
 				println(err.Error())
 				return
 			}
+			if err := chunk_service.RecoverInterruptedStorageConversion(projectPath); err != nil {
+				log.Printf("Failed to recover storage conversion for %q: %v", projectPath, err)
+			}
 		}
 	}
 

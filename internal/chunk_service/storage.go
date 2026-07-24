@@ -168,13 +168,21 @@ func StoreChunk(tx *sqlx.Tx, hash string, data []byte, size int) error {
 		return err
 	}
 	if mode == StorageModeCompact {
-		_, err = tx.Exec("INSERT OR IGNORE INTO chunk (hash, data, size) VALUES (?, ?, ?)", hash, data, size)
-		return err
+		return storeCompactChunk(tx, hash, data, size)
 	}
 	if mode != StorageModeDeflated {
 		return fmt.Errorf("storage mode %q is not available", mode)
 	}
 
+	return storeDeflatedChunk(tx, hash, data, size)
+}
+
+func storeCompactChunk(tx *sqlx.Tx, hash string, data []byte, size int) error {
+	_, err := tx.Exec("INSERT OR IGNORE INTO chunk (hash, data, size) VALUES (?, ?, ?)", hash, data, size)
+	return err
+}
+
+func storeDeflatedChunk(tx *sqlx.Tx, hash string, data []byte, size int) error {
 	path, key, err := deflatedChunkPath(tx, hash)
 	if err != nil {
 		return err
@@ -221,6 +229,20 @@ func StoreChunk(tx *sqlx.Tx, hash string, data []byte, size int) error {
 		VALUES (?, ?, ?, unixepoch())
 	`, hash, key, size)
 	return err
+}
+
+func deflatedProjectPath(tx *sqlx.Tx) (string, error) {
+	id, err := projectID(tx)
+	if err != nil {
+		return "", err
+	}
+	storageConfigMu.RLock()
+	root := storageRoot
+	storageConfigMu.RUnlock()
+	if root == "" {
+		return "", errors.New("deflated storage is not configured")
+	}
+	return filepath.Join(root, id), nil
 }
 
 func ReadChunk(tx *sqlx.Tx, hash string) ([]byte, error) {
@@ -303,15 +325,9 @@ func DeleteProjectStorage(tx *sqlx.Tx) error {
 	if mode != StorageModeDeflated {
 		return fmt.Errorf("storage mode %q is not available", mode)
 	}
-	id, err := projectID(tx)
+	path, err := deflatedProjectPath(tx)
 	if err != nil {
 		return err
 	}
-	storageConfigMu.RLock()
-	root := storageRoot
-	storageConfigMu.RUnlock()
-	if root == "" {
-		return errors.New("deflated storage is not configured")
-	}
-	return os.RemoveAll(filepath.Join(root, id))
+	return os.RemoveAll(path)
 }

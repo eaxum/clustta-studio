@@ -245,8 +245,9 @@ type StudioCapabilitiesResponse struct {
 }
 
 type ProjectStorageCapabilities struct {
-	SupportedModes []string `json:"supported_modes"`
-	AvailableModes []string `json:"available_modes"`
+	SupportedModes      []string `json:"supported_modes"`
+	AvailableModes      []string `json:"available_modes"`
+	ConversionSupported bool     `json:"conversion_supported"`
 }
 
 // GetStudioInfoHandler returns studio metadata for client discovery
@@ -270,8 +271,9 @@ func GetStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 		HostingMode: "private",
 		Capabilities: StudioCapabilitiesResponse{
 			ProjectStorage: ProjectStorageCapabilities{
-				SupportedModes: chunk_service.SupportedStorageModes(),
-				AvailableModes: chunk_service.AvailableStorageModes(),
+				SupportedModes:      chunk_service.SupportedStorageModes(),
+				AvailableModes:      chunk_service.AvailableStorageModes(),
+				ConversionSupported: true,
 			},
 		},
 	}
