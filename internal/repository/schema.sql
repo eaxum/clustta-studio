@@ -683,10 +683,8 @@ CREATE TABLE IF NOT EXISTS tomb (
     synced BOOLEAN DEFAULT 0 NOT NULL
 );
 
--- ═══════════════════════════════════════════════════════════════════════════
--- INTEGRATION TABLES
+-- Integration tables
 -- External integration mappings (Kitsu, ClickUp, ShotGrid, etc.)
--- ═══════════════════════════════════════════════════════════════════════════
 
 -- Project integration link: which external project is this Clustta project linked to?
 -- CONSTRAINT: Only ONE row allowed (one integration per project)
@@ -717,7 +715,7 @@ BEGIN
     INSERT INTO tomb (id, mtime, table_name, synced) VALUES (OLD.id, unixepoch(), 'integration_project', 0);
 END;
 
--- Collection mappings: external hierarchy items → Clustta Collections
+-- Collection mappings: external hierarchy items to Clustta Collections
 CREATE TABLE IF NOT EXISTS integration_collection_mapping (
     id TEXT PRIMARY KEY,
     mtime INTEGER NOT NULL,
@@ -748,7 +746,7 @@ BEGIN
     INSERT INTO tomb (id, mtime, table_name, synced) VALUES (OLD.id, unixepoch(), 'integration_collection_mapping', 0);
 END;
 
--- Asset mappings: external assets → Clustta Assets
+-- Asset mappings: external assets to Clustta Assets
 CREATE TABLE IF NOT EXISTS integration_asset_mapping (
     id TEXT PRIMARY KEY,
     mtime INTEGER NOT NULL,

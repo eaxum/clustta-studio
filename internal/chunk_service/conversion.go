@@ -14,21 +14,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const conversionSchema = `
-CREATE TABLE IF NOT EXISTS project_storage_conversion (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    source_mode TEXT NOT NULL CHECK (source_mode IN ('compact', 'deflated')),
-    target_mode TEXT NOT NULL CHECK (target_mode IN ('compact', 'deflated')),
-    status TEXT NOT NULL CHECK (status IN ('running', 'failed', 'cleanup_failed', 'completed')),
-    total_chunks INTEGER NOT NULL DEFAULT 0,
-    processed_chunks INTEGER NOT NULL DEFAULT 0,
-    required_bytes INTEGER NOT NULL DEFAULT 0,
-    processed_bytes INTEGER NOT NULL DEFAULT 0,
-    error TEXT NOT NULL DEFAULT '',
-    started_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-)`
-
 type StorageConversionState struct {
 	CurrentMode     string `db:"current_mode" json:"current_mode"`
 	SourceMode      string `db:"source_mode" json:"source_mode"`
@@ -65,20 +50,12 @@ func ProjectConversionActive(projectPath string) bool {
 	return active
 }
 
-func ensureConversionSchema(db *sqlx.DB) error {
-	_, err := db.Exec(conversionSchema)
-	return err
-}
-
 func GetStorageConversionState(projectPath string) (StorageConversionState, error) {
 	db, err := utils.OpenDb(projectPath)
 	if err != nil {
 		return StorageConversionState{}, err
 	}
 	defer db.Close()
-	if err := ensureConversionSchema(db); err != nil {
-		return StorageConversionState{}, err
-	}
 	state, err := getStorageConversionState(db)
 	if err != nil {
 		return state, err
@@ -123,9 +100,6 @@ func RecoverInterruptedStorageConversion(projectPath string) error {
 		return err
 	}
 	defer db.Close()
-	if err := ensureConversionSchema(db); err != nil {
-		return err
-	}
 	_, err = db.Exec(`UPDATE project_storage_conversion
 		SET status = 'failed', error = 'Conversion interrupted by Studio restart; retry to continue.', updated_at = unixepoch()
 		WHERE id = 1 AND status = 'running'`)
@@ -163,12 +137,6 @@ func StartStorageConversion(projectPath, targetMode string, availableBytes int64
 
 	db, err := utils.OpenDb(key)
 	if err != nil {
-		lock.Unlock()
-		activeConversions.Delete(key)
-		return StorageConversionState{}, err
-	}
-	if err = ensureConversionSchema(db); err != nil {
-		db.Close()
 		lock.Unlock()
 		activeConversions.Delete(key)
 		return StorageConversionState{}, err
