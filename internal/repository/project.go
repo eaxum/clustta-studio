@@ -885,6 +885,14 @@ func UpdateProject(projectPath string) error {
 	}
 	defer db.Close()
 
+	valid, err := utils.TableExists(db, "config")
+	if err != nil {
+		return err
+	}
+	if !valid {
+		return error_service.ErrInvalidProject
+	}
+
 	tx, err := db.Beginx()
 	if err != nil {
 		return err
@@ -973,7 +981,14 @@ func CreateProject(projectUri, studioName, workingDir, templateName, projectId s
 			}
 			return ProjectInfo{}, error_service.ErrInvalidProjectExists
 		}
-		err := InitDB(projectUri, studioName, workingDir, projectId, user, false)
+		tempDir, err := os.MkdirTemp(projectDir, ".clustta-project-*")
+		if err != nil {
+			return ProjectInfo{}, err
+		}
+		defer os.RemoveAll(tempDir)
+		tempPath := filepath.Join(tempDir, filepath.Base(projectUri))
+
+		err = InitDB(tempPath, studioName, workingDir, projectId, user, false)
 		if err != nil {
 			return ProjectInfo{}, err
 		}
@@ -985,14 +1000,17 @@ func CreateProject(projectUri, studioName, workingDir, templateName, projectId s
 			}
 			templatePath := filepath.Join(ProjectTemplatesPath, templateName+".clst")
 
-			err = LoadProjectTemplateData(projectUri, templatePath)
+			err = LoadProjectTemplateData(tempPath, templatePath)
 			if err != nil {
 				return ProjectInfo{}, err
 			}
 		}
 
-		projectInfo, err := GetProjectInfo(projectUri, user)
+		projectInfo, err := GetProjectInfo(tempPath, user)
 		if err != nil {
+			return ProjectInfo{}, err
+		}
+		if err = os.Rename(tempPath, projectUri); err != nil {
 			return ProjectInfo{}, err
 		}
 

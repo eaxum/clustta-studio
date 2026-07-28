@@ -255,13 +255,13 @@ func startServer(serverType string) {
 	// Iterate over the directory entries
 	for _, entry := range entries {
 		// Check if the entry is a file and has the specified extension
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), extension) {
+		if !entry.IsDir() && strings.EqualFold(filepath.Ext(entry.Name()), "."+extension) {
 			projectPath := filepath.Join(projectFolder, entry.Name())
 
 			err := repository.UpdateProject(projectPath)
 			if err != nil {
-				println(err.Error())
-				return
+				log.Printf("Skipping invalid project %q: %v", projectPath, err)
+				continue
 			}
 			if err := chunk_service.RecoverInterruptedStorageConversion(projectPath); err != nil {
 				log.Printf("Failed to recover storage conversion for %q: %v", projectPath, err)
