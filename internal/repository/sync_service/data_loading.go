@@ -740,6 +740,11 @@ func LoadUserDataPb(tx *sqlx.Tx, userId string) ([]byte, error) {
 		return []byte{}, err
 	}
 
+	tombs, err := repository.GetTombs(tx)
+	if err != nil {
+		return []byte{}, err
+	}
+
 	userData := &repositorypb.ProjectData{
 		ProjectPreview:      projectPreview.Hash,
 		CollectionTypes:     repository.ToPbCollectionTypes(collectionTypes),
@@ -767,6 +772,8 @@ func LoadUserDataPb(tx *sqlx.Tx, userId string) ([]byte, error) {
 
 		Tags:       repository.ToPbTags(tags),
 		AssetsTags: repository.ToPbAssetTags(assetsTags),
+
+		Tomb: repository.ToPbTombs(tombs),
 
 		IntegrationProjects:           repository.ToPbIntegrationProjects(integrationProjects),
 		IntegrationCollectionMappings: repository.ToPbIntegrationCollectionMappings(integrationCollectionMappings),
