@@ -2,11 +2,14 @@ package chunk_service
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,6 +75,46 @@ func GetStorageConversionState(projectPath string) (StorageConversionState, erro
 		state.RequiredBytes = requiredDestinationBytes(payloadBytes, targetMode)
 	}
 	return state, nil
+}
+
+// GetStorageConversionSummary returns only persisted conversion state. It uses
+// a read-only connection, observes request cancellation, and intentionally
+// avoids the chunk table scans performed by GetStorageConversionState.
+func GetStorageConversionSummary(ctx context.Context, projectPath string) (StorageConversionState, error) {
+	uriPath := filepath.ToSlash(projectPath)
+	if filepath.IsAbs(projectPath) && !strings.HasPrefix(uriPath, "/") {
+		uriPath = "/" + uriPath
+	}
+	dsn := (&url.URL{
+		Scheme:   "file",
+		Path:     uriPath,
+		RawQuery: "mode=ro&_busy_timeout=1000",
+	}).String()
+	db, err := sqlx.Open("sqlite3", dsn)
+	if err != nil {
+		return StorageConversionState{}, err
+	}
+	db.SetMaxOpenConns(1)
+	defer db.Close()
+	if err := db.PingContext(ctx); err != nil {
+		return StorageConversionState{}, err
+	}
+
+	var state StorageConversionState
+	err = db.GetContext(ctx, &state, `
+		SELECT ps.mode AS current_mode, c.source_mode, c.target_mode, c.status,
+		       c.total_chunks, c.processed_chunks, c.required_bytes, c.processed_bytes,
+		       c.error, c.started_at, c.updated_at
+		FROM project_storage ps JOIN project_storage_conversion c ON c.id = 1
+		WHERE ps.id = 1`)
+	if errors.Is(err, sql.ErrNoRows) {
+		if err := db.GetContext(ctx, &state.CurrentMode, "SELECT mode FROM project_storage WHERE id = 1"); err != nil {
+			return state, err
+		}
+		state.Status = "idle"
+		return state, nil
+	}
+	return state, err
 }
 
 func getStorageConversionState(db *sqlx.DB) (StorageConversionState, error) {

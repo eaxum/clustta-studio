@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -99,6 +100,15 @@ func conversionForProject(projectName string) (projectStorageConversion, error) 
 	return projectStorageConversion{ProjectName: projectName, StorageConversionState: state}, err
 }
 
+func conversionSummaryForProject(ctx context.Context, projectName string) (projectStorageConversion, error) {
+	projectPath, err := safeProjectPath(CONFIG.ProjectsDir, projectName)
+	if err != nil {
+		return projectStorageConversion{}, err
+	}
+	state, err := chunk_service.GetStorageConversionSummary(ctx, projectPath)
+	return projectStorageConversion{ProjectName: projectName, StorageConversionState: state}, err
+}
+
 func GetStorageConversionsHandler(w http.ResponseWriter, r *http.Request) {
 	if !requireStudioAdmin(w, r) {
 		return
@@ -110,11 +120,14 @@ func GetStorageConversionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	conversions := make([]projectStorageConversion, 0)
 	for _, entry := range entries {
+		if err := r.Context().Err(); err != nil {
+			return
+		}
 		if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".clst") {
 			continue
 		}
 		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
-		conversion, err := conversionForProject(name)
+		conversion, err := conversionSummaryForProject(r.Context(), name)
 		if err != nil {
 			log.Printf("Failed to inspect storage conversion for %q: %v", name, err)
 			continue
