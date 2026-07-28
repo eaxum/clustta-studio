@@ -96,10 +96,24 @@ Create a `.env` file:
 ```bash
 DATA_FOLDER=./data
 PROJECTS_FOLDER=./projects
+STORAGE_FOLDER=./storage
 STUDIO_USERS_DB=/var/data/studio_users.db
 SESSION_DB=/var/data/sessions.db
 PRIVATE=true
 ```
+
+`DATA_FOLDER`, `PROJECTS_FOLDER`, and `STORAGE_FOLDER` are paths on the Docker
+host. `STUDIO_USERS_DB` and `SESSION_DB` are paths inside the container.
+The image maps `STORAGE_FOLDER` to its internal `/var/storage` directory.
+Set `STORAGE_FOLDER` to the host directory where Deflated project blobs should
+be stored. For example:
+
+```bash
+STORAGE_FOLDER=/media/clustta/storage
+```
+
+For native, non-Docker deployments, `STORAGE_DIR` can still be used to set the
+server's storage directory directly.
 
 If connecting to Clustta Cloud, set `PRIVATE=false` and add:
 ```bash
@@ -113,7 +127,7 @@ See [Creating and accessing a studio](#creating-and-accessing-a-studio) for how 
 ### 4. Start the server
 
 ```bash
-mkdir -p data projects
+mkdir -p data projects storage
 docker compose up -d
 ```
 
@@ -125,9 +139,9 @@ docker compose up -d
 
 > ⚠️ NOTE
 >
-> You may need to set permissions on the projects directory:
+> You may need to set permissions on the projects and storage directories:
 ```bash
-sudo chmod a+w ./projects/
+sudo chmod a+w ./projects/ ./storage/
 ```
 
 <br>

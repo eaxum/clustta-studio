@@ -25,6 +25,7 @@ services:
     volumes:
       - ${DATA_FOLDER:?}:/var/data/
       - ${PROJECTS_FOLDER:?}:/var/projects/
+      - ${STORAGE_FOLDER:?}:/var/storage/
     restart: always
 
   # Traefik 3 reverse proxy

@@ -21,11 +21,12 @@ RUN CGO_ENABLED=1 go build \
 FROM debian:bookworm-slim AS build-release-stage
 
 ENV PROJECTS_DIR=/var/projects/
+ENV STORAGE_DIR=/var/storage/
 ENV DATA_DIR=/var/data/
 ENV SERVER_HOST=0.0.0.0
 ENV SERVER_PORT=7774
 
-RUN mkdir -p /var/projects /var/data \
+RUN mkdir -p /var/projects /var/storage /var/data \
     && adduser --disabled-password --gecos "" eaxum
 
 WORKDIR /usr/bin
@@ -38,7 +39,7 @@ COPY --from=build-stage /clustta_server ./clustta_server
 
 EXPOSE 7774
 
-RUN chown -R eaxum:eaxum /var/projects/ /var/data/ /usr/bin
+RUN chown -R eaxum:eaxum /var/projects/ /var/storage/ /var/data/ /usr/bin
 
 USER eaxum
 

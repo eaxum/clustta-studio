@@ -16,4 +16,5 @@ services:
     volumes:
       - ${DATA_FOLDER:?Please set DATA_FOLDER in .env}:/var/data/
       - ${PROJECTS_FOLDER:?Please set PROJECTS_FOLDER in .env}:/var/projects/
+      - ${STORAGE_FOLDER:?Please set STORAGE_FOLDER in .env}:/var/storage/
     restart: unless-stopped

@@ -125,6 +125,7 @@ configure_env() {
   # Data directories (default to subdirs of install dir)
   local data_folder="$INSTALL_DIR/data"
   local projects_folder="$INSTALL_DIR/projects"
+  local storage_folder="$INSTALL_DIR/storage"
 
   echo -e "${BOLD}Data directory${NC} [${data_folder}]: "
   read -r input
@@ -134,7 +135,11 @@ configure_env() {
   read -r input
   projects_folder="${input:-$projects_folder}"
 
-  mkdir -p "$data_folder" "$projects_folder"
+  echo -e "${BOLD}Deflated storage directory${NC} [${storage_folder}]: "
+  read -r input
+  storage_folder="${input:-$storage_folder}"
+
+  mkdir -p "$data_folder" "$projects_folder" "$storage_folder"
 
   # Private mode
   if [[ "$PRIVATE_MODE" != true ]]; then
@@ -172,8 +177,9 @@ configure_env() {
 
 DATA_FOLDER=${data_folder}
 PROJECTS_FOLDER=${projects_folder}
+STORAGE_FOLDER=${storage_folder}
 
-# Database paths
+# Database paths inside the container
 STUDIO_USERS_DB=/var/data/studio_users.db
 SESSION_DB=/var/data/sessions.db
 
@@ -204,8 +210,9 @@ configure_env_noninteractive() {
 
   local data_folder="$INSTALL_DIR/data"
   local projects_folder="$INSTALL_DIR/projects"
+  local storage_folder="$INSTALL_DIR/storage"
 
-  mkdir -p "$data_folder" "$projects_folder"
+  mkdir -p "$data_folder" "$projects_folder" "$storage_folder"
 
   cat > "$env_file" <<EOF
 # Clustta Studio Configuration
@@ -213,8 +220,9 @@ configure_env_noninteractive() {
 
 DATA_FOLDER=${data_folder}
 PROJECTS_FOLDER=${projects_folder}
+STORAGE_FOLDER=${storage_folder}
 
-# Database paths
+# Database paths inside the container
 STUDIO_USERS_DB=/var/data/studio_users.db
 SESSION_DB=/var/data/sessions.db
 
