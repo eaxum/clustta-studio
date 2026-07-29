@@ -15,6 +15,7 @@ import (
 type Config struct {
 	Host              string `json:"host" envconfig:"CLUSTTA_HOST"`
 	Port              string `json:"port" envconfig:"CLUSTTA_PORT"`
+	DataDir           string `json:"data_dir" envconfig:"DATA_DIR"`
 	ProjectsDir       string `json:"projects_dir" envconfig:"PROJECTS_DIR"`
 	SharedProjectsDir string `json:"shared_projects_dir" envconfig:"SHARED_PROJECTS_DIR"`
 	StorageDir        string `json:"storage_dir" envconfig:"STORAGE_DIR"`
@@ -108,8 +109,12 @@ func loadDefaults(cfg *Config) {
 	defaultSharedProjectsDir := filepath.Join(homedir, "clustta", "shared_projects")
 	defaultDataDir := filepath.Join(homedir, "clustta", "data")
 
+	if cfg.DataDir == "" {
+		cfg.DataDir = defaultDataDir
+	}
+
 	// Create data directory if it doesn't exist
-	if err := os.MkdirAll(defaultDataDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(cfg.DataDir, os.ModePerm); err != nil {
 		processError(err)
 	}
 
@@ -120,10 +125,10 @@ func loadDefaults(cfg *Config) {
 		cfg.SharedProjectsDir = defaultSharedProjectsDir
 	}
 	if cfg.StudioUsersDB == "" {
-		cfg.StudioUsersDB = filepath.Join(defaultDataDir, "studio_users.db")
+		cfg.StudioUsersDB = filepath.Join(cfg.DataDir, "studio_users.db")
 	}
 	if cfg.SessionDB == "" {
-		cfg.SessionDB = filepath.Join(defaultDataDir, "sessions.db")
+		cfg.SessionDB = filepath.Join(cfg.DataDir, "sessions.db")
 	}
 }
 

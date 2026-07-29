@@ -94,26 +94,27 @@ curl -fsSL https://raw.githubusercontent.com/eaxum/clustta-studio/main/deploy/do
 Create a `.env` file:
 
 ```bash
-DATA_FOLDER=./data
-PROJECTS_FOLDER=./projects
-STORAGE_FOLDER=./storage
-STUDIO_USERS_DB=/var/data/studio_users.db
-SESSION_DB=/var/data/sessions.db
+HOST_DATA_DIR=./data
+HOST_PROJECTS_DIR=./projects
+HOST_STORAGE_DIR=./storage
 PRIVATE=true
 ```
 
-`DATA_FOLDER`, `PROJECTS_FOLDER`, and `STORAGE_FOLDER` are paths on the Docker
-host. `STUDIO_USERS_DB` and `SESSION_DB` are paths inside the container.
-The image maps `STORAGE_FOLDER` to its internal `/var/storage` directory.
-Set `STORAGE_FOLDER` to the host directory where Deflated project blobs should
+`HOST_DATA_DIR`, `HOST_PROJECTS_DIR`, and `HOST_STORAGE_DIR` are paths on the
+Docker host. Compose maps them to the application's fixed `/var/data`,
+`/var/projects`, and `/var/storage` directories. Existing `DATA_FOLDER`,
+`PROJECTS_FOLDER`, and `STORAGE_FOLDER` settings remain supported for legacy
+installations.
+
+Set `HOST_STORAGE_DIR` to the host directory where Deflated project blobs should
 be stored. For example:
 
 ```bash
-STORAGE_FOLDER=/media/clustta/storage
+HOST_STORAGE_DIR=/media/clustta/storage
 ```
 
-For native, non-Docker deployments, `STORAGE_DIR` can still be used to set the
-server's storage directory directly.
+For native, non-Docker deployments, configure `DATA_DIR`, `PROJECTS_DIR`, and
+`STORAGE_DIR` directly.
 
 If connecting to Clustta Cloud, set `PRIVATE=false` and add:
 ```bash

@@ -1,6 +1,7 @@
 {
   "host": "0.0.0.0",
   "port": "7774",
+  "data_dir": "./data",
   "projects_dir": "./data/projects",
   "shared_projects_dir": "./data/shared_projects",
   "storage_dir": "./data/storage",

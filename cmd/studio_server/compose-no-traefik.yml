@@ -23,10 +23,14 @@ services:
       - web
     env_file:
       - ${ENV_FILE:-./.env}
+    environment:
+      DATA_DIR: /var/data
+      PROJECTS_DIR: /var/projects
+      STORAGE_DIR: /var/storage
     volumes:
-      - ${DATA_FOLDER:?}:/var/data/
-      - ${PROJECTS_FOLDER:?}:/var/projects/
-      - ${STORAGE_FOLDER:?}:/var/storage/
+      - ${HOST_DATA_DIR:-${DATA_FOLDER:-./data}}:/var/data/
+      - ${HOST_PROJECTS_DIR:-${PROJECTS_FOLDER:-./projects}}:/var/projects/
+      - ${HOST_STORAGE_DIR:-${STORAGE_FOLDER:-./storage}}:/var/storage/
     restart: always
 
 networks:
