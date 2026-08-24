@@ -15,7 +15,7 @@ func TestApplySyncableProjectConfigs(t *testing.T) {
 	tx := db.MustBegin()
 
 	err := ApplySyncableProjectConfigs(tx, []ProjectConfig{{
-		Name: "project_script_settings_v1", Value: `{"version":1}`, Mtime: 42,
+		Name: "project_script_settings", Value: `{"version":1}`, Mtime: 42,
 	}})
 	require.NoError(t, err)
 

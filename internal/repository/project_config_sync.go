@@ -9,8 +9,8 @@ import (
 )
 
 var SyncableProjectConfigNames = []string{
-	"project_script_settings_v1",
-	"dcc_prelaunch_hooks_v1",
+	"project_script_settings",
+	"dcc_prelaunch_hooks",
 }
 
 func GetSyncableProjectConfigs(tx *sqlx.Tx, changedOnly bool) ([]ProjectConfig, error) {
