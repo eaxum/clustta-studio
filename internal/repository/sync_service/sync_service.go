@@ -40,6 +40,7 @@ type WriteResult struct {
 
 type ProjectData struct {
 	ProjectPreview         string                        `json:"project_preview"`
+	ProjectConfigs         []repository.ProjectConfig    `json:"project_configs"`
 	Assets                 []models.Asset                `json:"assets"`
 	AssetTypes             []models.AssetType            `json:"asset_types"`
 	AssetsCheckpoints      []models.Checkpoint           `json:"assets_checkpoints"`
@@ -96,6 +97,7 @@ func (d *ProjectData) IsEmpty() bool {
 		len(d.IntegrationProjects) == 0 &&
 		len(d.IntegrationCollectionMappings) == 0 &&
 		len(d.IntegrationAssetMappings) == 0 &&
+		len(d.ProjectConfigs) == 0 &&
 		d.ProjectPreview == ""
 }
 
@@ -207,6 +209,9 @@ func CheckForConflicts(tx *sqlx.Tx, data ProjectData) (*WriteResult, error) {
 }
 
 func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
+	if err := repository.ApplySyncableProjectConfigs(tx, data.ProjectConfigs); err != nil {
+		return err
+	}
 
 	// Sort
 	sortedCollections, err := repository.TopologicalSort(data.Collections)
@@ -953,6 +958,9 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 }
 
 func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
+	if err := repository.ApplySyncableProjectConfigs(tx, data.ProjectConfigs); err != nil {
+		return err
+	}
 	// Sort
 	start := time.Now()
 	sortedCollections, err := repository.TopologicalSort(data.Collections)
@@ -1313,6 +1321,7 @@ func FetchData(remoteUrl string, userId string) (ProjectData, error) {
 
 			userData = ProjectData{
 				ProjectPreview:      userDataPb.ProjectPreview,
+				ProjectConfigs:      repository.FromPbProjectConfigs(userDataPb.ProjectConfigs),
 				CollectionTypes:     repository.FromPbCollectionTypes(userDataPb.CollectionTypes),
 				Collections:         repository.FromPbCollections(userDataPb.Collections),
 				CollectionAssignees: repository.FromPbCollectionAssignees(userDataPb.CollectionAssignees),

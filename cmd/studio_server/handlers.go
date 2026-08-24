@@ -1263,6 +1263,7 @@ func PostDataHandler(
 
 	requestData := sync_service.ProjectData{
 		ProjectPreview:      userDataPb.ProjectPreview,
+		ProjectConfigs:      repository.FromPbProjectConfigs(userDataPb.ProjectConfigs),
 		CollectionTypes:     repository.FromPbCollectionTypes(userDataPb.CollectionTypes),
 		Collections:         repository.FromPbCollections(userDataPb.Collections),
 		CollectionAssignees: repository.FromPbCollectionAssignees(userDataPb.CollectionAssignees),

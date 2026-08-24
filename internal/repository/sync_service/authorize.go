@@ -90,6 +90,9 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 	if data.ProjectPreview != "" && !isAdmin {
 		return deny("project_preview", "update", "")
 	}
+	if len(data.ProjectConfigs) > 0 && !role.ChangeRole {
+		return deny("project_config", "update", "")
+	}
 
 	// Roles → admin only (creating/updating role permission rows)
 	if len(data.Roles) > 0 && !isAdmin {

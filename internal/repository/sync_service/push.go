@@ -45,15 +45,16 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 		return nil
 	}
 	pdData := repositorypb.ProjectData{
-		ProjectPreview:  data.ProjectPreview,
+		ProjectPreview:      data.ProjectPreview,
+		ProjectConfigs:      repository.ToPbProjectConfigs(data.ProjectConfigs),
 		CollectionTypes:     repository.ToPbCollectionTypes(data.CollectionTypes),
-		Collections:        repository.ToPbCollections(data.Collections),
+		Collections:         repository.ToPbCollections(data.Collections),
 		CollectionAssignees: repository.ToPbCollectionAssignees(data.CollectionAssignees),
 
-		AssetTypes:          repository.ToPbAssetTypes(data.AssetTypes),
-		Assets:              repository.ToPbAssets(data.Assets),
-		AssetsCheckpoints:   repository.ToPbCheckpoints(data.AssetsCheckpoints),
-		AssetDependencies:   repository.ToPbAssetDependencies(data.AssetDependencies),
+		AssetTypes:             repository.ToPbAssetTypes(data.AssetTypes),
+		Assets:                 repository.ToPbAssets(data.Assets),
+		AssetsCheckpoints:      repository.ToPbCheckpoints(data.AssetsCheckpoints),
+		AssetDependencies:      repository.ToPbAssetDependencies(data.AssetDependencies),
 		CollectionDependencies: repository.ToPbCollectionDependencies(data.CollectionDependencies),
 
 		Statuses:        repository.ToPbStatuses(data.Statuses),
@@ -64,12 +65,12 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 
 		Templates: repository.ToPbTemplates(data.Templates),
 
-		Workflows:        repository.ToPbWorkflows(data.Workflows),
-		WorkflowLinks:    repository.ToPbWorkflowLinks(data.WorkflowLinks),
+		Workflows:           repository.ToPbWorkflows(data.Workflows),
+		WorkflowLinks:       repository.ToPbWorkflowLinks(data.WorkflowLinks),
 		WorkflowCollections: repository.ToPbWorkflowCollections(data.WorkflowCollections),
-		WorkflowAssets:    repository.ToPbWorkflowAssets(data.WorkflowAssets),
+		WorkflowAssets:      repository.ToPbWorkflowAssets(data.WorkflowAssets),
 
-		Tags:      repository.ToPbTags(data.Tags),
+		Tags:       repository.ToPbTags(data.Tags),
 		AssetsTags: repository.ToPbAssetTags(data.AssetsTags),
 
 		Tomb: repository.ToPbTombs(data.Tombs),
@@ -187,6 +188,9 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 			if err != nil {
 				return err
 			}
+			if err = repository.MarkSyncableProjectConfigsSynced(tx); err != nil {
+				return err
+			}
 			err = tx.Commit()
 			if err != nil {
 				return err
@@ -221,6 +225,9 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 
 		err = utils.SetTablesToSynced(tx, ProjectTables)
 		if err != nil {
+			return err
+		}
+		if err = repository.MarkSyncableProjectConfigsSynced(tx); err != nil {
 			return err
 		}
 		err = tx.Commit()

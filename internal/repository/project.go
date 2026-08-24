@@ -57,9 +57,10 @@ type ProjectInfo struct {
 }
 
 type ProjectConfig struct {
-	Name  string      `json:"name" db:"name"`
-	Value interface{} `json:"value" db:"value"`
-	Mtime int         `json:"mtime" db:"mtime"`
+	Name   string `json:"name" db:"name"`
+	Value  string `json:"value" db:"value"`
+	Mtime  int    `json:"mtime" db:"mtime"`
+	Synced bool   `json:"synced" db:"synced"`
 }
 
 func InitDB(projectPath string, studioName, workingDir, projectId string, user auth_service.User, walMode bool) error {
