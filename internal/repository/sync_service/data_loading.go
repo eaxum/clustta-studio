@@ -104,6 +104,11 @@ func OLDLoadUserData(tx *sqlx.Tx, userId string) (ProjectData, error) {
 	if err != nil {
 		return ProjectData{}, err
 	}
+	assetCheckpointTags := []models.AssetCheckpointTag{}
+	err = tx.Select(&assetCheckpointTags, fmt.Sprintf("SELECT * FROM asset_checkpoint_tag WHERE asset_id IN (%s)", strings.Join(quotedAssetIds, ",")))
+	if err != nil {
+		return ProjectData{}, err
+	}
 
 	statuses, err := repository.GetStatuses(tx)
 	if err != nil {
@@ -224,6 +229,7 @@ func OLDLoadUserData(tx *sqlx.Tx, userId string) (ProjectData, error) {
 	userData.AssetTypes = assetTypes
 	userData.Assets = assets
 	userData.AssetsCheckpoints = assetsCheckpoints
+	userData.AssetCheckpointTags = assetCheckpointTags
 	userData.AssetDependencies = assetDependencies
 	userData.CollectionDependencies = collectionDependencies
 
@@ -362,6 +368,11 @@ func LoadUserData(tx *sqlx.Tx, userId string) (ProjectData, error) {
 	if err != nil {
 		return ProjectData{}, err
 	}
+	assetCheckpointTags := []models.AssetCheckpointTag{}
+	err = tx.Select(&assetCheckpointTags, fmt.Sprintf("SELECT * FROM asset_checkpoint_tag WHERE asset_id IN (%s)", strings.Join(quotedAssetIds, ",")))
+	if err != nil {
+		return ProjectData{}, err
+	}
 
 	statuses, err := repository.GetStatuses(tx)
 	if err != nil {
@@ -484,6 +495,7 @@ func LoadUserData(tx *sqlx.Tx, userId string) (ProjectData, error) {
 	userData.AssetTypes = assetTypes
 	userData.Assets = assets
 	userData.AssetsCheckpoints = assetsCheckpoints
+	userData.AssetCheckpointTags = assetCheckpointTags
 	userData.AssetDependencies = assetDependencies
 	userData.CollectionDependencies = collectionDependencies
 
@@ -617,6 +629,11 @@ func LoadUserDataPb(tx *sqlx.Tx, userId string) ([]byte, error) {
 	checkpointQuery := fmt.Sprintf("SELECT * FROM asset_checkpoint WHERE trashed = 0 AND asset_id IN (%s)", strings.Join(quotedAssetIds, ","))
 	assetsCheckpoints := []models.Checkpoint{}
 	err = tx.Select(&assetsCheckpoints, checkpointQuery)
+	if err != nil {
+		return []byte{}, err
+	}
+	assetCheckpointTags := []models.AssetCheckpointTag{}
+	err = tx.Select(&assetCheckpointTags, fmt.Sprintf("SELECT * FROM asset_checkpoint_tag WHERE asset_id IN (%s)", strings.Join(quotedAssetIds, ",")))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -769,6 +786,7 @@ func LoadUserDataPb(tx *sqlx.Tx, userId string) ([]byte, error) {
 		AssetTypes:             repository.ToPbAssetTypes(assetTypes),
 		Assets:                 repository.ToPbAssets(assets),
 		AssetsCheckpoints:      repository.ToPbCheckpoints(assetsCheckpoints),
+		AssetCheckpointTags:    repository.ToPbAssetCheckpointTags(assetCheckpointTags),
 		AssetDependencies:      repository.ToPbAssetDependencies(assetDependencies),
 		CollectionDependencies: repository.ToPbCollectionDependencies(collectionDependencies),
 
@@ -848,6 +866,11 @@ func LoadChangedData(tx *sqlx.Tx) (ProjectData, error) {
 	checkpointQuery := "SELECT * FROM asset_checkpoint WHERE synced = 0"
 	assetsCheckpoints := []models.Checkpoint{}
 	err = tx.Select(&assetsCheckpoints, checkpointQuery)
+	if err != nil && err != sql.ErrNoRows {
+		return userData, err
+	}
+	assetCheckpointTags := []models.AssetCheckpointTag{}
+	err = tx.Select(&assetCheckpointTags, "SELECT * FROM asset_checkpoint_tag WHERE synced = 0")
 	if err != nil && err != sql.ErrNoRows {
 		return userData, err
 	}
@@ -985,6 +1008,7 @@ func LoadChangedData(tx *sqlx.Tx) (ProjectData, error) {
 	userData.AssetTypes = assetTypes
 	userData.Assets = assets
 	userData.AssetsCheckpoints = assetsCheckpoints
+	userData.AssetCheckpointTags = assetCheckpointTags
 	userData.AssetDependencies = assetDependencies
 	userData.CollectionDependencies = collectionDependencies
 
@@ -1049,6 +1073,11 @@ func LoadChangedDataPb(tx *sqlx.Tx) ([]byte, error) {
 	checkpointQuery := "SELECT * FROM asset_checkpoint WHERE synced = 0"
 	assetsCheckpoints := []models.Checkpoint{}
 	err = tx.Select(&assetsCheckpoints, checkpointQuery)
+	if err != nil && err != sql.ErrNoRows {
+		return []byte{}, err
+	}
+	assetCheckpointTags := []models.AssetCheckpointTag{}
+	err = tx.Select(&assetCheckpointTags, "SELECT * FROM asset_checkpoint_tag WHERE synced = 0")
 	if err != nil && err != sql.ErrNoRows {
 		return []byte{}, err
 	}
@@ -1198,6 +1227,7 @@ func LoadChangedDataPb(tx *sqlx.Tx) ([]byte, error) {
 		AssetTypes:             repository.ToPbAssetTypes(assetTypes),
 		Assets:                 repository.ToPbAssets(assets),
 		AssetsCheckpoints:      repository.ToPbCheckpoints(assetsCheckpoints),
+		AssetCheckpointTags:    repository.ToPbAssetCheckpointTags(assetCheckpointTags),
 		AssetDependencies:      repository.ToPbAssetDependencies(assetDependencies),
 		CollectionDependencies: repository.ToPbCollectionDependencies(collectionDependencies),
 

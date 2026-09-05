@@ -491,6 +491,40 @@ func initData(tx *sqlx.Tx) error {
 
 func ClearTrash(tx *sqlx.Tx) error {
 	deleteAssetAndCollections := `
+		-- Delete asset dependencies before checkpoint tag assignments
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
+			UNION
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
+		)
+		DELETE FROM asset_dependency
+		WHERE asset_id IN (
+			SELECT id FROM asset
+			WHERE trashed = 1
+			OR collection_id IN (SELECT id FROM trashed_collections)
+		)
+		OR dependency_id IN (
+			SELECT id FROM asset
+			WHERE trashed = 1
+			OR collection_id IN (SELECT id FROM trashed_collections)
+		);
+
+		-- Delete checkpoint tag assignments before checkpoints
+		WITH RECURSIVE trashed_collections AS (
+			SELECT id FROM collection WHERE trashed = 1
+			UNION
+			SELECT e.id FROM collection e
+			INNER JOIN trashed_collections te ON e.parent_id = te.id
+		)
+		DELETE FROM asset_checkpoint_tag
+		WHERE checkpoint_id IN (SELECT id FROM asset_checkpoint WHERE trashed = 1)
+		OR asset_id IN (
+			SELECT id FROM asset
+			WHERE trashed = 1
+			OR collection_id IN (SELECT id FROM trashed_collections)
+		);
+
 		-- Delete asset_checkpoint records
 		WITH RECURSIVE trashed_collections AS (
 			SELECT id FROM collection WHERE trashed = 1
@@ -498,28 +532,9 @@ func ClearTrash(tx *sqlx.Tx) error {
 			SELECT e.id FROM collection e
 			INNER JOIN trashed_collections te ON e.parent_id = te.id
 		)
-		DELETE FROM asset_checkpoint 
-		WHERE trashed = 1 
+		DELETE FROM asset_checkpoint
+		WHERE trashed = 1
 		OR asset_id IN (
-			SELECT id FROM asset 
-			WHERE trashed = 1 
-			OR collection_id IN (SELECT id FROM trashed_collections)
-		);
-
-		-- Delete asset dependencies
-		WITH RECURSIVE trashed_collections AS (
-			SELECT id FROM collection WHERE trashed = 1
-			UNION
-			SELECT e.id FROM collection e
-			INNER JOIN trashed_collections te ON e.parent_id = te.id
-		)
-		DELETE FROM asset_dependency 
-		WHERE asset_id IN (
-			SELECT id FROM asset 
-			WHERE trashed = 1 
-			OR collection_id IN (SELECT id FROM trashed_collections)
-		)
-		OR dependency_id IN (
 			SELECT id FROM asset 
 			WHERE trashed = 1 
 			OR collection_id IN (SELECT id FROM trashed_collections)
@@ -579,8 +594,12 @@ func ClearTrash(tx *sqlx.Tx) error {
 
 		-- Clean up hanging references
 		DELETE FROM asset WHERE collection_id != '' AND collection_id NOT IN (SELECT id FROM collection);
-		DELETE FROM asset_checkpoint WHERE asset_id NOT IN (SELECT id FROM asset);
 		DELETE FROM asset_dependency WHERE asset_id NOT IN (SELECT id FROM asset) OR dependency_id NOT IN (SELECT id FROM asset);
+		DELETE FROM asset_checkpoint_tag
+		WHERE asset_id NOT IN (SELECT id FROM asset)
+		OR tag_id NOT IN (SELECT id FROM tag)
+		OR checkpoint_id NOT IN (SELECT id FROM asset_checkpoint);
+		DELETE FROM asset_checkpoint WHERE asset_id NOT IN (SELECT id FROM asset);
 		DELETE FROM collection_dependency WHERE asset_id NOT IN (SELECT id FROM asset) OR dependency_id NOT IN (SELECT id FROM collection);
 		DELETE FROM asset_tag WHERE asset_id NOT IN (SELECT id FROM asset) OR tag_id NOT IN (SELECT id FROM tag);
 	`
@@ -706,6 +725,15 @@ func ClearProjectOrphans(projectPath string) error {
 			-- Or assets whose collection is an orphan
 			OR (collection_id IN (SELECT id FROM temp_orphan_collections));
 
+		-- Delete asset_dependency records where either asset is an orphan
+		DELETE FROM asset_dependency
+		WHERE asset_id IN (SELECT id FROM temp_orphan_assets)
+		OR dependency_id IN (SELECT id FROM temp_orphan_assets);
+
+		-- Delete checkpoint tags before their checkpoints
+		DELETE FROM asset_checkpoint_tag
+		WHERE asset_id IN (SELECT id FROM temp_orphan_assets);
+
 		-- Delete asset_checkpoint records related to orphan assets
 		DELETE FROM asset_checkpoint
 		WHERE asset_id IN (SELECT id FROM temp_orphan_assets);
@@ -713,11 +741,6 @@ func ClearProjectOrphans(projectPath string) error {
 		-- Delete asset_tag records related to orphan assets
 		DELETE FROM asset_tag
 		WHERE asset_id IN (SELECT id FROM temp_orphan_assets);
-
-		-- Delete asset_dependency records where either asset is an orphan
-		DELETE FROM asset_dependency
-		WHERE asset_id IN (SELECT id FROM temp_orphan_assets)
-		OR dependency_id IN (SELECT id FROM temp_orphan_assets);
 
 		-- Delete collection_dependency records related to orphan assets or collections
 		DELETE FROM collection_dependency
@@ -741,7 +764,7 @@ func ClearProjectOrphans(projectPath string) error {
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func VerifyProjectIntegrity(projectPath string) (bool, error) {
@@ -764,6 +787,7 @@ func VerifyProjectIntegrity(projectPath string) (bool, error) {
 		"config", "template", "tag", "status",
 		"collection", "collection_type", "asset", "asset_type",
 		"dependency_type", "asset_dependency", "asset_tag",
+		"asset_checkpoint_tag",
 		"asset_checkpoint", "chunk",
 		"user",
 	}

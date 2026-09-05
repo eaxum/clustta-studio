@@ -54,6 +54,7 @@ func PushData(projectPath, remoteUrl string, userId string, callback func(int, i
 		AssetTypes:             repository.ToPbAssetTypes(data.AssetTypes),
 		Assets:                 repository.ToPbAssets(data.Assets),
 		AssetsCheckpoints:      repository.ToPbCheckpoints(data.AssetsCheckpoints),
+		AssetCheckpointTags:    repository.ToPbAssetCheckpointTags(data.AssetCheckpointTags),
 		AssetDependencies:      repository.ToPbAssetDependencies(data.AssetDependencies),
 		CollectionDependencies: repository.ToPbCollectionDependencies(data.CollectionDependencies),
 

@@ -84,6 +84,9 @@ message AssetDependency {
   string dependency_id = 4;
   string dependency_type_id = 5;
   bool synced = 6;
+  string resolution_mode = 7;
+  string checkpoint_id = 8;
+  string asset_checkpoint_tag_id = 9;
 }
 
 message CollectionDependency {
@@ -166,6 +169,15 @@ message AssetTag {
   string asset_id = 3;
   string tag_id = 4;
   bool synced = 5;
+}
+
+message AssetCheckpointTag {
+  string id = 1;
+  int64 mtime = 2;
+  string asset_id = 3;
+  string tag_id = 4;
+  string checkpoint_id = 5;
+  bool synced = 6;
 }
 
 message Checkpoint {
@@ -348,6 +360,7 @@ message ProjectData {
     repeated IntegrationCollectionMapping integration_collection_mappings = 23;
     repeated IntegrationAssetMapping integration_asset_mappings = 24;
     repeated ProjectConfig project_configs = 25;
+    repeated AssetCheckpointTag asset_checkpoint_tags = 26;
 }
 
 message FullAsset {

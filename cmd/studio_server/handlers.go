@@ -1271,6 +1271,7 @@ func PostDataHandler(
 		AssetTypes:             repository.FromPbAssetTypes(userDataPb.AssetTypes),
 		Assets:                 repository.FromPbAssets(userDataPb.Assets),
 		AssetsCheckpoints:      repository.FromPbCheckpoints(userDataPb.AssetsCheckpoints),
+		AssetCheckpointTags:    repository.FromPbAssetCheckpointTags(userDataPb.AssetCheckpointTags),
 		AssetDependencies:      repository.FromPbAssetDependencies(userDataPb.AssetDependencies),
 		CollectionDependencies: repository.FromPbCollectionDependencies(userDataPb.CollectionDependencies),
 

@@ -195,13 +195,18 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 
 	// Asset / collection dependencies → ManageDependencies
 	for _, d := range data.AssetDependencies {
-		if _, err := repository.GetDependency(tx, d.Id); err != nil && !role.ManageDependencies {
-			return deny("asset_dependency", "create", d.Id)
+		if !role.ManageDependencies {
+			return deny("asset_dependency", "modify", d.Id)
 		}
 	}
 	for _, d := range data.CollectionDependencies {
-		if _, err := repository.GetCollectionDependency(tx, d.Id); err != nil && !role.ManageDependencies {
-			return deny("collection_dependency", "create", d.Id)
+		if !role.ManageDependencies {
+			return deny("collection_dependency", "modify", d.Id)
+		}
+	}
+	for _, assignment := range data.AssetCheckpointTags {
+		if !role.ManageDependencies {
+			return deny("asset_checkpoint_tag", "modify", assignment.Id)
 		}
 	}
 
@@ -283,7 +288,7 @@ func authorizeTomb(role models.Role, isAdmin bool, t repository.Tomb) error {
 		if !role.UnassignAsset {
 			return deny("collection_assignee", "delete", t.Id)
 		}
-	case "asset_dependency", "collection_dependency":
+	case "asset_dependency", "collection_dependency", "asset_checkpoint_tag":
 		if !role.ManageDependencies {
 			return deny(t.TableName, "delete", t.Id)
 		}

@@ -25,7 +25,7 @@ import (
 )
 
 type ConflictInfo struct {
-	Type       string `json:"type"`        // "collection" or "asset"
+	Type       string `json:"type"`        // "collection", "asset", or "asset_checkpoint_tag"
 	LocalId    string `json:"local_id"`    // ID client tried to push
 	ExistingId string `json:"existing_id"` // ID that already exists on server
 	Name       string `json:"name"`        // The conflicting name
@@ -44,6 +44,7 @@ type ProjectData struct {
 	Assets                 []models.Asset                `json:"assets"`
 	AssetTypes             []models.AssetType            `json:"asset_types"`
 	AssetsCheckpoints      []models.Checkpoint           `json:"assets_checkpoints"`
+	AssetCheckpointTags    []models.AssetCheckpointTag   `json:"asset_checkpoint_tags"`
 	AssetDependencies      []models.AssetDependency      `json:"asset_dependencies"`
 	CollectionDependencies []models.CollectionDependency `json:"collection_dependencies"`
 
@@ -77,6 +78,7 @@ func (d *ProjectData) IsEmpty() bool {
 	return len(d.Assets) == 0 &&
 		len(d.AssetTypes) == 0 &&
 		len(d.AssetsCheckpoints) == 0 &&
+		len(d.AssetCheckpointTags) == 0 &&
 		len(d.AssetDependencies) == 0 &&
 		len(d.CollectionDependencies) == 0 &&
 		len(d.CollectionTypes) == 0 &&
@@ -199,6 +201,27 @@ func CheckForConflicts(tx *sqlx.Tx, data ProjectData) (*WriteResult, error) {
 				Extension:  asset.Extension,
 			})
 		}
+	}
+
+	checkpointTags := []models.AssetCheckpointTag{}
+	if err = tx.Select(&checkpointTags, "SELECT * FROM asset_checkpoint_tag"); err != nil {
+		return nil, err
+	}
+	checkpointTagIds := make(map[string]string, len(checkpointTags))
+	for _, assignment := range checkpointTags {
+		checkpointTagIds[assignment.AssetId+"|"+assignment.TagId] = assignment.Id
+	}
+	for _, assignment := range data.AssetCheckpointTags {
+		existingId, exists := checkpointTagIds[assignment.AssetId+"|"+assignment.TagId]
+		if !exists || existingId == assignment.Id {
+			continue
+		}
+		result.Conflicts = append(result.Conflicts, ConflictInfo{
+			Type:       "asset_checkpoint_tag",
+			LocalId:    assignment.Id,
+			ExistingId: existingId,
+			ParentId:   assignment.AssetId,
+		})
 	}
 
 	if len(result.Conflicts) > 0 {
@@ -715,17 +738,16 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 	elapsed = time.Since(start)
 	fmt.Printf("checkpoint write took %s\n", elapsed)
 
-	for _, dependency := range data.AssetDependencies {
-		if tombItems[dependency.Id] {
+	for _, assetTag := range data.AssetsTags {
+		if tombItems[assetTag.Id] {
 			continue
 		}
-		_, err = repository.GetDependency(tx, dependency.Id)
+		_, err = repository.GetAssetTag(tx, assetTag.Id)
 		if err != nil {
-			if errors.Is(err, error_service.ErrAssetDependencyNotFound) {
-				_, err = repository.AddDependency(
-					tx, dependency.Id, dependency.AssetId, dependency.DependencyId, dependency.DependencyTypeId)
+			if errors.Is(err, error_service.ErrAssetTagNotFound) {
+				err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
 				if err != nil {
-					if err.Error() == "UNIQUE constraint failed: asset_dependency.asset_id, asset_dependency.dependency_id" {
+					if err.Error() == "UNIQUE constraint failed: asset_tag.asset_id, asset_tag.tag_id" {
 						continue
 					}
 					return err
@@ -733,6 +755,24 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 			} else {
 				return err
 			}
+		}
+	}
+
+	for _, assignment := range data.AssetCheckpointTags {
+		if tombItems[assignment.Id] {
+			continue
+		}
+		if err = repository.SaveAssetCheckpointTag(tx, assignment); err != nil {
+			return err
+		}
+	}
+
+	for _, dependency := range data.AssetDependencies {
+		if tombItems[dependency.Id] {
+			continue
+		}
+		if err = repository.SaveDependency(tx, dependency); err != nil {
+			return err
 		}
 	}
 
@@ -870,26 +910,6 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 				if err != nil {
 					return err
 				}
-			}
-		}
-	}
-
-	for _, assetTag := range data.AssetsTags {
-		if tombItems[assetTag.Id] {
-			continue
-		}
-		_, err = repository.GetAssetTag(tx, assetTag.Id)
-		if err != nil {
-			if errors.Is(err, error_service.ErrAssetTagNotFound) {
-				err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
-				if err != nil {
-					if err.Error() == "UNIQUE constraint failed: asset_tag.asset_id, asset_tag.tag_id" {
-						continue
-					}
-					return err
-				}
-			} else {
-				return err
 			}
 		}
 	}
@@ -1179,13 +1199,24 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	elapsed = time.Since(start)
 	fmt.Printf("checkpoint write took %s\n", elapsed)
 
-	for _, dependency := range data.AssetDependencies {
-		_, err = repository.AddDependency(
-			tx, dependency.Id, dependency.AssetId, dependency.DependencyId, dependency.DependencyTypeId)
+	for _, assetTag := range data.AssetsTags {
+		err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
 		if err != nil {
-			if err.Error() == "UNIQUE constraint failed: asset_dependency.asset_id, asset_dependency.dependency_id" {
+			if err.Error() == "UNIQUE constraint failed: asset_tag.asset_id, asset_tag.tag_id" {
 				continue
 			}
+			return err
+		}
+	}
+
+	for _, assignment := range data.AssetCheckpointTags {
+		if err = repository.SaveAssetCheckpointTag(tx, assignment); err != nil {
+			return err
+		}
+	}
+
+	for _, dependency := range data.AssetDependencies {
+		if err = repository.SaveDependency(tx, dependency); err != nil {
 			return err
 		}
 	}
@@ -1234,16 +1265,6 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	for _, workflowAsset := range data.WorkflowAssets {
 		_, err = repository.CreateWorkflowAsset(tx, workflowAsset.Id, workflowAsset.Name, workflowAsset.WorkflowId, workflowAsset.AssetTypeId, workflowAsset.IsResource, workflowAsset.TemplateId, workflowAsset.Pointer, workflowAsset.IsLink)
 		if err != nil {
-			return err
-		}
-	}
-
-	for _, assetTag := range data.AssetsTags {
-		err = repository.AddTagToAssetById(tx, assetTag.Id, assetTag.AssetId, assetTag.TagId)
-		if err != nil {
-			if err.Error() == "UNIQUE constraint failed: asset_tag.asset_id, asset_tag.tag_id" {
-				continue
-			}
 			return err
 		}
 	}
@@ -1329,6 +1350,7 @@ func FetchData(remoteUrl string, userId string) (ProjectData, error) {
 				AssetTypes:             repository.FromPbAssetTypes(userDataPb.AssetTypes),
 				Assets:                 repository.FromPbAssets(userDataPb.Assets),
 				AssetsCheckpoints:      repository.FromPbCheckpoints(userDataPb.AssetsCheckpoints),
+				AssetCheckpointTags:    repository.FromPbAssetCheckpointTags(userDataPb.AssetCheckpointTags),
 				AssetDependencies:      repository.FromPbAssetDependencies(userDataPb.AssetDependencies),
 				CollectionDependencies: repository.FromPbCollectionDependencies(userDataPb.CollectionDependencies),
 

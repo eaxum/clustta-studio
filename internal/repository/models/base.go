@@ -59,13 +59,13 @@ type Asset struct {
 	IsResource      bool   `db:"is_resource" json:"is_resource"`
 	StatusId        string `db:"status_id" json:"status_id"`
 	StatusShortName string `db:"status_short_name" json:"status_short_name"`
-	AssetTypeId      string `db:"asset_type_id" json:"asset_type_id"`
-	AssetTypeName    string `db:"asset_type_name" json:"asset_type_name"`
-	AssetTypeIcon    string `db:"asset_type_icon" json:"asset_type_icon"`
-	CollectionId        string `db:"collection_id" json:"collection_id"`
-	CollectionName      string `db:"collection_name" json:"collection_name"`
-	CollectionPath      string `db:"collection_path" json:"collection_path"`
-	AssetPath        string `db:"asset_path" json:"asset_path"`
+	AssetTypeId     string `db:"asset_type_id" json:"asset_type_id"`
+	AssetTypeName   string `db:"asset_type_name" json:"asset_type_name"`
+	AssetTypeIcon   string `db:"asset_type_icon" json:"asset_type_icon"`
+	CollectionId    string `db:"collection_id" json:"collection_id"`
+	CollectionName  string `db:"collection_name" json:"collection_name"`
+	CollectionPath  string `db:"collection_path" json:"collection_path"`
+	AssetPath       string `db:"asset_path" json:"asset_path"`
 	AssigneeId      string `db:"assignee_id" json:"assignee_id"`
 	AssigneeEmail   string `db:"assignee_email" json:"assignee_email"`
 	AssigneeName    string `db:"assignee_name" json:"assignee_name"`
@@ -81,8 +81,8 @@ type Asset struct {
 	// Tags             []string `db:"tags" json:"tags"`
 	CollectionDependencies    []string `db:"-" json:"collection_dependencies"`
 	CollectionDependenciesRaw string   `db:"collection_dependencies" json:"-"`
-	Dependencies          []string `db:"-" json:"dependencies"`
-	DependenciesRaw       string   `db:"dependencies" json:"-"`
+	Dependencies              []string `db:"-" json:"dependencies"`
+	DependenciesRaw           string   `db:"dependencies" json:"-"`
 	// Dependencies     []string `db:"dependencies" json:"dependencies"`
 	FileStatus       string       `db:"file_status" json:"file_status"`
 	Status           Status       `db:"status" json:"status"`
@@ -115,37 +115,37 @@ func (t *Asset) GetFilePath() string {
 }
 
 type Collection struct {
-	Id               string   `db:"id" json:"id"`
-	MTime            int      `db:"mtime" json:"mtime"`
-	CreatedAt        string   `db:"created_at" json:"created_at"`
-	Name             string   `db:"name" json:"name"`
-	Description      string   `db:"description" json:"description"`
-	CollectionPath       string   `db:"collection_path" json:"collection_path"`
-	FilePath         string   `db:"file_path" json:"file_path"`
-	Trashed          bool     `db:"trashed" json:"trashed"`
-	CollectionTypeId     string   `db:"collection_type_id" json:"collection_type_id"`
-	CollectionTypeIcon   string   `db:"collection_type_icon" json:"collection_type_icon"`
-	ParentId         string   `db:"parent_id" json:"parent_id"`
-	AssigneeIdsRaw   string   `db:"assignee_ids" json:"-"`
-	AssigneeIds      []string `db:"-" json:"assignee_ids"`
-	CollectionTypeName   string   `db:"collection_type_name" json:"collection_type_name"`
-	PreviewId        string   `db:"preview_id" json:"preview_id"`
-	Preview          []byte   `db:"preview" json:"preview"`
-	PreviewExtension string   `db:"preview_extension" json:"preview_extension"`
-	Synced           bool     `db:"synced" json:"synced"`
-	IsDependency     bool     `db:"is_dependency" json:"is_dependency"`
-	IsShared         bool     `db:"is_shared" json:"is_shared"`
-	CanModify        bool     `db:"can_modify" json:"can_modify"`
-	Level            int      `db:"level" json:"-"`
-	HasChildren      bool     `db:"-" json:"has_children"`
+	Id                 string   `db:"id" json:"id"`
+	MTime              int      `db:"mtime" json:"mtime"`
+	CreatedAt          string   `db:"created_at" json:"created_at"`
+	Name               string   `db:"name" json:"name"`
+	Description        string   `db:"description" json:"description"`
+	CollectionPath     string   `db:"collection_path" json:"collection_path"`
+	FilePath           string   `db:"file_path" json:"file_path"`
+	Trashed            bool     `db:"trashed" json:"trashed"`
+	CollectionTypeId   string   `db:"collection_type_id" json:"collection_type_id"`
+	CollectionTypeIcon string   `db:"collection_type_icon" json:"collection_type_icon"`
+	ParentId           string   `db:"parent_id" json:"parent_id"`
+	AssigneeIdsRaw     string   `db:"assignee_ids" json:"-"`
+	AssigneeIds        []string `db:"-" json:"assignee_ids"`
+	CollectionTypeName string   `db:"collection_type_name" json:"collection_type_name"`
+	PreviewId          string   `db:"preview_id" json:"preview_id"`
+	Preview            []byte   `db:"preview" json:"preview"`
+	PreviewExtension   string   `db:"preview_extension" json:"preview_extension"`
+	Synced             bool     `db:"synced" json:"synced"`
+	IsDependency       bool     `db:"is_dependency" json:"is_dependency"`
+	IsShared           bool     `db:"is_shared" json:"is_shared"`
+	CanModify          bool     `db:"can_modify" json:"can_modify"`
+	Level              int      `db:"level" json:"-"`
+	HasChildren        bool     `db:"-" json:"has_children"`
 }
 type CollectionAssignee struct {
-	Id         string `db:"id" json:"id"`
-	MTime      int    `db:"mtime" json:"mtime"`
-	CollectionId   string `db:"collection_id" json:"collection_id"`
-	AssigneeId string `db:"assignee_id" json:"assignee_id"`
-	AssignerId string `db:"assigner_id" json:"assigner_id"`
-	Synced     bool   `db:"synced" json:"synced"`
+	Id           string `db:"id" json:"id"`
+	MTime        int    `db:"mtime" json:"mtime"`
+	CollectionId string `db:"collection_id" json:"collection_id"`
+	AssigneeId   string `db:"assignee_id" json:"assignee_id"`
+	AssignerId   string `db:"assigner_id" json:"assigner_id"`
+	Synced       bool   `db:"synced" json:"synced"`
 }
 
 func (e Collection) MarshalJSON() ([]byte, error) {
@@ -164,16 +164,16 @@ func (e *Collection) GetFilePath() string {
 }
 
 type UntrackedAsset struct {
-	Id           string `db:"id" json:"id"`
-	Name         string `db:"name" json:"name"`
-	Extension    string `db:"extension" json:"extension"`
-	CollectionId     string `db:"collection_id" json:"collection_id"`
-	CollectionName   string `db:"collection_name" json:"collection_name"`
-	CollectionPath   string `db:"collection_path" json:"collection_path"`
-	AssetPath     string `db:"asset_path" json:"asset_path"`
-	FilePath     string `db:"file_path" json:"file_path"`
-	ItemPath     string `db:"item_type" json:"item_type"`
-	AssetTypeIcon string `db:"asset_type_icon" json:"asset_type_icon"`
+	Id             string `db:"id" json:"id"`
+	Name           string `db:"name" json:"name"`
+	Extension      string `db:"extension" json:"extension"`
+	CollectionId   string `db:"collection_id" json:"collection_id"`
+	CollectionName string `db:"collection_name" json:"collection_name"`
+	CollectionPath string `db:"collection_path" json:"collection_path"`
+	AssetPath      string `db:"asset_path" json:"asset_path"`
+	FilePath       string `db:"file_path" json:"file_path"`
+	ItemPath       string `db:"item_type" json:"item_type"`
+	AssetTypeIcon  string `db:"asset_type_icon" json:"asset_type_icon"`
 }
 
 func (ut UntrackedAsset) MarshalJSON() ([]byte, error) {
@@ -188,12 +188,12 @@ func (ut UntrackedAsset) MarshalJSON() ([]byte, error) {
 }
 
 type UntrackedCollection struct {
-	Id         string `db:"id" json:"id"`
-	Name       string `db:"name" json:"name"`
+	Id             string `db:"id" json:"id"`
+	Name           string `db:"name" json:"name"`
 	CollectionPath string `db:"collection_path" json:"collection_path"`
-	ItemPath   string `db:"item_path" json:"item_path"`
-	FilePath   string `db:"file_path" json:"file_path"`
-	ParentId   string `db:"parent_id" json:"parent_id"`
+	ItemPath       string `db:"item_path" json:"item_path"`
+	FilePath       string `db:"file_path" json:"file_path"`
+	ParentId       string `db:"parent_id" json:"parent_id"`
 }
 
 func (ue UntrackedCollection) MarshalJSON() ([]byte, error) {
@@ -208,58 +208,61 @@ func (ue UntrackedCollection) MarshalJSON() ([]byte, error) {
 }
 
 type AssetDependency struct {
-	Id               string `db:"id" json:"id"`
-	MTime            int    `db:"mtime" json:"mtime"`
-	AssetId           string `db:"asset_id" json:"asset_id"`
-	DependencyId     string `db:"dependency_id" json:"dependency_id"`
-	DependencyTypeId string `db:"dependency_type_id" json:"dependency_type_id"`
-	Synced           bool   `db:"synced" json:"synced"`
+	Id                   string  `db:"id" json:"id"`
+	MTime                int     `db:"mtime" json:"mtime"`
+	AssetId              string  `db:"asset_id" json:"asset_id"`
+	DependencyId         string  `db:"dependency_id" json:"dependency_id"`
+	DependencyTypeId     string  `db:"dependency_type_id" json:"dependency_type_id"`
+	ResolutionMode       string  `db:"resolution_mode" json:"resolution_mode"`
+	CheckpointId         *string `db:"checkpoint_id" json:"checkpoint_id,omitempty"`
+	AssetCheckpointTagId *string `db:"asset_checkpoint_tag_id" json:"asset_checkpoint_tag_id,omitempty"`
+	Synced               bool    `db:"synced" json:"synced"`
 }
 type CollectionDependency struct {
 	Id               string `db:"id" json:"id"`
 	MTime            int    `db:"mtime" json:"mtime"`
-	AssetId           string `db:"asset_id" json:"asset_id"`
+	AssetId          string `db:"asset_id" json:"asset_id"`
 	DependencyId     string `db:"dependency_id" json:"dependency_id"`
 	DependencyTypeId string `db:"dependency_type_id" json:"dependency_type_id"`
 	Synced           bool   `db:"synced" json:"synced"`
 }
 type Workflow struct {
-	Id       string           `db:"id" json:"id"`
-	MTime    int              `db:"mtime" json:"mtime"`
-	Name     string           `db:"name" json:"name"`
-	Synced   bool             `db:"synced" json:"synced"`
-	Assets    []WorkflowAsset   `db:"-" json:"assets"`
+	Id          string               `db:"id" json:"id"`
+	MTime       int                  `db:"mtime" json:"mtime"`
+	Name        string               `db:"name" json:"name"`
+	Synced      bool                 `db:"synced" json:"synced"`
+	Assets      []WorkflowAsset      `db:"-" json:"assets"`
 	Collections []WorkflowCollection `db:"-" json:"collections"`
-	Links    []WorkflowLink   `db:"-" json:"links"`
+	Links       []WorkflowLink       `db:"-" json:"links"`
 }
 type WorkflowAsset struct {
+	Id                   string `db:"id" json:"id"`
+	MTime                int    `db:"mtime" json:"mtime"`
+	Name                 string `db:"name" json:"name"`
+	TemplateId           string `db:"template_id" json:"template_id"`
+	IsResource           bool   `db:"is_resource" json:"is_resource"`
+	WorkflowId           string `db:"workflow_id" json:"workflow_id"`
+	AssetTypeId          string `db:"asset_type_id" json:"asset_type_id"`
+	WorkflowCollectionId string `db:"workflow_collection_id" json:"workflow_collection_id"`
+	IsLink               bool   `db:"is_link" json:"is_link"`
+	Pointer              string `db:"pointer" json:"pointer"`
+	Synced               bool   `db:"synced" json:"synced"`
+}
+type WorkflowCollection struct {
 	Id               string `db:"id" json:"id"`
 	MTime            int    `db:"mtime" json:"mtime"`
 	Name             string `db:"name" json:"name"`
-	TemplateId       string `db:"template_id" json:"template_id"`
-	IsResource       bool   `db:"is_resource" json:"is_resource"`
 	WorkflowId       string `db:"workflow_id" json:"workflow_id"`
-	AssetTypeId       string `db:"asset_type_id" json:"asset_type_id"`
-	WorkflowCollectionId string `db:"workflow_collection_id" json:"workflow_collection_id"`
-	IsLink           bool   `db:"is_link" json:"is_link"`
-	Pointer          string `db:"pointer" json:"pointer"`
-	Synced           bool   `db:"synced" json:"synced"`
-}
-type WorkflowCollection struct {
-	Id           string `db:"id" json:"id"`
-	MTime        int    `db:"mtime" json:"mtime"`
-	Name         string `db:"name" json:"name"`
-	WorkflowId   string `db:"workflow_id" json:"workflow_id"`
 	CollectionTypeId string `db:"collection_type_id" json:"collection_type_id"`
-	ParentId     string `db:"parent_id" json:"parent_id"`
-	Synced       bool   `db:"synced" json:"synced"`
+	ParentId         string `db:"parent_id" json:"parent_id"`
+	Synced           bool   `db:"synced" json:"synced"`
 }
 
 type WorkflowLink struct {
 	Id                 string `db:"id" json:"id"`
 	MTime              int    `db:"mtime" json:"mtime"`
 	Name               string `db:"name" json:"name"`
-	CollectionTypeId       string `db:"collection_type_id" json:"collection_type_id"`
+	CollectionTypeId   string `db:"collection_type_id" json:"collection_type_id"`
 	WorkflowId         string `db:"workflow_id" json:"workflow_id"`
 	LinkedWorkflowId   string `db:"linked_workflow_id" json:"linked_workflow_id"`
 	LinkedWorkflowName string `db:"-" json:"linked_workflow_name"`
@@ -290,18 +293,27 @@ type Tag struct {
 }
 
 type AssetTag struct {
-	Id     string `db:"id"`
-	MTime  int    `db:"mtime" json:"mtime"`
+	Id      string `db:"id"`
+	MTime   int    `db:"mtime" json:"mtime"`
 	AssetId string `db:"asset_id"`
-	TagId  string `db:"tag_id"`
-	Synced bool   `db:"synced" json:"synced"`
+	TagId   string `db:"tag_id"`
+	Synced  bool   `db:"synced" json:"synced"`
+}
+
+type AssetCheckpointTag struct {
+	Id           string `db:"id" json:"id"`
+	MTime        int64  `db:"mtime" json:"mtime"`
+	AssetId      string `db:"asset_id" json:"asset_id"`
+	TagId        string `db:"tag_id" json:"tag_id"`
+	CheckpointId string `db:"checkpoint_id" json:"checkpoint_id"`
+	Synced       bool   `db:"synced" json:"synced"`
 }
 
 type Checkpoint struct {
 	Id               string `db:"id" json:"id"`
 	MTime            int    `db:"mtime" json:"mtime"`
 	CreatedAt        string `db:"created_at" json:"created_at"`
-	AssetId           string `db:"asset_id" json:"asset_id"`
+	AssetId          string `db:"asset_id" json:"asset_id"`
 	XXHashChecksum   string `db:"xxhash_checksum" json:"xxhash_checksum"`
 	TimeModified     int    `db:"time_modified" json:"time_modified"`
 	FileSize         int    `db:"file_size" json:"file_size"`
@@ -373,7 +385,7 @@ type Role struct {
 	RemoveUser bool `db:"remove_user" json:"remove_user"`
 	ChangeRole bool `db:"change_role" json:"change_role"`
 
-	ChangeStatus  bool `db:"change_status" json:"change_status"`
+	ChangeStatus   bool `db:"change_status" json:"change_status"`
 	SetDoneAsset   bool `db:"set_done_asset" json:"set_done_asset"`
 	SetRetakeAsset bool `db:"set_retake_asset" json:"set_retake_asset"`
 
@@ -412,7 +424,7 @@ type RoleAttributes struct {
 	RemoveUser bool `db:"remove_user" json:"remove_user"`
 	ChangeRole bool `db:"change_role" json:"change_role"`
 
-	ChangeStatus  bool `db:"change_status" json:"change_status"`
+	ChangeStatus   bool `db:"change_status" json:"change_status"`
 	SetDoneAsset   bool `db:"set_done_asset" json:"set_done_asset"`
 	SetRetakeAsset bool `db:"set_retake_asset" json:"set_retake_asset"`
 

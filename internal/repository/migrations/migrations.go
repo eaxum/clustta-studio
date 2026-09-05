@@ -2,12 +2,13 @@ package migrations
 
 import (
 	"clustta/internal/utils"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
 
 // LatestVersion is the current schema version after all migrations.
-const LatestVersion = 2.0
+const LatestVersion = 2.2
 
 // Migration defines a single schema migration step.
 type Migration struct {
@@ -28,17 +29,27 @@ func All() []Migration {
 		{Version: 1.8, Description: "Rename task/entity to asset/collection", Up: MigrateV1_8},
 		{Version: 1.9, Description: "Add manage_share_links permission", Up: MigrateV1_9},
 		{Version: 2.0, Description: "Add project storage tables", Up: MigrateV2_0},
+		{Version: 2.2, Description: "Add versioned dependencies and checkpoint tags", Up: MigrateV2_2},
 	}
 }
 
 // RunMigrations applies all pending migrations to the database.
 func RunMigrations(db *sqlx.DB, currentVersion float64, schema string) error {
+	if currentVersion > LatestVersion {
+		return fmt.Errorf("project schema %.1f is newer than supported schema %.1f", currentVersion, LatestVersion)
+	}
+	// Earlier migrations also apply the current schema, including selector indexes.
+	if currentVersion < LatestVersion {
+		if err := prepareDependencyColumns(db); err != nil {
+			return err
+		}
+	}
 	for _, m := range All() {
 		shouldRun := false
 		if m.Version == 1.2 {
 			shouldRun = currentVersion == 1.2
 		} else {
-			shouldRun = currentVersion <= m.Version
+			shouldRun = currentVersion < m.Version
 		}
 
 		if shouldRun {

@@ -19,7 +19,7 @@ type SyncOptions struct {
 
 var ProjectTables = []string{
 	"role", "user", "status", "tag",
-	"asset_type", "asset", "dependency_type", "asset_dependency", "collection_dependency",
+	"asset_type", "asset", "dependency_type", "asset_dependency", "collection_dependency", "asset_checkpoint_tag",
 	"collection_type", "collection", "collection_assignee", "template",
 	"workflow", "workflow_link", "workflow_collection", "workflow_asset",
 	"asset_tag", "asset_checkpoint", "tomb",
