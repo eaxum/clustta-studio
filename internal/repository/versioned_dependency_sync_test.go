@@ -154,6 +154,15 @@ func TestAssetDependencyProtobufRoundTripPreservesSelector(t *testing.T) {
 	}
 }
 
+func TestCheckpointProvenanceProtobufRoundTrip(t *testing.T) {
+	sourceId := "source-v1"
+	original := models.Checkpoint{Id: "output-v1", SourceCheckpointId: &sourceId}
+	roundTrip := FromPbCheckpoints(ToPbCheckpoints([]models.Checkpoint{original}))[0]
+	if roundTrip.SourceCheckpointId == nil || *roundTrip.SourceCheckpointId != sourceId {
+		t.Fatalf("checkpoint source did not round trip: %+v", roundTrip)
+	}
+}
+
 func TestProjectSchemaCreatesVersionedDependencyTables(t *testing.T) {
 	db, err := sqlx.Open("sqlite3", filepath.Join(t.TempDir(), "schema.db"))
 	if err != nil {

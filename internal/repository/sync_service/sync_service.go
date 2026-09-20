@@ -697,43 +697,15 @@ func WriteProjectData(tx *sqlx.Tx, data ProjectData, strict bool) error {
 	fmt.Printf("asset write took %s\n", elapsed)
 
 	start = time.Now()
-	localAssetsCheckpoints, err := repository.GetSimpleCheckpoints(tx)
-	if err != nil {
-		return err
-	}
-	localAssetsCheckpointsIndex := make(map[string]int)
-	for i, c := range localAssetsCheckpoints {
-		localAssetsCheckpointsIndex[c.Id] = i
-	}
-
-	createCheckpointQuery := `
-		INSERT INTO asset_checkpoint 
-		(id, mtime, created_at, asset_id, xxhash_checksum, time_modified, file_size, comment, chunks, author_id, preview_id, group_id) 
-		VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);
-	`
-	createCheckpointStmt, err := tx.Prepare(createCheckpointQuery)
-	if err != nil {
-		return err
-	}
-
+	checkpoints := make([]models.Checkpoint, 0, len(data.AssetsCheckpoints))
 	for _, assetCheckpoint := range data.AssetsCheckpoints {
 		if tombItems[assetCheckpoint.Id] {
 			continue
 		}
-
-		_, exists := localAssetsCheckpointsIndex[assetCheckpoint.Id]
-		if !exists {
-			EpochTime, err := utils.RFC3339ToEpoch(assetCheckpoint.CreatedAt)
-			if err != nil {
-				return err
-			}
-
-			_, err = createCheckpointStmt.Exec(assetCheckpoint.Id, assetCheckpoint.MTime, EpochTime, assetCheckpoint.AssetId, assetCheckpoint.XXHashChecksum, assetCheckpoint.TimeModified, assetCheckpoint.FileSize, assetCheckpoint.Comment, assetCheckpoint.Chunks, assetCheckpoint.AuthorUID, assetCheckpoint.PreviewId, assetCheckpoint.GroupId)
-			if err != nil {
-				return err
-			}
-			continue
-		}
+		checkpoints = append(checkpoints, assetCheckpoint)
+	}
+	if err = repository.SaveCheckpoints(tx, checkpoints); err != nil {
+		return err
 	}
 	elapsed = time.Since(start)
 	fmt.Printf("checkpoint write took %s\n", elapsed)
@@ -1176,25 +1148,8 @@ func OverWriteProjectData(tx *sqlx.Tx, data ProjectData) error {
 	fmt.Printf("asset write took %s\n", elapsed)
 
 	start = time.Now()
-	createCheckpointQuery := `
-		INSERT INTO asset_checkpoint 
-		(id, mtime, created_at, asset_id, xxhash_checksum, time_modified, file_size, comment, chunks, author_id, preview_id, group_id) 
-		VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);
-	`
-	createCheckpointStmt, err := tx.Prepare(createCheckpointQuery)
-	if err != nil {
+	if err = repository.SaveCheckpoints(tx, data.AssetsCheckpoints); err != nil {
 		return err
-	}
-
-	for _, assetCheckpoint := range data.AssetsCheckpoints {
-		EpochTime, err := utils.RFC3339ToEpoch(assetCheckpoint.CreatedAt)
-		if err != nil {
-			return err
-		}
-		_, err = createCheckpointStmt.Exec(assetCheckpoint.Id, assetCheckpoint.MTime, EpochTime, assetCheckpoint.AssetId, assetCheckpoint.XXHashChecksum, assetCheckpoint.TimeModified, assetCheckpoint.FileSize, assetCheckpoint.Comment, assetCheckpoint.Chunks, assetCheckpoint.AuthorUID, assetCheckpoint.PreviewId, assetCheckpoint.GroupId)
-		if err != nil {
-			return err
-		}
 	}
 	elapsed = time.Since(start)
 	fmt.Printf("checkpoint write took %s\n", elapsed)

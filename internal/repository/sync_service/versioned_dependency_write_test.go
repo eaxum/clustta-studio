@@ -3,6 +3,7 @@ package sync_service
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"clustta/internal/repository"
 	"clustta/internal/repository/models"
@@ -97,5 +98,47 @@ func TestWriteProjectDataCreatesAndUpdatesVersionedDependency(t *testing.T) {
 	var count int
 	if err := tx.Get(&count, "SELECT COUNT(*) FROM asset_tag WHERE asset_id = 'boy'"); err != nil || count != 0 {
 		t.Fatalf("checkpoint assignment removal must remove asset tag: count=%d err=%v", count, err)
+	}
+}
+
+func TestWriteProjectDataUpdatesCheckpointProvenance(t *testing.T) {
+	db := sqlx.MustOpen("sqlite3", filepath.Join(t.TempDir(), "project.db"))
+	defer db.Close()
+	db.MustExec(repository.ProjectSchema)
+	db.MustExec(`
+		INSERT INTO asset (id, created_at, mtime, name, extension, status_id, asset_type_id)
+		VALUES ('source', 1, 1, 'Source', '.blend', 'status', 'type'),
+		       ('output', 1, 1, 'Output', '.fbx', 'status', 'type');
+		INSERT INTO asset_checkpoint
+			(id, created_at, mtime, asset_id, xxhash_checksum, time_modified, file_size, chunks, author_id)
+		VALUES ('source-v1', 1, 1, 'source', 'source-hash', 1, 1, '', 'artist'),
+		       ('output-v1', 1, 1, 'output', 'output-hash', 1, 1, '', 'artist');
+	`)
+	sourceId := "source-v1"
+	checkpoint := models.Checkpoint{
+		Id: "output-v1", MTime: 2, CreatedAt: time.Unix(1, 0).UTC().Format(time.RFC3339),
+		AssetId: "output", XXHashChecksum: "output-hash", TimeModified: 1, FileSize: 1,
+		Comment: "exported", AuthorUID: "artist", SourceCheckpointId: &sourceId,
+	}
+	tx := db.MustBegin()
+	defer tx.Rollback()
+	if err := WriteProjectData(tx, ProjectData{AssetsCheckpoints: []models.Checkpoint{checkpoint}}, false); err != nil {
+		t.Fatal(err)
+	}
+	var stored models.Checkpoint
+	if err := tx.Get(&stored, "SELECT * FROM asset_checkpoint WHERE id = 'output-v1'"); err != nil {
+		t.Fatal(err)
+	}
+	if stored.Comment != "exported" || stored.SourceCheckpointId == nil || *stored.SourceCheckpointId != sourceId {
+		t.Fatalf("checkpoint provenance was not saved: %+v", stored)
+	}
+	outputId := "output-v1"
+	checkpoint = models.Checkpoint{
+		Id: "source-v1", MTime: 2, CreatedAt: time.Unix(1, 0).UTC().Format(time.RFC3339),
+		AssetId: "source", XXHashChecksum: "source-hash", TimeModified: 1, FileSize: 1,
+		AuthorUID: "artist", SourceCheckpointId: &outputId,
+	}
+	if err := WriteProjectData(tx, ProjectData{AssetsCheckpoints: []models.Checkpoint{checkpoint}}, false); err == nil {
+		t.Fatal("expected checkpoint source cycle to fail")
 	}
 }

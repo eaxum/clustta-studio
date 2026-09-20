@@ -78,6 +78,13 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 	if tableCount != 1 {
 		t.Fatal("expected asset_checkpoint_tag table")
 	}
+	var sourceColumnCount int
+	if err = db.Get(&sourceColumnCount, "SELECT COUNT(*) FROM pragma_table_info('asset_checkpoint') WHERE name = 'source_checkpoint_id'"); err != nil {
+		t.Fatal(err)
+	}
+	if sourceColumnCount != 1 {
+		t.Fatal("expected checkpoint source column")
+	}
 
 	var version string
 	if err = db.Get(&version, "SELECT value FROM config WHERE name = 'version'"); err != nil {
@@ -105,5 +112,26 @@ func TestOlderMigrationCanApplyCurrentSelectorIndexes(t *testing.T) {
 	var mode string
 	if err := db.Get(&mode, "SELECT resolution_mode FROM asset_dependency WHERE id = 'edge'"); err != nil || mode != "floating" {
 		t.Fatalf("migration lost floating edge: %s, %v", mode, err)
+	}
+}
+
+func TestCurrentV2_2AddsCheckpointSourceBeforeApplyingSchema(t *testing.T) {
+	schema, err := os.ReadFile("../schema.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := sqlx.MustOpen("sqlite3", filepath.Join(t.TempDir(), "project.clst"))
+	defer db.Close()
+	db.MustExec(`
+		CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT NOT NULL, mtime INTEGER NOT NULL);
+		CREATE TABLE asset_checkpoint (id TEXT PRIMARY KEY);
+		INSERT INTO config VALUES ('version', '2.2', 1);
+	`)
+	if err = RunMigrations(db, 2.2, string(schema)); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err = db.Get(&count, "SELECT COUNT(*) FROM pragma_table_info('asset_checkpoint') WHERE name = 'source_checkpoint_id'"); err != nil || count != 1 {
+		t.Fatalf("checkpoint source column: count=%d err=%v", count, err)
 	}
 }

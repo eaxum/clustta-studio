@@ -18,20 +18,20 @@ import (
 
 type Timeline struct {
 	CreatedAt string `db:"created_at" json:"created_at"`
-	AssetId    string `db:"asset_id" json:"asset_id"`
-	AssetPath  string `db:"asset_path" json:"asset_path"`
+	AssetId   string `db:"asset_id" json:"asset_id"`
+	AssetPath string `db:"asset_path" json:"asset_path"`
 	Comment   string `db:"comment" json:"comment"`
 	AuthorUID string `db:"author_id" json:"author_id"`
 	GroupId   string `db:"group_id" json:"group_id"`
 	Preview   []byte `db:"preview" json:"preview"`
 }
 type CompatTimeline struct {
-	CreatedAt string   `db:"created_at" json:"created_at"`
+	CreatedAt  string   `db:"created_at" json:"created_at"`
 	AssetPaths []string `db:"asset_paths" json:"asset_paths"`
-	GroupId   string   `db:"group_id" json:"group_id"`
-	Comment   string   `db:"comment" json:"comment"`
-	AuthorUID string   `db:"author_id" json:"author_id"`
-	Preview   []byte   `db:"preview" json:"preview"`
+	GroupId    string   `db:"group_id" json:"group_id"`
+	Comment    string   `db:"comment" json:"comment"`
+	AuthorUID  string   `db:"author_id" json:"author_id"`
+	Preview    []byte   `db:"preview" json:"preview"`
 }
 
 func CreateNewAssetCheckpoint(
@@ -96,7 +96,7 @@ func CreateNewAssetCheckpoint(
 
 	params := map[string]interface{}{
 		"created_at":      utils.GetEpochTime(),
-		"asset_id":         assetId,
+		"asset_id":        assetId,
 		"xxhash_checksum": checkpointChecksum,
 		"time_modified":   timeModified,
 		"file_size":       fileSize,
@@ -190,7 +190,7 @@ func CreateCheckpoint(
 
 	params := map[string]interface{}{
 		"created_at":      utils.GetEpochTime(),
-		"asset_id":         assetId,
+		"asset_id":        assetId,
 		"xxhash_checksum": checkpointChecksum,
 		"time_modified":   timeModified,
 		"file_size":       fileSize,
@@ -207,7 +207,7 @@ func CreateCheckpoint(
 
 	checkpoint := models.Checkpoint{}
 	conditions := map[string]interface{}{
-		"asset_id":         assetId,
+		"asset_id":        assetId,
 		"xxhash_checksum": checkpointChecksum,
 	}
 	err = base_service.GetBy(tx, "asset_checkpoint", conditions, &checkpoint)
@@ -232,7 +232,7 @@ func AddCheckpoint(
 	params := map[string]interface{}{
 		"id":              id,
 		"created_at":      created_at,
-		"asset_id":         assetId,
+		"asset_id":        assetId,
 		"xxhash_checksum": xxHashChecksum,
 		"time_modified":   timeModified,
 		"file_size":       fileSize,
@@ -284,6 +284,39 @@ func GetSimpleCheckpoints(tx *sqlx.Tx) ([]models.Checkpoint, error) {
 		return checkpoints, err
 	}
 	return checkpoints, nil
+}
+
+// SaveCheckpoints merges checkpoint metadata without replacing newer edits.
+func SaveCheckpoints(tx *sqlx.Tx, checkpoints []models.Checkpoint) error {
+	// Clear replaced links first so valid batch edits do not create temporary cycles.
+	for _, checkpoint := range checkpoints {
+		if _, err := tx.Exec(`UPDATE asset_checkpoint SET source_checkpoint_id = NULL
+            WHERE id = ? AND mtime < ?`, checkpoint.Id, checkpoint.MTime); err != nil {
+			return err
+		}
+	}
+	for _, checkpoint := range checkpoints {
+		createdAt, err := utils.RFC3339ToEpoch(checkpoint.CreatedAt)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(`INSERT INTO asset_checkpoint
+            (id, mtime, created_at, asset_id, xxhash_checksum, time_modified, file_size,
+             comment, chunks, author_id, preview_id, group_id, trashed, source_checkpoint_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET comment = excluded.comment,
+                source_checkpoint_id = excluded.source_checkpoint_id,
+                trashed = excluded.trashed, mtime = excluded.mtime
+            WHERE excluded.mtime > asset_checkpoint.mtime`,
+			checkpoint.Id, checkpoint.MTime, createdAt, checkpoint.AssetId,
+			checkpoint.XXHashChecksum, checkpoint.TimeModified, checkpoint.FileSize,
+			checkpoint.Comment, checkpoint.Chunks, checkpoint.AuthorUID, checkpoint.PreviewId,
+			checkpoint.GroupId, checkpoint.Trashed, checkpoint.SourceCheckpointId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetCheckpoint(tx *sqlx.Tx, id string) (models.Checkpoint, error) {
@@ -374,12 +407,12 @@ func GetTimeline(tx *sqlx.Tx) ([]CompatTimeline, error) {
 	for i, checkpoint := range checkpoints {
 		if previousCheckpoint.GroupId == "" {
 			previousCheckpoint = CompatTimeline{
-				CreatedAt: checkpoint.CreatedAt,
+				CreatedAt:  checkpoint.CreatedAt,
 				AssetPaths: []string{checkpoint.AssetPath},
-				GroupId:   checkpoint.GroupId,
-				Comment:   checkpoint.Comment,
-				AuthorUID: checkpoint.AuthorUID,
-				Preview:   checkpoint.Preview,
+				GroupId:    checkpoint.GroupId,
+				Comment:    checkpoint.Comment,
+				AuthorUID:  checkpoint.AuthorUID,
+				Preview:    checkpoint.Preview,
 			}
 			if i == len(checkpoints)-1 {
 				timeline = append(timeline, previousCheckpoint)
@@ -392,11 +425,11 @@ func GetTimeline(tx *sqlx.Tx) ([]CompatTimeline, error) {
 		} else {
 			timeline = append(timeline, previousCheckpoint)
 			previousCheckpoint = CompatTimeline{
-				CreatedAt: checkpoint.CreatedAt,
+				CreatedAt:  checkpoint.CreatedAt,
 				AssetPaths: []string{checkpoint.AssetPath},
-				Comment:   checkpoint.Comment,
-				AuthorUID: checkpoint.AuthorUID,
-				Preview:   checkpoint.Preview,
+				Comment:    checkpoint.Comment,
+				AuthorUID:  checkpoint.AuthorUID,
+				Preview:    checkpoint.Preview,
 			}
 		}
 		if i == len(checkpoints)-1 {

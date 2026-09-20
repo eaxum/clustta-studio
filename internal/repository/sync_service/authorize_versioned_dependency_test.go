@@ -47,3 +47,31 @@ func TestCheckpointTagAssignmentRequiresManageDependencies(t *testing.T) {
 		t.Fatalf("expected manage_dependencies to allow checkpoint tag assignment: %v", err)
 	}
 }
+
+func TestCheckpointMetadataUpdateRequiresCreateCheckpoint(t *testing.T) {
+	db := sqlx.MustOpen("sqlite3", filepath.Join(t.TempDir(), "project.db"))
+	defer db.Close()
+	db.MustExec(repository.ProjectSchema)
+	db.MustExec(`
+		INSERT INTO role (id, mtime, name) VALUES ('artist-role', 1, 'artist');
+		INSERT INTO user (id, mtime, added_at, first_name, last_name, username, email, role_id)
+		VALUES ('artist', 1, 1, 'Studio', 'Artist', 'artist', 'artist@example.com', 'artist-role');
+		INSERT INTO asset (id, created_at, mtime, name, extension, status_id, asset_type_id)
+		VALUES ('output', 1, 1, 'Output', '.fbx', 'status', 'type');
+		INSERT INTO asset_checkpoint
+			(id, created_at, mtime, asset_id, xxhash_checksum, time_modified, file_size, chunks, author_id)
+		VALUES ('output-v1', 1, 1, 'output', 'hash', 1, 1, '', 'artist');
+	`)
+	tx := db.MustBegin()
+	defer tx.Rollback()
+	data := ProjectData{AssetsCheckpoints: []models.Checkpoint{{Id: "output-v1", MTime: 2}}}
+	if err := AuthorizeProjectDataWrite(tx, "artist", false, data); err == nil {
+		t.Fatal("expected checkpoint update permission error")
+	}
+	if _, err := tx.Exec("UPDATE role SET create_checkpoint = 1 WHERE id = 'artist-role'"); err != nil {
+		t.Fatal(err)
+	}
+	if err := AuthorizeProjectDataWrite(tx, "artist", false, data); err != nil {
+		t.Fatalf("expected create_checkpoint to allow metadata update: %v", err)
+	}
+}

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.31.1
-// source: schema.proto
+// source: internal/repository/schema.proto
 
 package repositorypb
 
@@ -40,7 +40,7 @@ type User struct {
 
 func (x *User) Reset() {
 	*x = User{}
-	mi := &file_schema_proto_msgTypes[0]
+	mi := &file_internal_repository_schema_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +52,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[0]
+	mi := &file_internal_repository_schema_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +65,7 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use User.ProtoReflect.Descriptor instead.
 func (*User) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{0}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *User) GetId() string {
@@ -158,7 +158,7 @@ type CollectionType struct {
 
 func (x *CollectionType) Reset() {
 	*x = CollectionType{}
-	mi := &file_schema_proto_msgTypes[1]
+	mi := &file_internal_repository_schema_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -170,7 +170,7 @@ func (x *CollectionType) String() string {
 func (*CollectionType) ProtoMessage() {}
 
 func (x *CollectionType) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[1]
+	mi := &file_internal_repository_schema_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -183,7 +183,7 @@ func (x *CollectionType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionType.ProtoReflect.Descriptor instead.
 func (*CollectionType) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{1}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CollectionType) GetId() string {
@@ -234,7 +234,7 @@ type AssetType struct {
 
 func (x *AssetType) Reset() {
 	*x = AssetType{}
-	mi := &file_schema_proto_msgTypes[2]
+	mi := &file_internal_repository_schema_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -246,7 +246,7 @@ func (x *AssetType) String() string {
 func (*AssetType) ProtoMessage() {}
 
 func (x *AssetType) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[2]
+	mi := &file_internal_repository_schema_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +259,7 @@ func (x *AssetType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetType.ProtoReflect.Descriptor instead.
 func (*AssetType) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{2}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AssetType) GetId() string {
@@ -322,7 +322,7 @@ type Asset struct {
 
 func (x *Asset) Reset() {
 	*x = Asset{}
-	mi := &file_schema_proto_msgTypes[3]
+	mi := &file_internal_repository_schema_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -334,7 +334,7 @@ func (x *Asset) String() string {
 func (*Asset) ProtoMessage() {}
 
 func (x *Asset) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[3]
+	mi := &file_internal_repository_schema_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -347,7 +347,7 @@ func (x *Asset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Asset.ProtoReflect.Descriptor instead.
 func (*Asset) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{3}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Asset) GetId() string {
@@ -489,7 +489,7 @@ type Collection struct {
 
 func (x *Collection) Reset() {
 	*x = Collection{}
-	mi := &file_schema_proto_msgTypes[4]
+	mi := &file_internal_repository_schema_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -501,7 +501,7 @@ func (x *Collection) String() string {
 func (*Collection) ProtoMessage() {}
 
 func (x *Collection) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[4]
+	mi := &file_internal_repository_schema_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -514,7 +514,7 @@ func (x *Collection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Collection.ProtoReflect.Descriptor instead.
 func (*Collection) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{4}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Collection) GetId() string {
@@ -615,7 +615,7 @@ type CollectionAssignee struct {
 
 func (x *CollectionAssignee) Reset() {
 	*x = CollectionAssignee{}
-	mi := &file_schema_proto_msgTypes[5]
+	mi := &file_internal_repository_schema_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -627,7 +627,7 @@ func (x *CollectionAssignee) String() string {
 func (*CollectionAssignee) ProtoMessage() {}
 
 func (x *CollectionAssignee) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[5]
+	mi := &file_internal_repository_schema_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -640,7 +640,7 @@ func (x *CollectionAssignee) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionAssignee.ProtoReflect.Descriptor instead.
 func (*CollectionAssignee) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{5}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CollectionAssignee) GetId() string {
@@ -702,7 +702,7 @@ type AssetDependency struct {
 
 func (x *AssetDependency) Reset() {
 	*x = AssetDependency{}
-	mi := &file_schema_proto_msgTypes[6]
+	mi := &file_internal_repository_schema_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -714,7 +714,7 @@ func (x *AssetDependency) String() string {
 func (*AssetDependency) ProtoMessage() {}
 
 func (x *AssetDependency) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[6]
+	mi := &file_internal_repository_schema_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -727,7 +727,7 @@ func (x *AssetDependency) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetDependency.ProtoReflect.Descriptor instead.
 func (*AssetDependency) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{6}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *AssetDependency) GetId() string {
@@ -807,7 +807,7 @@ type CollectionDependency struct {
 
 func (x *CollectionDependency) Reset() {
 	*x = CollectionDependency{}
-	mi := &file_schema_proto_msgTypes[7]
+	mi := &file_internal_repository_schema_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +819,7 @@ func (x *CollectionDependency) String() string {
 func (*CollectionDependency) ProtoMessage() {}
 
 func (x *CollectionDependency) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[7]
+	mi := &file_internal_repository_schema_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -832,7 +832,7 @@ func (x *CollectionDependency) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionDependency.ProtoReflect.Descriptor instead.
 func (*CollectionDependency) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{7}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CollectionDependency) GetId() string {
@@ -889,7 +889,7 @@ type Workflow struct {
 
 func (x *Workflow) Reset() {
 	*x = Workflow{}
-	mi := &file_schema_proto_msgTypes[8]
+	mi := &file_internal_repository_schema_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +901,7 @@ func (x *Workflow) String() string {
 func (*Workflow) ProtoMessage() {}
 
 func (x *Workflow) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[8]
+	mi := &file_internal_repository_schema_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +914,7 @@ func (x *Workflow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Workflow.ProtoReflect.Descriptor instead.
 func (*Workflow) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{8}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Workflow) GetId() string {
@@ -964,7 +964,7 @@ type WorkflowAsset struct {
 
 func (x *WorkflowAsset) Reset() {
 	*x = WorkflowAsset{}
-	mi := &file_schema_proto_msgTypes[9]
+	mi := &file_internal_repository_schema_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -976,7 +976,7 @@ func (x *WorkflowAsset) String() string {
 func (*WorkflowAsset) ProtoMessage() {}
 
 func (x *WorkflowAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[9]
+	mi := &file_internal_repository_schema_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -989,7 +989,7 @@ func (x *WorkflowAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkflowAsset.ProtoReflect.Descriptor instead.
 func (*WorkflowAsset) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{9}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *WorkflowAsset) GetId() string {
@@ -1084,7 +1084,7 @@ type WorkflowCollection struct {
 
 func (x *WorkflowCollection) Reset() {
 	*x = WorkflowCollection{}
-	mi := &file_schema_proto_msgTypes[10]
+	mi := &file_internal_repository_schema_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1096,7 +1096,7 @@ func (x *WorkflowCollection) String() string {
 func (*WorkflowCollection) ProtoMessage() {}
 
 func (x *WorkflowCollection) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[10]
+	mi := &file_internal_repository_schema_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1109,7 +1109,7 @@ func (x *WorkflowCollection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkflowCollection.ProtoReflect.Descriptor instead.
 func (*WorkflowCollection) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{10}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *WorkflowCollection) GetId() string {
@@ -1177,7 +1177,7 @@ type WorkflowLink struct {
 
 func (x *WorkflowLink) Reset() {
 	*x = WorkflowLink{}
-	mi := &file_schema_proto_msgTypes[11]
+	mi := &file_internal_repository_schema_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1189,7 +1189,7 @@ func (x *WorkflowLink) String() string {
 func (*WorkflowLink) ProtoMessage() {}
 
 func (x *WorkflowLink) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[11]
+	mi := &file_internal_repository_schema_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1202,7 +1202,7 @@ func (x *WorkflowLink) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkflowLink.ProtoReflect.Descriptor instead.
 func (*WorkflowLink) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{11}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *WorkflowLink) GetId() string {
@@ -1273,7 +1273,7 @@ type DependencyType struct {
 
 func (x *DependencyType) Reset() {
 	*x = DependencyType{}
-	mi := &file_schema_proto_msgTypes[12]
+	mi := &file_internal_repository_schema_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1285,7 +1285,7 @@ func (x *DependencyType) String() string {
 func (*DependencyType) ProtoMessage() {}
 
 func (x *DependencyType) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[12]
+	mi := &file_internal_repository_schema_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1298,7 +1298,7 @@ func (x *DependencyType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DependencyType.ProtoReflect.Descriptor instead.
 func (*DependencyType) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{12}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *DependencyType) GetId() string {
@@ -1343,7 +1343,7 @@ type Status struct {
 
 func (x *Status) Reset() {
 	*x = Status{}
-	mi := &file_schema_proto_msgTypes[13]
+	mi := &file_internal_repository_schema_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1355,7 +1355,7 @@ func (x *Status) String() string {
 func (*Status) ProtoMessage() {}
 
 func (x *Status) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[13]
+	mi := &file_internal_repository_schema_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1368,7 +1368,7 @@ func (x *Status) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Status.ProtoReflect.Descriptor instead.
 func (*Status) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{13}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Status) GetId() string {
@@ -1425,7 +1425,7 @@ type Tag struct {
 
 func (x *Tag) Reset() {
 	*x = Tag{}
-	mi := &file_schema_proto_msgTypes[14]
+	mi := &file_internal_repository_schema_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1437,7 +1437,7 @@ func (x *Tag) String() string {
 func (*Tag) ProtoMessage() {}
 
 func (x *Tag) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[14]
+	mi := &file_internal_repository_schema_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1450,7 +1450,7 @@ func (x *Tag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tag.ProtoReflect.Descriptor instead.
 func (*Tag) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{14}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Tag) GetId() string {
@@ -1494,7 +1494,7 @@ type AssetTag struct {
 
 func (x *AssetTag) Reset() {
 	*x = AssetTag{}
-	mi := &file_schema_proto_msgTypes[15]
+	mi := &file_internal_repository_schema_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1506,7 +1506,7 @@ func (x *AssetTag) String() string {
 func (*AssetTag) ProtoMessage() {}
 
 func (x *AssetTag) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[15]
+	mi := &file_internal_repository_schema_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1519,7 +1519,7 @@ func (x *AssetTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetTag.ProtoReflect.Descriptor instead.
 func (*AssetTag) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{15}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AssetTag) GetId() string {
@@ -1571,7 +1571,7 @@ type AssetCheckpointTag struct {
 
 func (x *AssetCheckpointTag) Reset() {
 	*x = AssetCheckpointTag{}
-	mi := &file_schema_proto_msgTypes[16]
+	mi := &file_internal_repository_schema_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1583,7 +1583,7 @@ func (x *AssetCheckpointTag) String() string {
 func (*AssetCheckpointTag) ProtoMessage() {}
 
 func (x *AssetCheckpointTag) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[16]
+	mi := &file_internal_repository_schema_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1596,7 +1596,7 @@ func (x *AssetCheckpointTag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetCheckpointTag.ProtoReflect.Descriptor instead.
 func (*AssetCheckpointTag) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{16}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AssetCheckpointTag) GetId() string {
@@ -1642,28 +1642,29 @@ func (x *AssetCheckpointTag) GetSynced() bool {
 }
 
 type Checkpoint struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Mtime          int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
-	CreatedAt      string                 `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	AssetId        string                 `protobuf:"bytes,4,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	XxhashChecksum string                 `protobuf:"bytes,5,opt,name=xxhash_checksum,json=xxhashChecksum,proto3" json:"xxhash_checksum,omitempty"`
-	TimeModified   int64                  `protobuf:"varint,6,opt,name=time_modified,json=timeModified,proto3" json:"time_modified,omitempty"`
-	FileSize       int64                  `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
-	Comment        string                 `protobuf:"bytes,8,opt,name=comment,proto3" json:"comment,omitempty"`
-	Chunks         string                 `protobuf:"bytes,9,opt,name=chunks,proto3" json:"chunks,omitempty"`
-	AuthorUid      string                 `protobuf:"bytes,10,opt,name=author_uid,json=authorUid,proto3" json:"author_uid,omitempty"`
-	PreviewId      string                 `protobuf:"bytes,11,opt,name=preview_id,json=previewId,proto3" json:"preview_id,omitempty"`
-	Trashed        bool                   `protobuf:"varint,12,opt,name=trashed,proto3" json:"trashed,omitempty"`
-	Synced         bool                   `protobuf:"varint,13,opt,name=synced,proto3" json:"synced,omitempty"`
-	GroupId        string                 `protobuf:"bytes,14,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Mtime              int64                  `protobuf:"varint,2,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	CreatedAt          string                 `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	AssetId            string                 `protobuf:"bytes,4,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
+	XxhashChecksum     string                 `protobuf:"bytes,5,opt,name=xxhash_checksum,json=xxhashChecksum,proto3" json:"xxhash_checksum,omitempty"`
+	TimeModified       int64                  `protobuf:"varint,6,opt,name=time_modified,json=timeModified,proto3" json:"time_modified,omitempty"`
+	FileSize           int64                  `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	Comment            string                 `protobuf:"bytes,8,opt,name=comment,proto3" json:"comment,omitempty"`
+	Chunks             string                 `protobuf:"bytes,9,opt,name=chunks,proto3" json:"chunks,omitempty"`
+	AuthorUid          string                 `protobuf:"bytes,10,opt,name=author_uid,json=authorUid,proto3" json:"author_uid,omitempty"`
+	PreviewId          string                 `protobuf:"bytes,11,opt,name=preview_id,json=previewId,proto3" json:"preview_id,omitempty"`
+	Trashed            bool                   `protobuf:"varint,12,opt,name=trashed,proto3" json:"trashed,omitempty"`
+	Synced             bool                   `protobuf:"varint,13,opt,name=synced,proto3" json:"synced,omitempty"`
+	GroupId            string                 `protobuf:"bytes,14,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	SourceCheckpointId *string                `protobuf:"bytes,15,opt,name=source_checkpoint_id,json=sourceCheckpointId,proto3,oneof" json:"source_checkpoint_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Checkpoint) Reset() {
 	*x = Checkpoint{}
-	mi := &file_schema_proto_msgTypes[17]
+	mi := &file_internal_repository_schema_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1675,7 +1676,7 @@ func (x *Checkpoint) String() string {
 func (*Checkpoint) ProtoMessage() {}
 
 func (x *Checkpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[17]
+	mi := &file_internal_repository_schema_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1688,7 +1689,7 @@ func (x *Checkpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Checkpoint.ProtoReflect.Descriptor instead.
 func (*Checkpoint) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{17}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *Checkpoint) GetId() string {
@@ -1789,6 +1790,13 @@ func (x *Checkpoint) GetGroupId() string {
 	return ""
 }
 
+func (x *Checkpoint) GetSourceCheckpointId() string {
+	if x != nil && x.SourceCheckpointId != nil {
+		return *x.SourceCheckpointId
+	}
+	return ""
+}
+
 type Role struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1828,7 +1836,7 @@ type Role struct {
 
 func (x *Role) Reset() {
 	*x = Role{}
-	mi := &file_schema_proto_msgTypes[18]
+	mi := &file_internal_repository_schema_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1840,7 +1848,7 @@ func (x *Role) String() string {
 func (*Role) ProtoMessage() {}
 
 func (x *Role) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[18]
+	mi := &file_internal_repository_schema_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1853,7 +1861,7 @@ func (x *Role) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Role.ProtoReflect.Descriptor instead.
 func (*Role) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{18}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *Role) GetId() string {
@@ -2086,7 +2094,7 @@ type UserRole struct {
 
 func (x *UserRole) Reset() {
 	*x = UserRole{}
-	mi := &file_schema_proto_msgTypes[19]
+	mi := &file_internal_repository_schema_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2098,7 +2106,7 @@ func (x *UserRole) String() string {
 func (*UserRole) ProtoMessage() {}
 
 func (x *UserRole) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[19]
+	mi := &file_internal_repository_schema_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2111,7 +2119,7 @@ func (x *UserRole) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserRole.ProtoReflect.Descriptor instead.
 func (*UserRole) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{19}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *UserRole) GetId() string {
@@ -2166,7 +2174,7 @@ type Template struct {
 
 func (x *Template) Reset() {
 	*x = Template{}
-	mi := &file_schema_proto_msgTypes[20]
+	mi := &file_internal_repository_schema_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2178,7 +2186,7 @@ func (x *Template) String() string {
 func (*Template) ProtoMessage() {}
 
 func (x *Template) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[20]
+	mi := &file_internal_repository_schema_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2191,7 +2199,7 @@ func (x *Template) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Template.ProtoReflect.Descriptor instead.
 func (*Template) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{20}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *Template) GetId() string {
@@ -2268,7 +2276,7 @@ type Preview struct {
 
 func (x *Preview) Reset() {
 	*x = Preview{}
-	mi := &file_schema_proto_msgTypes[21]
+	mi := &file_internal_repository_schema_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2280,7 +2288,7 @@ func (x *Preview) String() string {
 func (*Preview) ProtoMessage() {}
 
 func (x *Preview) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[21]
+	mi := &file_internal_repository_schema_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2293,7 +2301,7 @@ func (x *Preview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Preview.ProtoReflect.Descriptor instead.
 func (*Preview) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{21}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Preview) GetHash() string {
@@ -2329,7 +2337,7 @@ type Tomb struct {
 
 func (x *Tomb) Reset() {
 	*x = Tomb{}
-	mi := &file_schema_proto_msgTypes[22]
+	mi := &file_internal_repository_schema_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2341,7 +2349,7 @@ func (x *Tomb) String() string {
 func (*Tomb) ProtoMessage() {}
 
 func (x *Tomb) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[22]
+	mi := &file_internal_repository_schema_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2354,7 +2362,7 @@ func (x *Tomb) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tomb.ProtoReflect.Descriptor instead.
 func (*Tomb) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{22}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *Tomb) GetId() string {
@@ -2404,7 +2412,7 @@ type IntegrationProject struct {
 
 func (x *IntegrationProject) Reset() {
 	*x = IntegrationProject{}
-	mi := &file_schema_proto_msgTypes[23]
+	mi := &file_internal_repository_schema_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2416,7 +2424,7 @@ func (x *IntegrationProject) String() string {
 func (*IntegrationProject) ProtoMessage() {}
 
 func (x *IntegrationProject) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[23]
+	mi := &file_internal_repository_schema_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2429,7 +2437,7 @@ func (x *IntegrationProject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntegrationProject.ProtoReflect.Descriptor instead.
 func (*IntegrationProject) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{23}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *IntegrationProject) GetId() string {
@@ -2529,7 +2537,7 @@ type IntegrationCollectionMapping struct {
 
 func (x *IntegrationCollectionMapping) Reset() {
 	*x = IntegrationCollectionMapping{}
-	mi := &file_schema_proto_msgTypes[24]
+	mi := &file_internal_repository_schema_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2541,7 +2549,7 @@ func (x *IntegrationCollectionMapping) String() string {
 func (*IntegrationCollectionMapping) ProtoMessage() {}
 
 func (x *IntegrationCollectionMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[24]
+	mi := &file_internal_repository_schema_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2554,7 +2562,7 @@ func (x *IntegrationCollectionMapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntegrationCollectionMapping.ProtoReflect.Descriptor instead.
 func (*IntegrationCollectionMapping) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{24}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *IntegrationCollectionMapping) GetId() string {
@@ -2663,7 +2671,7 @@ type IntegrationAssetMapping struct {
 
 func (x *IntegrationAssetMapping) Reset() {
 	*x = IntegrationAssetMapping{}
-	mi := &file_schema_proto_msgTypes[25]
+	mi := &file_internal_repository_schema_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2675,7 +2683,7 @@ func (x *IntegrationAssetMapping) String() string {
 func (*IntegrationAssetMapping) ProtoMessage() {}
 
 func (x *IntegrationAssetMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[25]
+	mi := &file_internal_repository_schema_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2688,7 +2696,7 @@ func (x *IntegrationAssetMapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntegrationAssetMapping.ProtoReflect.Descriptor instead.
 func (*IntegrationAssetMapping) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{25}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *IntegrationAssetMapping) GetId() string {
@@ -2800,7 +2808,7 @@ type ProjectConfig struct {
 
 func (x *ProjectConfig) Reset() {
 	*x = ProjectConfig{}
-	mi := &file_schema_proto_msgTypes[26]
+	mi := &file_internal_repository_schema_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2812,7 +2820,7 @@ func (x *ProjectConfig) String() string {
 func (*ProjectConfig) ProtoMessage() {}
 
 func (x *ProjectConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[26]
+	mi := &file_internal_repository_schema_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2825,7 +2833,7 @@ func (x *ProjectConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectConfig.ProtoReflect.Descriptor instead.
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{26}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ProjectConfig) GetName() string {
@@ -2883,7 +2891,7 @@ type ProjectData struct {
 
 func (x *ProjectData) Reset() {
 	*x = ProjectData{}
-	mi := &file_schema_proto_msgTypes[27]
+	mi := &file_internal_repository_schema_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2895,7 +2903,7 @@ func (x *ProjectData) String() string {
 func (*ProjectData) ProtoMessage() {}
 
 func (x *ProjectData) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[27]
+	mi := &file_internal_repository_schema_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2908,7 +2916,7 @@ func (x *ProjectData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectData.ProtoReflect.Descriptor instead.
 func (*ProjectData) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{27}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ProjectData) GetProjectPreview() string {
@@ -3143,7 +3151,7 @@ type FullAsset struct {
 
 func (x *FullAsset) Reset() {
 	*x = FullAsset{}
-	mi := &file_schema_proto_msgTypes[28]
+	mi := &file_internal_repository_schema_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3155,7 +3163,7 @@ func (x *FullAsset) String() string {
 func (*FullAsset) ProtoMessage() {}
 
 func (x *FullAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[28]
+	mi := &file_internal_repository_schema_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3168,7 +3176,7 @@ func (x *FullAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FullAsset.ProtoReflect.Descriptor instead.
 func (*FullAsset) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{28}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *FullAsset) GetId() string {
@@ -3475,7 +3483,7 @@ type ChunkInfo struct {
 
 func (x *ChunkInfo) Reset() {
 	*x = ChunkInfo{}
-	mi := &file_schema_proto_msgTypes[29]
+	mi := &file_internal_repository_schema_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3487,7 +3495,7 @@ func (x *ChunkInfo) String() string {
 func (*ChunkInfo) ProtoMessage() {}
 
 func (x *ChunkInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[29]
+	mi := &file_internal_repository_schema_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3500,7 +3508,7 @@ func (x *ChunkInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkInfo.ProtoReflect.Descriptor instead.
 func (*ChunkInfo) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{29}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ChunkInfo) GetHash() string {
@@ -3526,7 +3534,7 @@ type FullAssetList struct {
 
 func (x *FullAssetList) Reset() {
 	*x = FullAssetList{}
-	mi := &file_schema_proto_msgTypes[30]
+	mi := &file_internal_repository_schema_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3538,7 +3546,7 @@ func (x *FullAssetList) String() string {
 func (*FullAssetList) ProtoMessage() {}
 
 func (x *FullAssetList) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[30]
+	mi := &file_internal_repository_schema_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3551,7 +3559,7 @@ func (x *FullAssetList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FullAssetList.ProtoReflect.Descriptor instead.
 func (*FullAssetList) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{30}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *FullAssetList) GetFullAssets() []*FullAsset {
@@ -3570,7 +3578,7 @@ type Previews struct {
 
 func (x *Previews) Reset() {
 	*x = Previews{}
-	mi := &file_schema_proto_msgTypes[31]
+	mi := &file_internal_repository_schema_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3582,7 +3590,7 @@ func (x *Previews) String() string {
 func (*Previews) ProtoMessage() {}
 
 func (x *Previews) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[31]
+	mi := &file_internal_repository_schema_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3595,7 +3603,7 @@ func (x *Previews) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Previews.ProtoReflect.Descriptor instead.
 func (*Previews) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{31}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *Previews) GetPreviews() []*Preview {
@@ -3614,7 +3622,7 @@ type ChunkHashes struct {
 
 func (x *ChunkHashes) Reset() {
 	*x = ChunkHashes{}
-	mi := &file_schema_proto_msgTypes[32]
+	mi := &file_internal_repository_schema_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3626,7 +3634,7 @@ func (x *ChunkHashes) String() string {
 func (*ChunkHashes) ProtoMessage() {}
 
 func (x *ChunkHashes) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[32]
+	mi := &file_internal_repository_schema_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3639,7 +3647,7 @@ func (x *ChunkHashes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkHashes.ProtoReflect.Descriptor instead.
 func (*ChunkHashes) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{32}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ChunkHashes) GetChunkHashes() []string {
@@ -3658,7 +3666,7 @@ type ChunkInfos struct {
 
 func (x *ChunkInfos) Reset() {
 	*x = ChunkInfos{}
-	mi := &file_schema_proto_msgTypes[33]
+	mi := &file_internal_repository_schema_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3670,7 +3678,7 @@ func (x *ChunkInfos) String() string {
 func (*ChunkInfos) ProtoMessage() {}
 
 func (x *ChunkInfos) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_proto_msgTypes[33]
+	mi := &file_internal_repository_schema_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3683,7 +3691,7 @@ func (x *ChunkInfos) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkInfos.ProtoReflect.Descriptor instead.
 func (*ChunkInfos) Descriptor() ([]byte, []int) {
-	return file_schema_proto_rawDescGZIP(), []int{33}
+	return file_internal_repository_schema_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ChunkInfos) GetChunkInfos() []*ChunkInfo {
@@ -3693,11 +3701,11 @@ func (x *ChunkInfos) GetChunkInfos() []*ChunkInfo {
 	return nil
 }
 
-var File_schema_proto protoreflect.FileDescriptor
+var File_internal_repository_schema_proto protoreflect.FileDescriptor
 
-const file_schema_proto_rawDesc = "" +
+const file_internal_repository_schema_proto_rawDesc = "" +
 	"\n" +
-	"\fschema.proto\x12\n" +
+	" internal/repository/schema.proto\x12\n" +
 	"repository\"\x90\x02\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
@@ -3862,7 +3870,7 @@ const file_schema_proto_rawDesc = "" +
 	"\basset_id\x18\x03 \x01(\tR\aassetId\x12\x15\n" +
 	"\x06tag_id\x18\x04 \x01(\tR\x05tagId\x12#\n" +
 	"\rcheckpoint_id\x18\x05 \x01(\tR\fcheckpointId\x12\x16\n" +
-	"\x06synced\x18\x06 \x01(\bR\x06synced\"\x94\x03\n" +
+	"\x06synced\x18\x06 \x01(\bR\x06synced\"\xe4\x03\n" +
 	"\n" +
 	"Checkpoint\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
@@ -3882,7 +3890,9 @@ const file_schema_proto_rawDesc = "" +
 	"preview_id\x18\v \x01(\tR\tpreviewId\x12\x18\n" +
 	"\atrashed\x18\f \x01(\bR\atrashed\x12\x16\n" +
 	"\x06synced\x18\r \x01(\bR\x06synced\x12\x19\n" +
-	"\bgroup_id\x18\x0e \x01(\tR\agroupId\"\xf5\b\n" +
+	"\bgroup_id\x18\x0e \x01(\tR\agroupId\x125\n" +
+	"\x14source_checkpoint_id\x18\x0f \x01(\tH\x00R\x12sourceCheckpointId\x88\x01\x01B\x17\n" +
+	"\x15_source_checkpoint_id\"\xf5\b\n" +
 	"\x04Role\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05mtime\x18\x02 \x01(\x03R\x05mtime\x12\x12\n" +
@@ -4092,19 +4102,19 @@ const file_schema_proto_rawDesc = "" +
 	"chunkInfosB\"Z internal/repository/repositorypbb\x06proto3"
 
 var (
-	file_schema_proto_rawDescOnce sync.Once
-	file_schema_proto_rawDescData []byte
+	file_internal_repository_schema_proto_rawDescOnce sync.Once
+	file_internal_repository_schema_proto_rawDescData []byte
 )
 
-func file_schema_proto_rawDescGZIP() []byte {
-	file_schema_proto_rawDescOnce.Do(func() {
-		file_schema_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_schema_proto_rawDesc), len(file_schema_proto_rawDesc)))
+func file_internal_repository_schema_proto_rawDescGZIP() []byte {
+	file_internal_repository_schema_proto_rawDescOnce.Do(func() {
+		file_internal_repository_schema_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_repository_schema_proto_rawDesc), len(file_internal_repository_schema_proto_rawDesc)))
 	})
-	return file_schema_proto_rawDescData
+	return file_internal_repository_schema_proto_rawDescData
 }
 
-var file_schema_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
-var file_schema_proto_goTypes = []any{
+var file_internal_repository_schema_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_internal_repository_schema_proto_goTypes = []any{
 	(*User)(nil),                         // 0: repository.User
 	(*CollectionType)(nil),               // 1: repository.CollectionType
 	(*AssetType)(nil),                    // 2: repository.AssetType
@@ -4140,7 +4150,7 @@ var file_schema_proto_goTypes = []any{
 	(*ChunkHashes)(nil),                  // 32: repository.ChunkHashes
 	(*ChunkInfos)(nil),                   // 33: repository.ChunkInfos
 }
-var file_schema_proto_depIdxs = []int32{
+var file_internal_repository_schema_proto_depIdxs = []int32{
 	3,  // 0: repository.ProjectData.assets:type_name -> repository.Asset
 	2,  // 1: repository.ProjectData.asset_types:type_name -> repository.AssetType
 	17, // 2: repository.ProjectData.assets_checkpoints:type_name -> repository.Checkpoint
@@ -4178,26 +4188,27 @@ var file_schema_proto_depIdxs = []int32{
 	0,  // [0:30] is the sub-list for field type_name
 }
 
-func init() { file_schema_proto_init() }
-func file_schema_proto_init() {
-	if File_schema_proto != nil {
+func init() { file_internal_repository_schema_proto_init() }
+func file_internal_repository_schema_proto_init() {
+	if File_internal_repository_schema_proto != nil {
 		return
 	}
+	file_internal_repository_schema_proto_msgTypes[17].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_schema_proto_rawDesc), len(file_schema_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_repository_schema_proto_rawDesc), len(file_internal_repository_schema_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_schema_proto_goTypes,
-		DependencyIndexes: file_schema_proto_depIdxs,
-		MessageInfos:      file_schema_proto_msgTypes,
+		GoTypes:           file_internal_repository_schema_proto_goTypes,
+		DependencyIndexes: file_internal_repository_schema_proto_depIdxs,
+		MessageInfos:      file_internal_repository_schema_proto_msgTypes,
 	}.Build()
-	File_schema_proto = out.File
-	file_schema_proto_goTypes = nil
-	file_schema_proto_depIdxs = nil
+	File_internal_repository_schema_proto = out.File
+	file_internal_repository_schema_proto_goTypes = nil
+	file_internal_repository_schema_proto_depIdxs = nil
 }

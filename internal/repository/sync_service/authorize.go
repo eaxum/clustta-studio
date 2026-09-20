@@ -69,9 +69,9 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 	if err != nil {
 		return err
 	}
-	checkpointsById := make(map[string]bool, len(localCheckpoints))
+	checkpointsById := make(map[string]models.Checkpoint, len(localCheckpoints))
 	for _, c := range localCheckpoints {
-		checkpointsById[c.Id] = true
+		checkpointsById[c.Id] = c
 	}
 
 	// Helper: look up status name for SetDone/SetRetake gating.
@@ -183,13 +183,18 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 		}
 	}
 
-	// Asset checkpoints: only creation is meaningful (immutable rows)
+	// Asset checkpoints use CreateCheckpoint for creation and metadata edits.
 	for _, cp := range data.AssetsCheckpoints {
-		if checkpointsById[cp.Id] {
+		local, exists := checkpointsById[cp.Id]
+		if exists && local.MTime >= cp.MTime {
 			continue
 		}
 		if !role.CreateCheckpoint {
-			return deny("checkpoint", "create", cp.Id)
+			op := "create"
+			if exists {
+				op = "update"
+			}
+			return deny("checkpoint", op, cp.Id)
 		}
 	}
 
