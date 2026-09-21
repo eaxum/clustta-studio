@@ -2,6 +2,7 @@ package main
 
 import (
 	"clustta/internal/chunk_service"
+	"clustta/internal/compatibility"
 	"clustta/internal/utils"
 	"log"
 	"net/http"
@@ -114,7 +115,7 @@ func ProjectStorageMiddleware(next http.Handler) http.HandlerFunc {
 // }
 
 func (s *APIServer) Run() error {
-	router := http.NewServeMux()
+	router := &projectMux{http.NewServeMux()}
 
 	// Rate limiter for auth endpoints
 	authLimiter := newIPRateLimiter(5, time.Minute)
@@ -226,7 +227,8 @@ func (s *APIServer) Run() error {
 			"http://wails.localhost:*",
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization", "Clustta-Agent", "UserData", "Cookie"},
+		ExposedHeaders:   []string{compatibility.ProtocolHeader, compatibility.SchemaHeader, compatibility.ProjectSchemaHeader},
+		AllowedHeaders:   []string{compatibility.ProtocolHeader, compatibility.SchemaHeader, compatibility.ProjectSchemaHeader, "Content-Type", "Authorization", "Clustta-Agent", "UserId", "UserData", "Cookie"},
 		AllowCredentials: true,
 	})
 

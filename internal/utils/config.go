@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -29,28 +28,23 @@ func SetTablesToSynced(tx *sqlx.Tx, tables []string) error {
 	return nil
 }
 
-func GetProjectVersion(tx *sqlx.Tx) (float64, error) {
+func GetProjectVersion(tx *sqlx.Tx) (string, error) {
 	var version string
 	err := tx.Get(&version, "SELECT value FROM config WHERE name = 'version'")
 	if err != nil && (err == sql.ErrNoRows || strings.Contains(err.Error(), "no such table")) {
-		return 0.0, nil
+		return "0.0", nil
 	} else if err != nil {
-		return 0.0, err
+		return "", err
 	}
-	versionFloat, err := strconv.ParseFloat(version, 8)
-	if err != nil {
-		return 0.0, err
-	}
-	return versionFloat, nil
+	return version, nil
 }
 
-func SetProjectVersion(tx *sqlx.Tx, version float64) error {
-	versionStr := strconv.FormatFloat(version, 'f', -1, 64)
+func SetProjectVersion(tx *sqlx.Tx, version string) error {
 	_, err := tx.Exec(`
 		INSERT INTO config (name, value, mtime)
 		VALUES ('version', ?, ?)
 		ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value, mtime = EXCLUDED.mtime
-	`, versionStr, GetEpochTime())
+	`, version, GetEpochTime())
 	return err
 }
 

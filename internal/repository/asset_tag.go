@@ -72,7 +72,7 @@ func AddTagToAsset(tx *sqlx.Tx, assetId string, tag string) error {
 	}
 	params := map[string]interface{}{
 		"asset_id": assetId,
-		"tag_id":  tagObj.Id,
+		"tag_id":   tagObj.Id,
 	}
 	err = base_service.Create(tx, "asset_tag", params)
 	if err != nil {
@@ -83,9 +83,9 @@ func AddTagToAsset(tx *sqlx.Tx, assetId string, tag string) error {
 
 func AddTagToAssetById(tx *sqlx.Tx, id, assetId string, tagId string) error {
 	params := map[string]interface{}{
-		"id":      id,
+		"id":       id,
 		"asset_id": assetId,
-		"tag_id":  tagId,
+		"tag_id":   tagId,
 	}
 	err := base_service.Create(tx, "asset_tag", params)
 	if err != nil {
@@ -115,7 +115,7 @@ func GetAssetTags(tx *sqlx.Tx, assetId string) ([]models.Tag, error) {
 func RemoveTagFromAsset(tx *sqlx.Tx, assetId string, tagId string) error {
 	conditions := map[string]interface{}{
 		"asset_id": assetId,
-		"tag_id":  tagId,
+		"tag_id":   tagId,
 	}
 	err := base_service.DeleteBy(tx, "asset_tag", conditions)
 	return err

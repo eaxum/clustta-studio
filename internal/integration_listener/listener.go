@@ -7,6 +7,7 @@
 package integration_listener
 
 import (
+	"clustta/internal/compatibility"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -443,6 +444,9 @@ func (l *StudioListener) applyToProject(projectPath string, a integrations.Exter
 		return "", err
 	}
 	defer tx.Rollback()
+	if err := compatibility.ValidateDatabase(tx); err != nil {
+		return "", err
+	}
 
 	link, err := repository.GetIntegrationProjectByIntegrationId(tx, a.IntegrationId)
 	if err != nil || link.ExternalProjectId != a.ProjectId {

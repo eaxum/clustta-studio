@@ -59,7 +59,7 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = RunMigrations(db, 2.0, versionedDependencyMigrationSchema); err != nil {
+	if err = RunMigrations(db, "2.0", versionedDependencyMigrationSchema); err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,7 +106,7 @@ func TestOlderMigrationCanApplyCurrentSelectorIndexes(t *testing.T) {
 		id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, asset_id TEXT NOT NULL,
 		dependency_id TEXT NOT NULL, dependency_type_id TEXT NOT NULL, synced BOOLEAN DEFAULT 0 NOT NULL);
 		INSERT INTO asset_dependency VALUES ('edge', 1, 'shot', 'boy', 'default', 1);`)
-	if err := RunMigrations(db, 1.9, string(schema)); err != nil {
+	if err := RunMigrations(db, "1.9", string(schema)); err != nil {
 		t.Fatal(err)
 	}
 	var mode string
@@ -127,7 +127,7 @@ func TestCurrentV2_2AddsCheckpointSourceBeforeApplyingSchema(t *testing.T) {
 		CREATE TABLE asset_checkpoint (id TEXT PRIMARY KEY);
 		INSERT INTO config VALUES ('version', '2.2', 1);
 	`)
-	if err = RunMigrations(db, 2.2, string(schema)); err != nil {
+	if err = RunMigrations(db, "2.2", string(schema)); err != nil {
 		t.Fatal(err)
 	}
 	var count int

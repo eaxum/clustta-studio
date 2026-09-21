@@ -3,6 +3,7 @@ package main
 import (
 	"clustta/internal/auth_service"
 	"clustta/internal/chunk_service"
+	"clustta/internal/compatibility"
 	"clustta/internal/metadata_service"
 	"clustta/internal/repository"
 	"clustta/internal/repository/repositorypb"
@@ -241,6 +242,7 @@ type StudioInfoResponse struct {
 }
 
 type StudioCapabilitiesResponse struct {
+	Compatibility  *compatibility.Contract    `json:"compatibility"`
 	ProjectStorage ProjectStorageCapabilities `json:"project_storage"`
 }
 
@@ -270,6 +272,7 @@ func GetStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 		AltUrl:      CONFIG.ServerAltURL,
 		HostingMode: "private",
 		Capabilities: StudioCapabilitiesResponse{
+			Compatibility: compatibility.Current(compatibility.Schema),
 			ProjectStorage: ProjectStorageCapabilities{
 				SupportedModes:      chunk_service.SupportedStorageModes(),
 				AvailableModes:      chunk_service.AvailableStorageModes(),
@@ -832,7 +835,7 @@ func ToggleProjectCloseHandler(
 		return
 	}
 
-	projectInfo, err := repository.GetProjectInfo(projectPath, user)
+	projectInfo, err := repository.GetProjectDiscoveryInfo(projectPath, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -981,7 +984,7 @@ func GetProjectHandler(
 		return
 	}
 	if userInProject {
-		projectInfo, err := repository.GetProjectInfo(projectPath, user)
+		projectInfo, err := repository.GetProjectDiscoveryInfo(projectPath, user)
 		if err != nil {
 			log.Printf("Request error: %v", err)
 			http.Error(w, "Internal server error", 400)
@@ -1056,6 +1059,7 @@ func GetProjectSyncTokenHandler(
 
 func GetProjectsHandler(
 	w http.ResponseWriter, r *http.Request) {
+	compatibility.Respond(w, compatibility.Schema)
 	projectFolder := CONFIG.ProjectsDir
 
 	extension := "clst"
@@ -1109,7 +1113,7 @@ func GetProjectsHandler(
 				return
 			}
 			if userInProject {
-				projectInfo, err := repository.GetProjectInfo(projectPath, user)
+				projectInfo, err := repository.GetProjectDiscoveryInfo(projectPath, user)
 				if err != nil {
 					log.Printf("Request error: %v", err)
 					http.Error(w, "Internal server error", 400)
@@ -1142,12 +1146,6 @@ func GetDataHandler(
 	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
-		return
-	}
-
-	if err := repository.UpdateProject(projectPath); err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 500)
 		return
 	}
 
@@ -1212,12 +1210,6 @@ func PostDataHandler(
 	}
 	if !utils.FileExists(projectPath) {
 		http.Error(w, "Project Not Found", 400)
-		return
-	}
-
-	if err := repository.UpdateProject(projectPath); err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 500)
 		return
 	}
 
