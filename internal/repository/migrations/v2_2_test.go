@@ -51,7 +51,7 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 		);
 		CREATE VIEW asset_dependencies AS SELECT asset_id FROM asset_dependency;
 		CREATE VIEW full_asset AS SELECT asset_id FROM asset_dependencies;
-		INSERT INTO config (name, value, mtime) VALUES ('version', '2.0', 1);
+		INSERT INTO config (name, value, mtime) VALUES ('version', '2', 1);
 		INSERT INTO asset_dependency (id, mtime, asset_id, dependency_id, dependency_type_id)
 		VALUES ('edge', 1, 'shot', 'boy', 'default');
 	`)
@@ -59,7 +59,7 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = RunMigrations(db, "2.0", versionedDependencyMigrationSchema); err != nil {
+	if err = RunMigrations(db, "2", versionedDependencyMigrationSchema); err != nil {
 		t.Fatal(err)
 	}
 
