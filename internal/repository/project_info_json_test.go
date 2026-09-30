@@ -21,7 +21,7 @@ func TestProjectInfoAcceptsLegacyNumericVersion(t *testing.T) {
 	}
 }
 
-func TestProjectInfoMarshalsVersionAsString(t *testing.T) {
+func TestProjectInfoMarshalsVersionAsLegacyNumber(t *testing.T) {
 	data, err := json.Marshal(ProjectInfo{Version: "2.2"})
 	if err != nil {
 		t.Fatal(err)
@@ -30,8 +30,18 @@ func TestProjectInfoMarshalsVersionAsString(t *testing.T) {
 	if err := json.Unmarshal(data, &wire); err != nil {
 		t.Fatal(err)
 	}
-	if string(wire["version"]) != `"2.2"` {
-		t.Fatalf("expected a string version, got %s", wire["version"])
+	if string(wire["version"]) != `2.2` {
+		t.Fatalf("expected a numeric version, got %s", wire["version"])
+	}
+
+	var legacyProject struct {
+		Version float64 `json:"version"`
+	}
+	if err := json.Unmarshal(data, &legacyProject); err != nil {
+		t.Fatalf("legacy client could not decode project info: %v", err)
+	}
+	if legacyProject.Version != 2.2 {
+		t.Fatalf("expected legacy version 2.2, got %v", legacyProject.Version)
 	}
 }
 

@@ -11,6 +11,25 @@ import (
 
 type projectInfoJSON ProjectInfo
 
+func (project ProjectInfo) MarshalJSON() ([]byte, error) {
+	version := json.RawMessage("null")
+	if project.Version != "" {
+		if _, err := compatibility.CompareVersions(project.Version, project.Version); err != nil {
+			return nil, fmt.Errorf("invalid project version %q: %w", project.Version, err)
+		}
+		version = json.RawMessage(project.Version)
+	}
+
+	wire := struct {
+		*projectInfoJSON
+		Version json.RawMessage `json:"version"`
+	}{
+		projectInfoJSON: (*projectInfoJSON)(&project),
+		Version:         version,
+	}
+	return json.Marshal(wire)
+}
+
 func (project *ProjectInfo) UnmarshalJSON(data []byte) error {
 	wire := struct {
 		*projectInfoJSON
