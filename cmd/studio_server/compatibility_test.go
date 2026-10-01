@@ -24,7 +24,7 @@ func TestProjectAdmissionPreservesDataOnRejection(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if _, err := db.Exec("CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT); INSERT INTO config VALUES ('version','2.2'), ('sync_token','unchanged'); CREATE TABLE pending (value TEXT); INSERT INTO pending VALUES ('local work');"); err != nil {
+	if _, err := db.Exec("CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT); INSERT INTO config VALUES ('version',?), ('sync_token','unchanged'); CREATE TABLE pending (value TEXT); INSERT INTO pending VALUES ('local work');", compatibility.Schema); err != nil {
 		t.Fatal(err)
 	}
 	for _, endpoint := range []string{"data", "sync-token", "chunks", "chunk-upload-confirm", "assets", "collaborators"} {
@@ -70,7 +70,7 @@ func TestNewProjectRoutesAutomaticallyUseAdmission(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if _, err := db.Exec("CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT); INSERT INTO config VALUES ('version','2.2'); CREATE TABLE user (id TEXT PRIMARY KEY, role_id TEXT); INSERT INTO user VALUES ('alice','role'); CREATE TABLE role (id TEXT PRIMARY KEY); INSERT INTO role VALUES ('role');"); err != nil {
+	if _, err := db.Exec("CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT); INSERT INTO config VALUES ('version',?); CREATE TABLE user (id TEXT PRIMARY KEY, role_id TEXT); INSERT INTO user VALUES ('alice','role'); CREATE TABLE role (id TEXT PRIMARY KEY); INSERT INTO role VALUES ('role');", compatibility.Schema); err != nil {
 		t.Fatal(err)
 	}
 	writes := 0
