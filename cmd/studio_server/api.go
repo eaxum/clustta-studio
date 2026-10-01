@@ -227,8 +227,8 @@ func (s *APIServer) Run() error {
 			"http://wails.localhost:*",
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-		ExposedHeaders:   []string{compatibility.ProtocolHeader, compatibility.SchemaHeader, compatibility.ProjectSchemaHeader},
-		AllowedHeaders:   []string{compatibility.ProtocolHeader, compatibility.SchemaHeader, compatibility.ProjectSchemaHeader, "Content-Type", "Authorization", "Clustta-Agent", "UserId", "UserData", "Cookie"},
+		ExposedHeaders:   []string{compatibility.APIVersionHeader},
+		AllowedHeaders:   []string{compatibility.APIVersionHeader, "Content-Type", "Authorization", "Clustta-Agent", "UserId", "UserData", "Cookie"},
 		AllowCredentials: true,
 	})
 

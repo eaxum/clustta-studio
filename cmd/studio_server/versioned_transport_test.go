@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"clustta/internal/compatibility"
 	"clustta/internal/constants"
 	"clustta/internal/repository"
 	"clustta/internal/repository/repositorypb"
@@ -71,6 +72,7 @@ func TestClientWireRoundTrip(t *testing.T) {
 		request := httptest.NewRequest(http.MethodPost, "/project/wire/data", bytes.NewReader(body))
 		request.SetPathValue("project", "wire")
 		request = request.WithContext(context.WithValue(request.Context(), apiUserContextKey, []byte(`{"id":"artist"}`)))
+		request = request.WithContext(compatibility.WithAPIContext(request.Context(), compatibility.APIContext{Version: compatibility.CurrentAPIVersion}))
 		response := httptest.NewRecorder()
 		PostDataHandler(response, request)
 		if response.Code != http.StatusOK {
@@ -79,6 +81,7 @@ func TestClientWireRoundTrip(t *testing.T) {
 		request = httptest.NewRequest(http.MethodGet, "/project/wire/data", strings.NewReader(`{"user_id":"artist"}`))
 		request.SetPathValue("project", "wire")
 		request = request.WithContext(context.WithValue(request.Context(), apiUserContextKey, []byte(`{"id":"artist"}`)))
+		request = request.WithContext(compatibility.WithAPIContext(request.Context(), compatibility.APIContext{Version: compatibility.CurrentAPIVersion}))
 		response = httptest.NewRecorder()
 		GetDataHandler(response, request)
 		if response.Code != http.StatusOK {

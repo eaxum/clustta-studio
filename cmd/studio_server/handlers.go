@@ -233,16 +233,17 @@ func GetStudioKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 // StudioInfoResponse represents studio metadata for client discovery
 type StudioInfoResponse struct {
-	Id           string                     `json:"id"`
-	Name         string                     `json:"name"`
-	Url          string                     `json:"url"`
-	AltUrl       string                     `json:"alt_url"`
-	HostingMode  string                     `json:"hosting_mode"`
-	Capabilities StudioCapabilitiesResponse `json:"capabilities"`
+	Id            string                     `json:"id"`
+	Name          string                     `json:"name"`
+	Url           string                     `json:"url"`
+	AltUrl        string                     `json:"alt_url"`
+	HostingMode   string                     `json:"hosting_mode"`
+	ProjectSchema string                     `json:"project_schema"`
+	API           compatibility.APIInfo      `json:"api"`
+	Capabilities  StudioCapabilitiesResponse `json:"capabilities"`
 }
 
 type StudioCapabilitiesResponse struct {
-	Compatibility  *compatibility.Contract    `json:"compatibility"`
 	ProjectStorage ProjectStorageCapabilities `json:"project_storage"`
 }
 
@@ -266,13 +267,14 @@ func GetStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := StudioInfoResponse{
-		Id:          studioId,
-		Name:        CONFIG.ServerName,
-		Url:         CONFIG.ServerURL,
-		AltUrl:      CONFIG.ServerAltURL,
-		HostingMode: "private",
+		Id:            studioId,
+		Name:          CONFIG.ServerName,
+		Url:           CONFIG.ServerURL,
+		AltUrl:        CONFIG.ServerAltURL,
+		HostingMode:   "private",
+		ProjectSchema: compatibility.CurrentProjectSchema,
+		API:           compatibility.Info(),
 		Capabilities: StudioCapabilitiesResponse{
-			Compatibility: compatibility.Current(compatibility.Schema),
 			ProjectStorage: ProjectStorageCapabilities{
 				SupportedModes:      chunk_service.SupportedStorageModes(),
 				AvailableModes:      chunk_service.AvailableStorageModes(),
@@ -389,10 +391,20 @@ func UpdateStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 		studioId = "private-studio"
 	}
 	response := StudioInfoResponse{
-		Id:     studioId,
-		Name:   CONFIG.ServerName,
-		Url:    CONFIG.ServerURL,
-		AltUrl: CONFIG.ServerAltURL,
+		Id:            studioId,
+		Name:          CONFIG.ServerName,
+		Url:           CONFIG.ServerURL,
+		AltUrl:        CONFIG.ServerAltURL,
+		HostingMode:   "private",
+		ProjectSchema: compatibility.CurrentProjectSchema,
+		API:           compatibility.Info(),
+		Capabilities: StudioCapabilitiesResponse{
+			ProjectStorage: ProjectStorageCapabilities{
+				SupportedModes:      chunk_service.SupportedStorageModes(),
+				AvailableModes:      chunk_service.AvailableStorageModes(),
+				ConversionSupported: true,
+			},
+		},
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -1059,7 +1071,11 @@ func GetProjectSyncTokenHandler(
 
 func GetProjectsHandler(
 	w http.ResponseWriter, r *http.Request) {
-	compatibility.Respond(w, compatibility.Schema)
+	var ok bool
+	r, ok = negotiateRequestAPI(w, r)
+	if !ok {
+		return
+	}
 	projectFolder := CONFIG.ProjectsDir
 
 	extension := "clst"
@@ -1178,6 +1194,14 @@ func GetDataHandler(
 		http.Error(w, "Internal server error", 500)
 		return
 	}
+	userData, err = sync_service.ProjectDataBytesForAPI(
+		userData,
+		compatibility.FromContext(r.Context()).Version,
+	)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	compressedData, err := zstd.CompressLevel(nil, userData, 3)
 	if err != nil {
@@ -1250,6 +1274,14 @@ func PostDataHandler(
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
+		return
+	}
+	if err = sync_service.PreserveCanonicalFieldsForAPI(
+		tx,
+		compatibility.FromContext(r.Context()).Version,
+		&userDataPb,
+	); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

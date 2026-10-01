@@ -2,7 +2,6 @@ package repository
 
 import (
 	"bytes"
-	"clustta/internal/compatibility"
 	"context"
 	"database/sql"
 	"embed"
@@ -37,25 +36,24 @@ var templateFS embed.FS
 var ProjectSchema string
 
 type ProjectInfo struct {
-	Compatibility    *compatibility.Contract `json:"compatibility,omitempty"`
-	Id               string                  `json:"id"`
-	SyncToken        string                  `json:"sync_token"`
-	PreviewId        string                  `json:"preview_id"`
-	Name             string                  `json:"name"`
-	Icon             string                  `json:"icon"`
-	Version          string                  `json:"version"`
-	Uri              string                  `json:"uri"`
-	WorkingDirectory string                  `json:"working_directory"`
-	Remote           string                  `json:"remote"`
-	Valid            bool                    `json:"valid"`
-	Status           string                  `json:"status"`
-	HasRemote        bool                    `json:"has_remote"`
-	IsUnsynced       bool                    `json:"is_unsynced"`
-	IsDownloaded     bool                    `json:"is_downloaded"`
-	IsClosed         bool                    `json:"is_closed"`
-	IsOutdated       bool                    `json:"is_outdated"`
-	IgnoreList       []string                `json:"ignore_list"`
-	StorageMode      string                  `json:"storage_mode"`
+	Id               string   `json:"id"`
+	SyncToken        string   `json:"sync_token"`
+	PreviewId        string   `json:"preview_id"`
+	Name             string   `json:"name"`
+	Icon             string   `json:"icon"`
+	Version          string   `json:"version"`
+	Uri              string   `json:"uri"`
+	WorkingDirectory string   `json:"working_directory"`
+	Remote           string   `json:"remote"`
+	Valid            bool     `json:"valid"`
+	Status           string   `json:"status"`
+	HasRemote        bool     `json:"has_remote"`
+	IsUnsynced       bool     `json:"is_unsynced"`
+	IsDownloaded     bool     `json:"is_downloaded"`
+	IsClosed         bool     `json:"is_closed"`
+	IsOutdated       bool     `json:"is_outdated"`
+	IgnoreList       []string `json:"ignore_list"`
+	StorageMode      string   `json:"storage_mode"`
 }
 
 type ProjectConfig struct {
@@ -1136,10 +1134,6 @@ func GetProjectInfo(projectUri string, user auth_service.User) (ProjectInfo, err
 		if err != nil {
 			return ProjectInfo{}, err
 		}
-		projectSchema, err := compatibility.ReadSchema(tx)
-		if err != nil {
-			return ProjectInfo{}, err
-		}
 		projectVersion, err := utils.GetProjectVersion(tx)
 		if err != nil {
 			return ProjectInfo{}, err
@@ -1177,7 +1171,6 @@ func GetProjectInfo(projectUri string, user auth_service.User) (ProjectInfo, err
 			return ProjectInfo{}, err
 		}
 		return ProjectInfo{
-			Compatibility:    compatibility.Current(projectSchema),
 			Id:               projectId,
 			SyncToken:        syncToken,
 			PreviewId:        projectPreview.Hash,
@@ -1198,36 +1191,9 @@ func GetProjectInfo(projectUri string, user auth_service.User) (ProjectInfo, err
 	}
 }
 
-// GetProjectDiscoveryInfo reads only stable config metadata for compatibility discovery.
+// GetProjectDiscoveryInfo returns project information for API discovery.
 func GetProjectDiscoveryInfo(projectPath string, user auth_service.User) (ProjectInfo, error) {
-	db, err := utils.OpenDb(projectPath)
-	if err != nil {
-		return ProjectInfo{}, err
-	}
-	defer db.Close()
-	schema, err := compatibility.ReadSchema(db)
-	if err != nil {
-		return ProjectInfo{}, err
-	}
-	if schema == compatibility.Schema {
-		return GetProjectInfo(projectPath, user)
-	}
-	var project ProjectInfo
-	project.Compatibility = compatibility.Current(schema)
-	project.Version = schema
-	for name, target := range map[string]*string{
-		"project_id":   &project.Id,
-		"project_name": &project.Name,
-		"project_icon": &project.Icon,
-	} {
-		err := db.Get(target, "SELECT value FROM config WHERE name = ?", name)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return ProjectInfo{}, err
-		}
-	}
-	project.Uri = projectPath
-	project.Valid = true
-	return project, nil
+	return GetProjectInfo(projectPath, user)
 }
 
 func GetSyncToken(projectUri string, user auth_service.User) (string, error) {

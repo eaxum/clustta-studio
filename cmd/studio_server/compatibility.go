@@ -18,24 +18,14 @@ func (m *projectMux) HandleFunc(pattern string, handler func(http.ResponseWriter
 	m.ServeMux.HandleFunc(pattern, handler)
 }
 
-func admitProjectDatabase(w http.ResponseWriter, r *http.Request, path string) bool {
-	db, err := utils.OpenDb(path)
+func negotiateRequestAPI(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
+	api, err := compatibility.Negotiate(r.Header)
 	if err != nil {
-		http.Error(w, "Project unavailable", http.StatusServiceUnavailable)
-		return false
-	}
-	defer db.Close()
-	schema, err := compatibility.ReadSchema(db)
-	if err != nil {
-		http.Error(w, "Project unavailable during maintenance", http.StatusServiceUnavailable)
-		return false
-	}
-	compatibility.Respond(w, schema)
-	if err := compatibility.Admit(r.Header, schema); err != nil {
 		compatibility.WriteError(w, err)
-		return false
+		return r, false
 	}
-	return true
+	compatibility.Respond(w, api)
+	return r.WithContext(compatibility.WithAPIContext(r.Context(), api)), true
 }
 
 func projectAdmission(next http.HandlerFunc) http.HandlerFunc {
@@ -45,6 +35,10 @@ func projectAdmission(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+		r, ok = negotiateRequestAPI(w, r)
+		if !ok {
+			return
+		}
 		path, err := safeProjectPath(CONFIG.ProjectsDir, r.PathValue("project"))
 		if err != nil {
 			http.Error(w, "Invalid project name", http.StatusBadRequest)
@@ -52,11 +46,6 @@ func projectAdmission(next http.HandlerFunc) http.HandlerFunc {
 		}
 		isRoot := r.URL.Path == "/"+r.PathValue("project")
 		if isRoot && r.Method == http.MethodPost {
-			if err := compatibility.Admit(r.Header, compatibility.Schema); err != nil {
-				compatibility.WriteError(w, err)
-				return
-			}
-			compatibility.Respond(w, compatibility.Schema)
 			next(w, r)
 			return
 		}
@@ -71,9 +60,6 @@ func projectAdmission(next http.HandlerFunc) http.HandlerFunc {
 		}
 		if !member {
 			http.Error(w, "Forbidden", http.StatusForbidden)
-			return
-		}
-		if !(isRoot && r.Method == http.MethodGet) && !admitProjectDatabase(w, r, path) {
 			return
 		}
 		next(w, r)

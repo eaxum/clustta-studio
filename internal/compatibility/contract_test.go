@@ -1,63 +1,59 @@
 package compatibility
 
 import (
-	"errors"
 	"net/http"
 	"testing"
 )
 
-func TestAdmission(t *testing.T) {
-	tests := []struct {
-		name      string
-		modify    func(http.Header)
-		schema    string
-		update    string
-		malformed bool
-	}{
-		{name: "matching", schema: Schema},
-		{name: "legacy client", schema: Schema, modify: func(h http.Header) { clear(h) }, update: "client"},
-		{name: "old client", schema: Schema, modify: func(h http.Header) { h.Set(SchemaHeader, LegacySchema) }, update: "client"},
-		{name: "newer client", schema: Schema, modify: func(h http.Header) { h.Set(SchemaHeader, "2.10") }, update: "server"},
-		{name: "newer client protocol", schema: Schema, modify: func(h http.Header) { h.Set(ProtocolHeader, "2") }, update: "server"},
-		{name: "future project", schema: "2.4", update: "server"},
-		{name: "stale replica", schema: Schema, modify: func(h http.Header) { h.Set(ProjectSchemaHeader, LegacySchema) }, update: "replica"},
-		{name: "partial", schema: Schema, modify: func(h http.Header) { h.Del(ProtocolHeader) }, malformed: true},
-		{name: "duplicate", schema: Schema, modify: func(h http.Header) { h.Add(ProjectSchemaHeader, Schema) }, malformed: true},
-		{name: "invalid schema", schema: Schema, modify: func(h http.Header) { h.Set(SchemaHeader, "2.2,2.1") }, malformed: true},
-		{name: "invalid protocol", schema: Schema, modify: func(h http.Header) { h.Set(ProtocolHeader, "abc") }, malformed: true},
+func TestNegotiateDefaultsLegacyClientsToAPI1(t *testing.T) {
+	api, err := Negotiate(http.Header{})
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			headers := http.Header{}
-			Declare(headers)
-			if test.modify != nil {
-				test.modify(headers)
-			}
-			err := Admit(headers, test.schema)
-			if test.update == "" && !test.malformed {
-				if err != nil {
-					t.Fatal(err)
-				}
-				return
-			}
-			if err == nil {
-				t.Fatal("incompatible request admitted")
-			}
-			var rejection *Rejection
-			if errors.As(err, &rejection) {
-				if test.malformed || rejection.RequiredUpdate != test.update {
-					t.Fatalf("unexpected rejection: %v", err)
-				}
-			} else if !test.malformed {
-				t.Fatalf("expected structured rejection: %v", err)
-			}
-		})
+	if api.Version != LegacyAPIVersion {
+		t.Fatalf("expected API %s, got %s", LegacyAPIVersion, api.Version)
+	}
+	if len(api.Capabilities) != 0 {
+		t.Fatalf("legacy API exposed capabilities: %v", api.Capabilities)
 	}
 }
 
-func TestMissingHostContractRequiresServerUpdate(t *testing.T) {
-	var rejection *Rejection
-	if !errors.As(Check(nil), &rejection) || rejection.RequiredUpdate != "server" {
-		t.Fatal("missing contract approved")
+func TestNegotiateCurrentAPI(t *testing.T) {
+	headers := http.Header{}
+	headers.Set(APIVersionHeader, CurrentAPIVersion)
+
+	api, err := Negotiate(headers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if api.Version != CurrentAPIVersion {
+		t.Fatalf("expected API %s, got %s", CurrentAPIVersion, api.Version)
+	}
+	if len(api.Capabilities) != 2 {
+		t.Fatalf("expected current capabilities, got %v", api.Capabilities)
+	}
+}
+
+func TestNegotiateRejectsUnsupportedAPI(t *testing.T) {
+	headers := http.Header{}
+	headers.Set(APIVersionHeader, "3")
+
+	_, err := Negotiate(headers)
+	unsupported, ok := err.(*UnsupportedAPIError)
+	if !ok {
+		t.Fatalf("expected UnsupportedAPIError, got %T", err)
+	}
+	if len(unsupported.SupportedVersions) != 2 {
+		t.Fatalf("unexpected supported versions: %v", unsupported.SupportedVersions)
+	}
+}
+
+func TestInfoAdvertisesLegacyDefault(t *testing.T) {
+	info := Info()
+	if info.DefaultVersion != LegacyAPIVersion {
+		t.Fatalf("expected legacy default, got %s", info.DefaultVersion)
+	}
+	if len(info.SupportedVersions) != 2 {
+		t.Fatalf("unexpected supported versions: %v", info.SupportedVersions)
 	}
 }
