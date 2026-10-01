@@ -261,7 +261,7 @@ func ApplyCollections(tx *sqlx.Tx, actorId string, req CollectionRequest) (Colle
 
 func PutAssetType(tx *sqlx.Tx, actorId string, req TypePutRequest) (AssetTypeResponse, error) {
 	actor, err := repository.GetUser(tx, actorId)
-	if err != nil || actor.Role.Name != "admin" {
+	if err != nil || !actor.Role.ManageAssetTypes {
 		return AssetTypeResponse{}, ErrForbidden
 	}
 	if req.Id == "" || req.Name == "" {
@@ -288,7 +288,7 @@ func PutAssetType(tx *sqlx.Tx, actorId string, req TypePutRequest) (AssetTypeRes
 
 func PutCollectionType(tx *sqlx.Tx, actorId string, req TypePutRequest) (CollectionTypeResponse, error) {
 	actor, err := repository.GetUser(tx, actorId)
-	if err != nil || actor.Role.Name != "admin" {
+	if err != nil || !actor.Role.ManageCollectionTypes {
 		return CollectionTypeResponse{}, ErrForbidden
 	}
 	if req.Id == "" || req.Name == "" {

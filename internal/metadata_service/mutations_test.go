@@ -32,7 +32,7 @@ func TestTypeMutationReturnsTokenPredecessor(t *testing.T) {
 	if _, err = db.Exec("INSERT INTO config(name,value,mtime) VALUES('sync_token','before',1)"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec("INSERT INTO role(id,mtime,name,synced) VALUES('admin-role',1,'admin',1)"); err != nil {
+	if _, err = db.Exec("INSERT INTO role(id,mtime,name,manage_asset_types,synced) VALUES('admin-role',1,'admin',1,1)"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = db.Exec(`INSERT INTO user(id,mtime,added_at,first_name,last_name,username,email,role_id,synced)

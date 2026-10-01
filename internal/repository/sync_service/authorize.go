@@ -86,16 +86,16 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 		return s.Name
 	}
 
-	// Project preview (project-wide config) → admin only
-	if data.ProjectPreview != "" && !isAdmin {
+	// Project-wide settings.
+	if data.ProjectPreview != "" && !role.ManageProjectSettings {
 		return deny("project_preview", "update", "")
 	}
-	if len(data.ProjectConfigs) > 0 && !role.ChangeRole {
+	if len(data.ProjectConfigs) > 0 && !role.ManageProjectSettings {
 		return deny("project_config", "update", "")
 	}
 
-	// Roles → admin only (creating/updating role permission rows)
-	if len(data.Roles) > 0 && !isAdmin {
+	// Role definitions.
+	if len(data.Roles) > 0 && !role.ManageRoles {
 		return deny("role", "modify", "")
 	}
 
@@ -154,8 +154,11 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 		if local.MTime >= a.MTime {
 			continue
 		}
-		if !role.UpdateAsset {
+		if assetMetadataChanged(local, a) && !role.UpdateAsset {
 			return deny("asset", "update", a.Id)
+		}
+		if local.PreviewId != a.PreviewId && !role.UpdateAsset && !checkpointPreviewChangeAllowed(a, data.AssetsCheckpoints, role) {
+			return deny("asset", "update_preview", a.Id)
 		}
 		if local.StatusId != a.StatusId {
 			if !role.ChangeStatus {
@@ -172,7 +175,7 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 				}
 			}
 		}
-		if local.AssigneeId != a.AssigneeId {
+		if local.AssigneeId != a.AssigneeId || local.AssignerId != a.AssignerId {
 			if a.AssigneeId == "" {
 				if !role.UnassignAsset {
 					return deny("asset", "unassign", a.Id)
@@ -229,33 +232,42 @@ func AuthorizeProjectDataWrite(tx *sqlx.Tx, callerUserId string, bypass bool, da
 		}
 	}
 
-	// Project-wide config (types, statuses, tags, workflows, integrations) → admin only
-	if !isAdmin {
-		switch {
-		case len(data.CollectionTypes) > 0:
-			return deny("collection_type", "modify", "")
-		case len(data.AssetTypes) > 0:
-			return deny("asset_type", "modify", "")
-		case len(data.DependencyTypes) > 0:
-			return deny("dependency_type", "modify", "")
-		case len(data.Statuses) > 0:
-			return deny("status", "modify", "")
-		case len(data.Tags) > 0:
-			return deny("tag", "modify", "")
-		case len(data.Workflows) > 0:
-			return deny("workflow", "modify", "")
-		case len(data.WorkflowLinks) > 0:
-			return deny("workflow_link", "modify", "")
-		case len(data.WorkflowCollections) > 0:
-			return deny("workflow_collection", "modify", "")
-		case len(data.WorkflowAssets) > 0:
-			return deny("workflow_asset", "modify", "")
-		case len(data.IntegrationProjects) > 0:
-			return deny("integration_project", "modify", "")
-		case len(data.IntegrationCollectionMappings) > 0:
-			return deny("integration_collection_mapping", "modify", "")
-		case len(data.IntegrationAssetMappings) > 0:
-			return deny("integration_asset_mapping", "modify", "")
+	// Project-wide configuration.
+	if len(data.CollectionTypes) > 0 && !role.ManageCollectionTypes {
+		return deny("collection_type", "modify", "")
+	}
+	if len(data.AssetTypes) > 0 && !role.ManageAssetTypes {
+		return deny("asset_type", "modify", "")
+	}
+	if len(data.DependencyTypes) > 0 && !role.ManageDependencyTypes {
+		return deny("dependency_type", "modify", "")
+	}
+	if len(data.Statuses) > 0 && !role.ManageStatuses {
+		return deny("status", "modify", "")
+	}
+	if len(data.Tags) > 0 && !role.ManageTags {
+		return deny("tag", "modify", "")
+	}
+	if (len(data.Workflows) > 0 || len(data.WorkflowLinks) > 0 || len(data.WorkflowCollections) > 0 || len(data.WorkflowAssets) > 0) && !role.ManageWorkflows {
+		return deny("workflow", "modify", "")
+	}
+	if (len(data.IntegrationProjects) > 0 || len(data.IntegrationCollectionMappings) > 0) && !role.ManageIntegrations {
+		return deny("integration", "modify", "")
+	}
+	if !role.ManageIntegrations {
+		localMappings, err := repository.GetAllAssetMappings(tx)
+		if err != nil {
+			return err
+		}
+		mappingsById := make(map[string]models.IntegrationAssetMapping, len(localMappings))
+		for _, mapping := range localMappings {
+			mappingsById[mapping.Id] = mapping
+		}
+		for _, mapping := range data.IntegrationAssetMappings {
+			local, exists := mappingsById[mapping.Id]
+			if !exists || !integrationCheckpointUpdateAllowed(local, mapping, checkpointsById, data.AssetsCheckpoints, role) {
+				return deny("integration_asset_mapping", "modify", mapping.Id)
+			}
 		}
 	}
 
@@ -301,12 +313,93 @@ func authorizeTomb(role models.Role, isAdmin bool, t repository.Tomb) error {
 		if !role.UpdateAsset {
 			return deny("asset_tag", "delete", t.Id)
 		}
+	case "collection_type":
+		if !role.ManageCollectionTypes {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "asset_type":
+		if !role.ManageAssetTypes {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "dependency_type":
+		if !role.ManageDependencyTypes {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "status":
+		if !role.ManageStatuses {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "tag":
+		if !role.ManageTags {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "workflow", "workflow_link", "workflow_collection", "workflow_asset":
+		if !role.ManageWorkflows {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "integration_project", "integration_collection_mapping", "integration_asset_mapping":
+		if !role.ManageIntegrations {
+			return deny(t.TableName, "delete", t.Id)
+		}
+	case "role":
+		if !role.ManageRoles {
+			return deny(t.TableName, "delete", t.Id)
+		}
 	default:
-		// role, status, tag, collection_type, asset_type, dependency_type,
-		// workflow*, integration* — project-wide config, admin only.
+		// Unknown project data is restricted to the reserved admin role.
 		if !isAdmin {
 			return deny(t.TableName, "delete", t.Id)
 		}
 	}
 	return nil
+}
+
+func assetMetadataChanged(local, incoming models.Asset) bool {
+	return local.Name != incoming.Name ||
+		local.Description != incoming.Description ||
+		local.Extension != incoming.Extension ||
+		local.IsResource != incoming.IsResource ||
+		local.AssetTypeId != incoming.AssetTypeId ||
+		local.CollectionId != incoming.CollectionId ||
+		local.IsLink != incoming.IsLink ||
+		local.Pointer != incoming.Pointer ||
+		local.Trashed != incoming.Trashed
+}
+
+func checkpointPreviewChangeAllowed(asset models.Asset, checkpoints []models.Checkpoint, role models.Role) bool {
+	if !role.CreateCheckpoint || asset.PreviewId == "" {
+		return false
+	}
+	for _, checkpoint := range checkpoints {
+		if checkpoint.AssetId == asset.Id && checkpoint.PreviewId == asset.PreviewId {
+			return true
+		}
+	}
+	return false
+}
+
+func integrationCheckpointUpdateAllowed(local, incoming models.IntegrationAssetMapping, localCheckpoints map[string]models.Checkpoint, incomingCheckpoints []models.Checkpoint, role models.Role) bool {
+	if !role.CreateCheckpoint || incoming.LastPushedCheckpointId == "" {
+		return false
+	}
+	if local.IntegrationId != incoming.IntegrationId ||
+		local.ExternalId != incoming.ExternalId ||
+		local.ExternalName != incoming.ExternalName ||
+		local.ExternalParentId != incoming.ExternalParentId ||
+		local.ExternalType != incoming.ExternalType ||
+		local.ExternalStatus != incoming.ExternalStatus ||
+		local.ExternalAssignees != incoming.ExternalAssignees ||
+		local.ExternalMetadata != incoming.ExternalMetadata ||
+		local.AssetId != incoming.AssetId {
+		return false
+	}
+	if checkpoint, exists := localCheckpoints[incoming.LastPushedCheckpointId]; exists && checkpoint.AssetId == incoming.AssetId {
+		return true
+	}
+	for _, checkpoint := range incomingCheckpoints {
+		if checkpoint.Id == incoming.LastPushedCheckpointId && checkpoint.AssetId == incoming.AssetId {
+			return true
+		}
+	}
+	return false
 }

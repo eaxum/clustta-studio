@@ -19,7 +19,7 @@ func TestAdmission(t *testing.T) {
 		{name: "old client", schema: Schema, modify: func(h http.Header) { h.Set(SchemaHeader, LegacySchema) }, update: "client"},
 		{name: "newer client", schema: Schema, modify: func(h http.Header) { h.Set(SchemaHeader, "2.10") }, update: "server"},
 		{name: "newer client protocol", schema: Schema, modify: func(h http.Header) { h.Set(ProtocolHeader, "2") }, update: "server"},
-		{name: "future project", schema: "2.3", update: "server"},
+		{name: "future project", schema: "2.4", update: "server"},
 		{name: "stale replica", schema: Schema, modify: func(h http.Header) { h.Set(ProjectSchemaHeader, LegacySchema) }, update: "replica"},
 		{name: "partial", schema: Schema, modify: func(h http.Header) { h.Del(ProtocolHeader) }, malformed: true},
 		{name: "duplicate", schema: Schema, modify: func(h http.Header) { h.Add(ProjectSchemaHeader, Schema) }, malformed: true},

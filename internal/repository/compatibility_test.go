@@ -21,14 +21,14 @@ func TestDiscoveryReadsIncompatibleProjectFromStableConfig(t *testing.T) {
 	projectPath := filepath.Join(t.TempDir(), "future.clst")
 	db := sqlx.MustOpen("sqlite3", projectPath)
 	db.MustExec(`CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT NOT NULL);
-		INSERT INTO config VALUES ('version', '2.3'), ('project_id', 'future-id'), ('project_name', 'Future');`)
+		INSERT INTO config VALUES ('version', '2.4'), ('project_id', 'future-id'), ('project_name', 'Future');`)
 	db.Close()
 
 	project, err := GetProjectDiscoveryInfo(projectPath, auth_service.User{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if project.Version != "2.3" || project.Compatibility == nil || project.Compatibility.ProjectSchema != "2.3" {
+	if project.Version != "2.4" || project.Compatibility == nil || project.Compatibility.ProjectSchema != "2.4" {
 		t.Fatalf("unexpected discovery result: %+v", project)
 	}
 }

@@ -11,6 +11,10 @@ import (
 
 const versionedDependencyMigrationSchema = `
 CREATE TABLE IF NOT EXISTS config (name TEXT PRIMARY KEY, value TEXT NOT NULL, mtime INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS role (
+    id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, name TEXT NOT NULL,
+    synced BOOLEAN DEFAULT 0 NOT NULL
+);
 CREATE TABLE IF NOT EXISTS asset_dependency (
     id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, asset_id TEXT NOT NULL,
     dependency_id TEXT NOT NULL, dependency_type_id TEXT NOT NULL,
@@ -40,6 +44,7 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 
 	_, err = db.Exec(`
 		CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT NOT NULL, mtime INTEGER NOT NULL);
+		CREATE TABLE role (id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, name TEXT NOT NULL, synced BOOLEAN DEFAULT 0 NOT NULL);
 		CREATE TABLE asset_dependency (
 			id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, asset_id TEXT NOT NULL,
 			dependency_id TEXT NOT NULL, dependency_type_id TEXT NOT NULL,
@@ -90,8 +95,8 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 	if err = db.Get(&version, "SELECT value FROM config WHERE name = 'version'"); err != nil {
 		t.Fatal(err)
 	}
-	if version != "2.2" {
-		t.Fatalf("expected schema version 2.2, got %s", version)
+	if version != LatestVersion {
+		t.Fatalf("expected schema version %s, got %s", LatestVersion, version)
 	}
 }
 
@@ -105,6 +110,7 @@ func TestOlderMigrationCanApplyCurrentSelectorIndexes(t *testing.T) {
 	db.MustExec(`CREATE TABLE asset_dependency (
 		id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, asset_id TEXT NOT NULL,
 		dependency_id TEXT NOT NULL, dependency_type_id TEXT NOT NULL, synced BOOLEAN DEFAULT 0 NOT NULL);
+		CREATE TABLE role (id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, name TEXT NOT NULL, synced BOOLEAN DEFAULT 0 NOT NULL);
 		INSERT INTO asset_dependency VALUES ('edge', 1, 'shot', 'boy', 'default', 1);`)
 	if err := RunMigrations(db, "1.9", string(schema)); err != nil {
 		t.Fatal(err)
@@ -124,6 +130,7 @@ func TestCurrentV2_2AddsCheckpointSourceBeforeApplyingSchema(t *testing.T) {
 	defer db.Close()
 	db.MustExec(`
 		CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT NOT NULL, mtime INTEGER NOT NULL);
+		CREATE TABLE role (id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, name TEXT NOT NULL, synced BOOLEAN DEFAULT 0 NOT NULL);
 		CREATE TABLE asset_checkpoint (id TEXT PRIMARY KEY);
 		INSERT INTO config VALUES ('version', '2.2', 1);
 	`)

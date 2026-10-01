@@ -11,7 +11,7 @@ import (
 )
 
 // LatestVersion is the current schema version after all migrations.
-const LatestVersion = "2.2"
+const LatestVersion = "2.3"
 
 // Migration defines a single schema migration step.
 type Migration struct {
@@ -33,6 +33,7 @@ func All() []Migration {
 		{Version: "1.9", Description: "Add manage_share_links permission", Up: MigrateV1_9},
 		{Version: "2.0", Description: "Add project storage tables", Up: MigrateV2_0},
 		{Version: "2.2", Description: "Add versioned dependencies, checkpoint tags, and sources", Up: MigrateV2_2},
+		{Version: "2.3", Description: "Add project management permissions", Up: MigrateV2_3},
 	}
 }
 
