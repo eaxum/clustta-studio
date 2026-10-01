@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -57,6 +58,9 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 		CREATE VIEW asset_dependencies AS SELECT asset_id FROM asset_dependency;
 		CREATE VIEW full_asset AS SELECT asset_id FROM asset_dependencies;
 		INSERT INTO config (name, value, mtime) VALUES ('version', '2', 1);
+		INSERT INTO role (id, mtime, name, synced) VALUES
+			('admin-role', 1, 'Admin', 0),
+			('artist-role', 1, 'artist', 0);
 		INSERT INTO asset_dependency (id, mtime, asset_id, dependency_id, dependency_type_id)
 		VALUES ('edge', 1, 'shot', 'boy', 'default');
 	`)
@@ -89,6 +93,23 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 	}
 	if sourceColumnCount != 1 {
 		t.Fatal("expected checkpoint source column")
+	}
+	for _, permission := range projectManagementPermissions {
+		var adminAllowed bool
+		if err = db.Get(&adminAllowed, fmt.Sprintf("SELECT %s FROM role WHERE id = 'admin-role'", permission)); err != nil {
+			t.Fatal(err)
+		}
+		if !adminAllowed {
+			t.Fatalf("expected admin to receive %s", permission)
+		}
+
+		var artistAllowed bool
+		if err = db.Get(&artistAllowed, fmt.Sprintf("SELECT %s FROM role WHERE id = 'artist-role'", permission)); err != nil {
+			t.Fatal(err)
+		}
+		if artistAllowed {
+			t.Fatalf("expected %s to default to false", permission)
+		}
 	}
 
 	var version string
