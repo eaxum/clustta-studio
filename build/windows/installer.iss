@@ -63,6 +63,7 @@ var
   APIKeyEdit: TNewEdit;
   PrivateCheckbox: TNewCheckBox;
   ExistingConfigFile: String;
+  WindowsUIMode: String;
 
 procedure BrowseProjectsDir(Sender: TObject);
 var
@@ -150,6 +151,9 @@ begin
         PrivateCheckbox.Checked := True
       else if Value = 'false' then
         PrivateCheckbox.Checked := False;
+
+      Value := GetJsonValue(ConfigContent, 'windows_ui_mode');
+      if Value <> '' then WindowsUIMode := Value;
     end;
   end;
 end;
@@ -266,6 +270,8 @@ begin
   PrivateCheckbox.Caption := 'Private Mode (standalone, no connection to Clustta Cloud)';
   PrivateCheckbox.Checked := True;
 
+  WindowsUIMode := 'console';
+
   { Load existing config values if upgrading }
   LoadExistingConfig;
 end;
@@ -376,6 +382,7 @@ begin
       '  "studio_api_key": "' + EscapeJson(Trim(APIKeyEdit.Text)) + '",' + #13#10 +
       '  "studio_users_db": "' + EscapeJson(StudioUsersDB) + '",' + #13#10 +
       '  "session_db": "' + EscapeJson(SessionDB) + '",' + #13#10 +
+      '  "windows_ui_mode": "' + EscapeJson(WindowsUIMode) + '",' + #13#10 +
       '  "private": ' + BoolToStr(PrivateCheckbox.Checked);
 
     { Add registered_at if it existed }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/kelseyhightower/envconfig"
@@ -27,6 +28,7 @@ type Config struct {
 	SessionDB         string `json:"session_db" envconfig:"SESSION_DB"`
 	Private           bool   `json:"private" envconfig:"PRIVATE"`
 	SecureCookies     bool   `json:"secure_cookies" envconfig:"SECURE_COOKIES"`
+	WindowsUIMode     string `json:"windows_ui_mode" envconfig:"WINDOWS_UI_MODE"`
 	SMTPHost          string `json:"smtp_host" envconfig:"SMTP_HOST"`
 	SMTPPort          int    `json:"smtp_port" envconfig:"SMTP_PORT"`
 	SMTPUser          string `json:"smtp_user" envconfig:"SMTP_USER"`
@@ -41,8 +43,15 @@ type Config struct {
 }
 
 var CONFIG Config = Config{
-	Private: true,
+	Private:       true,
+	WindowsUIMode: WindowsUIModeConsole,
 }
+
+const (
+	WindowsUIModeConsole  = "console"
+	WindowsUIModeTray     = "tray"
+	WindowsUIModeHeadless = "headless"
+)
 
 // configMutex serializes concurrent read-modify-write cycles on CONFIG/studio_config.json
 // (e.g. admin-triggered renames hitting PUT /studio-info at the same time).
@@ -100,6 +109,9 @@ func loadDefaults(cfg *Config) {
 	if cfg.Port == "" {
 		cfg.Port = "7774"
 	}
+	if cfg.WindowsUIMode == "" {
+		cfg.WindowsUIMode = WindowsUIModeConsole
+	}
 
 	homedir, err := os.UserHomeDir()
 	if err != nil {
@@ -130,6 +142,33 @@ func loadDefaults(cfg *Config) {
 	if cfg.SessionDB == "" {
 		cfg.SessionDB = filepath.Join(cfg.DataDir, "sessions.db")
 	}
+}
+
+func validWindowsUIMode(mode string) bool {
+	return mode == WindowsUIModeConsole || mode == WindowsUIModeTray || mode == WindowsUIModeHeadless
+}
+
+func loadWindowsUIMode() string {
+	mode := WindowsUIModeConsole
+	if utils.FileExists("studio_config.json") {
+		file, err := os.Open("studio_config.json")
+		if err == nil {
+			defer file.Close()
+
+			var startupConfig struct {
+				WindowsUIMode string `json:"windows_ui_mode"`
+			}
+			if json.NewDecoder(file).Decode(&startupConfig) == nil && startupConfig.WindowsUIMode != "" {
+				mode = startupConfig.WindowsUIMode
+			}
+		}
+	}
+
+	if environmentMode, exists := os.LookupEnv("WINDOWS_UI_MODE"); exists {
+		mode = environmentMode
+	}
+
+	return strings.ToLower(strings.TrimSpace(mode))
 }
 
 // saveConfig writes the current config to studio_config.json

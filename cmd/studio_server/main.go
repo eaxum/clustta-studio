@@ -107,8 +107,9 @@ func GetUsers() error {
 	return nil
 }
 func main() {
-	// Platform-specific initialization (chdir + file logging on Windows, no-op elsewhere)
-	initDesktop()
+	prepareDesktop()
+	windowsUIMode := loadWindowsUIMode()
+	initDesktop(windowsUIMode)
 
 	log.Printf("Clustta Studio v%s starting...", Version)
 
@@ -125,7 +126,7 @@ func main() {
 	}
 
 	// Wrap the server startup in the system tray (Windows) or run directly (other platforms)
-	runWithTray(func() {
+	runWithTray(windowsUIMode, func() {
 		startServer(serverType)
 	})
 }

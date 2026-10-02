@@ -77,33 +77,60 @@ func hideConsole() {
 	}
 }
 
-// initDesktop performs Windows-specific initialization:
-// - Changes working directory to exe location (for Start Menu shortcuts)
-// - Creates a console window for log output
-// Only runs in production builds (DesktopMode == "true"), not during dev.
-func initDesktop() {
+// prepareDesktop changes to the executable directory before configuration is read.
+func prepareDesktop() {
 	if DesktopMode != "true" {
 		return
 	}
 
-	// Change working directory to the executable's directory so studio_config.json is found
 	if dir := exeDir(); dir != "." {
-		os.Chdir(dir)
+		if err := os.Chdir(dir); err != nil {
+			log.Printf("Failed to use executable directory: %v", err)
+		}
+	}
+}
+
+// initDesktop configures Windows console and file logging.
+func initDesktop(mode string) {
+	if DesktopMode != "true" {
+		return
 	}
 
-	// Create a console window for output
-	allocConsole()
+	effectiveMode := mode
+	if !validWindowsUIMode(effectiveMode) {
+		effectiveMode = WindowsUIModeConsole
+	}
 
-	// Also log to file for persistence
+	if effectiveMode != WindowsUIModeHeadless {
+		allocConsole()
+	}
+
 	logFile, err := os.OpenFile("studio_server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
-		// Write to both console and file
+	if err != nil {
+		log.Printf("Failed to open log file: %v", err)
+	} else if consoleHwnd != 0 {
 		log.SetOutput(io.MultiWriter(os.Stdout, logFile))
+	} else {
+		os.Stdout = logFile
+		os.Stderr = logFile
+		log.SetOutput(logFile)
+	}
+
+	if mode != effectiveMode {
+		log.Printf("Invalid windows_ui_mode %q, using %q", mode, effectiveMode)
+	}
+	if effectiveMode == WindowsUIModeTray {
+		hideConsole()
 	}
 }
 
 // runWithTray starts the server and shows a system tray icon with Quit and Restart options.
-func runWithTray(startServer func()) {
+func runWithTray(mode string, startServer func()) {
+	if mode == WindowsUIModeHeadless {
+		startServer()
+		return
+	}
+
 	systray.Run(func() {
 		onTrayReady(startServer)
 	}, func() {

@@ -13,6 +13,7 @@
   "session_db": "./data/sessions.db",
   "private": true,
   "secure_cookies": false,
+  "windows_ui_mode": "console",
   "smtp_host": "",
   "smtp_port": 0,
   "smtp_user": "",
