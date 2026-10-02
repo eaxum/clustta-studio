@@ -2,6 +2,7 @@ package sync_service
 
 import (
 	"clustta/internal/compatibility"
+	"clustta/internal/repository"
 	"clustta/internal/repository/repositorypb"
 	"testing"
 
@@ -72,7 +73,10 @@ func TestPreserveCanonicalFieldsForAPI1(t *testing.T) {
 	tx := db.MustBegin()
 	defer tx.Rollback()
 	data := &repositorypb.ProjectData{
-		AssetDependencies:   []*repositorypb.AssetDependency{{Id: "dependency"}},
+		AssetDependencies: []*repositorypb.AssetDependency{
+			{Id: "dependency"},
+			{Id: "new-dependency"},
+		},
 		AssetsCheckpoints:   []*repositorypb.Checkpoint{{Id: "checkpoint"}},
 		AssetCheckpointTags: []*repositorypb.AssetCheckpointTag{{Id: "unknown-to-api-1"}},
 		Roles:               []*repositorypb.Role{{Id: "role"}},
@@ -81,6 +85,7 @@ func TestPreserveCanonicalFieldsForAPI1(t *testing.T) {
 		t.Fatal(err)
 	}
 	if data.AssetDependencies[0].ResolutionMode != "pinned" ||
+		data.AssetDependencies[1].ResolutionMode != repository.DependencyResolutionFloating ||
 		data.AssetsCheckpoints[0].SourceCheckpointId == nil ||
 		!data.Roles[0].ManageRoles ||
 		len(data.AssetCheckpointTags) != 0 {

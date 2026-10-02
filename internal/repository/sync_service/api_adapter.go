@@ -2,6 +2,7 @@ package sync_service
 
 import (
 	"clustta/internal/compatibility"
+	"clustta/internal/repository"
 	"clustta/internal/repository/repositorypb"
 	"database/sql"
 
@@ -49,7 +50,7 @@ func PreserveCanonicalFieldsForAPI(tx *sqlx.Tx, apiVersion string, data *reposit
 			dependency.Id,
 		).Scan(&resolutionMode, &checkpointID, &checkpointTagID)
 		if err == sql.ErrNoRows {
-			dependency.ResolutionMode = "latest"
+			dependency.ResolutionMode = repository.DependencyResolutionFloating
 			continue
 		}
 		if err != nil {
