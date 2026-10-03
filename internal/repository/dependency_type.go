@@ -17,8 +17,11 @@ func CreateDependencyType(tx *sqlx.Tx, id string, name string) (models.Dependenc
 		"id":   id,
 		"name": name,
 	}
-	base_service.Create(tx, "dependency_type", params)
-	err := base_service.GetByName(tx, "dependency_type", name, &assetDependencyType)
+	err := base_service.Create(tx, "dependency_type", params)
+	if err != nil {
+		return assetDependencyType, err
+	}
+	err = base_service.GetByName(tx, "dependency_type", name, &assetDependencyType)
 	if err != nil {
 		return assetDependencyType, err
 	}
