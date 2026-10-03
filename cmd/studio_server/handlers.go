@@ -1348,12 +1348,6 @@ func PostDataHandler(
 		http.Error(w, "Internal server error", 400)
 		return
 	}
-	err = repository.UpdateUsersPhoto(tx)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
-		return
-	}
 	err = repository.AddItemsToTomb(tx, requestData.Tombs)
 	if err != nil {
 		log.Printf("Request error: %v", err)
