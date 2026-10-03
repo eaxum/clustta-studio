@@ -615,6 +615,13 @@ func (l *StudioListener) spawnReconcile(client *integrations.KitsuClient, token 
 	}
 	go func() {
 		defer l.reconciling.Store(false)
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				message := fmt.Sprintf("reconcile panic: %v", recovered)
+				log.Printf("listener: %s\n%s", message, debug.Stack())
+				l.manager.recordError(l.config.Id, message)
+			}
+		}()
 		if err := l.reconcile(client, token); err != nil {
 			log.Printf("listener: reconcile error studio=%s: %v", l.config.StudioId, err)
 		}
