@@ -37,6 +37,14 @@ DROP VIEW IF EXISTS full_asset;
 CREATE VIEW full_asset AS SELECT asset_id FROM asset_dependencies;`
 
 func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
+	for _, version := range []string{"2", "2.1"} {
+		t.Run(version, func(t *testing.T) {
+			testMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t, version)
+		})
+	}
+}
+
+func testMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T, version string) {
 	db, err := sqlx.Open("sqlite3", filepath.Join(t.TempDir(), "project.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -67,8 +75,11 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err = db.Exec("UPDATE config SET value = ? WHERE name = 'version'", version); err != nil {
+		t.Fatal(err)
+	}
 
-	if err = RunMigrations(db, "2", versionedDependencyMigrationSchema); err != nil {
+	if err = RunMigrations(db, version, versionedDependencyMigrationSchema); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,12 +123,12 @@ func TestMigrateV2_2AddsVersionedDependenciesAndCheckpointTags(t *testing.T) {
 		}
 	}
 
-	var version string
-	if err = db.Get(&version, "SELECT value FROM config WHERE name = 'version'"); err != nil {
+	var migratedVersion string
+	if err = db.Get(&migratedVersion, "SELECT value FROM config WHERE name = 'version'"); err != nil {
 		t.Fatal(err)
 	}
-	if version != LatestVersion {
-		t.Fatalf("expected schema version %s, got %s", LatestVersion, version)
+	if migratedVersion != LatestVersion {
+		t.Fatalf("expected schema version %s, got %s", LatestVersion, migratedVersion)
 	}
 }
 
@@ -161,5 +172,42 @@ func TestCurrentV2_2AddsCheckpointSourceBeforeApplyingSchema(t *testing.T) {
 	var count int
 	if err = db.Get(&count, "SELECT COUNT(*) FROM pragma_table_info('asset_checkpoint') WHERE name = 'source_checkpoint_id'"); err != nil || count != 1 {
 		t.Fatalf("checkpoint source column: count=%d err=%v", count, err)
+	}
+}
+
+func TestRunMigrationsRollsBackOnFinalSchemaFailure(t *testing.T) {
+	db := sqlx.MustOpen("sqlite3", filepath.Join(t.TempDir(), "project.clst"))
+	defer db.Close()
+	db.MustExec(`
+		CREATE TABLE config (name TEXT PRIMARY KEY, value TEXT NOT NULL, mtime INTEGER NOT NULL);
+		CREATE TABLE role (id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, name TEXT NOT NULL, synced BOOLEAN DEFAULT 0 NOT NULL);
+		CREATE TABLE asset_dependency (
+			id TEXT PRIMARY KEY, mtime INTEGER NOT NULL, asset_id TEXT NOT NULL,
+			dependency_id TEXT NOT NULL, dependency_type_id TEXT NOT NULL,
+			synced BOOLEAN DEFAULT 0 NOT NULL
+		);
+		CREATE TABLE asset_checkpoint (id TEXT PRIMARY KEY);
+		INSERT INTO config VALUES ('version', '2.0', 1);
+	`)
+
+	err := RunMigrations(db, "2.0", versionedDependencyMigrationSchema+"\nCREATE INDEX broken ON asset_dependency(missing_column);")
+	if err == nil {
+		t.Fatal("expected migration failure")
+	}
+
+	var version string
+	if err = db.Get(&version, "SELECT value FROM config WHERE name = 'version'"); err != nil {
+		t.Fatal(err)
+	}
+	if version != "2.0" {
+		t.Fatalf("expected version 2.0 after rollback, got %s", version)
+	}
+
+	var columnCount int
+	if err = db.Get(&columnCount, "SELECT count(*) FROM pragma_table_info('asset_dependency') WHERE name = 'checkpoint_id'"); err != nil {
+		t.Fatal(err)
+	}
+	if columnCount != 0 {
+		t.Fatal("migration changes were not rolled back")
 	}
 }

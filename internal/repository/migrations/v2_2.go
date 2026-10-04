@@ -19,8 +19,8 @@ var projectManagementPermissions = []string{
 }
 
 // MigrateV2_2 adds versioned dependencies and project management permissions.
-func MigrateV2_2(db *sqlx.DB, schema string) error {
-	_, err := db.Exec(`
+func MigrateV2_2(tx *sqlx.Tx, _ string) error {
+	_, err := tx.Exec(`
 		DROP VIEW IF EXISTS full_asset;
 		DROP VIEW IF EXISTS asset_dependencies;
 		DROP TRIGGER IF EXISTS asset_dependency_selector_insert;
@@ -31,29 +31,20 @@ func MigrateV2_2(db *sqlx.DB, schema string) error {
 		return err
 	}
 
-	if err := utils.AddColumnIfNotExist(db, "asset_dependency", "resolution_mode", "TEXT", "'floating'", false); err != nil {
+	if err := prepareV2_2Columns(tx); err != nil {
 		return err
 	}
-	if err := utils.AddColumnIfNotExist(db, "asset_dependency", "checkpoint_id", "TEXT", "", true); err != nil {
-		return err
-	}
-	if err := utils.AddColumnIfNotExist(db, "asset_dependency", "asset_checkpoint_tag_id", "TEXT", "", true); err != nil {
-		return err
-	}
-	if err := utils.AddColumnIfNotExist(db, "asset_checkpoint", "source_checkpoint_id", "TEXT", "", true); err != nil {
-		return err
-	}
-	return utils.CreateSchema(db, schema)
+	return prepareProjectManagementPermissions(tx)
 }
 
-func prepareProjectManagementPermissions(db *sqlx.DB) error {
+func prepareProjectManagementPermissions(tx *sqlx.Tx) error {
 	for _, permission := range projectManagementPermissions {
-		if err := utils.AddColumnIfNotExist(db, "role", permission, "BOOLEAN", "0", false); err != nil {
+		if err := utils.AddColumnIfNotExist(tx, "role", permission, "BOOLEAN", "0", false); err != nil {
 			return err
 		}
 	}
 
-	_, err := db.Exec(`
+	_, err := tx.Exec(`
 		UPDATE role SET
 			manage_collection_types = 1,
 			manage_asset_types = 1,
@@ -69,34 +60,36 @@ func prepareProjectManagementPermissions(db *sqlx.DB) error {
 	return err
 }
 
-func prepareDependencyColumns(db *sqlx.DB) error {
-	for _, table := range []string{"task_checkpoint", "asset_checkpoint"} {
-		exists, err := utils.TableExists(db, table)
-		if err != nil {
+func repairV2_2Schema(tx *sqlx.Tx) error {
+	if err := prepareProjectManagementPermissions(tx); err != nil {
+		return err
+	}
+	return prepareV2_2Columns(tx)
+}
+
+func prepareV2_2Columns(tx *sqlx.Tx) error {
+	checkpointExists, err := utils.TableExists(tx, "asset_checkpoint")
+	if err != nil {
+		return err
+	}
+	if checkpointExists {
+		if err = utils.AddColumnIfNotExist(tx, "asset_checkpoint", "source_checkpoint_id", "TEXT", "", true); err != nil {
 			return err
-		}
-		if exists {
-			if err = utils.AddColumnIfNotExist(db, table, "source_checkpoint_id", "TEXT", "", true); err != nil {
-				return err
-			}
 		}
 	}
-	for _, table := range []string{"task_dependency", "asset_dependency"} {
-		exists, err := utils.TableExists(db, table)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			continue
-		}
-		if err := utils.AddColumnIfNotExist(db, table, "resolution_mode", "TEXT", "'floating'", false); err != nil {
-			return err
-		}
-		for _, column := range []string{"checkpoint_id", "asset_checkpoint_tag_id"} {
-			if err := utils.AddColumnIfNotExist(db, table, column, "TEXT", "", true); err != nil {
-				return err
-			}
-		}
+
+	dependencyExists, err := utils.TableExists(tx, "asset_dependency")
+	if err != nil {
+		return err
 	}
-	return nil
+	if !dependencyExists {
+		return nil
+	}
+	if err = utils.AddColumnIfNotExist(tx, "asset_dependency", "resolution_mode", "TEXT", "'floating'", false); err != nil {
+		return err
+	}
+	if err = utils.AddColumnIfNotExist(tx, "asset_dependency", "checkpoint_id", "TEXT", "", true); err != nil {
+		return err
+	}
+	return utils.AddColumnIfNotExist(tx, "asset_dependency", "asset_checkpoint_tag_id", "TEXT", "", true)
 }
