@@ -21,7 +21,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.27.2"
 
       - name: Install dependencies
         run: go mod download
@@ -120,7 +120,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.27.2"
 
       - name: Install cross-compiler (arm64)
         if: matrix.goarch == 'arm64'

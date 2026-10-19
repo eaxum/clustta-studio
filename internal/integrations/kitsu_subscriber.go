@@ -11,7 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/zishang520/engine.io-client-go/transports"
 	"github.com/zishang520/engine.io/v2/events"
+	"github.com/zishang520/engine.io/v2/types"
 	"github.com/zishang520/socket.io-client-go/socket"
 )
 
@@ -39,6 +41,8 @@ func (s *KitsuSocketSubscriber) Subscribe(ctx context.Context, out chan<- KitsuE
 
 	opts := socket.DefaultOptions()
 	opts.SetPath("/socket.io/")
+	// Disable WebTransport until its QUIC dependency supports the patched release.
+	opts.SetTransports(types.NewSet(transports.Polling, transports.WebSocket))
 	opts.SetAuth(map[string]any{"token": s.token})
 	opts.SetExtraHeaders(http.Header{
 		"Authorization": []string{"Bearer " + s.token},
