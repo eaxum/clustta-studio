@@ -4,9 +4,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/alexedwards/scs/v2"
 )
 
 func TestApiTokenMiddlewareRejectsHeaderOnlyIdentity(t *testing.T) {
+	previousSessionManager := sessionManager
+	sessionManager = scs.New()
+	t.Cleanup(func() {
+		sessionManager = previousSessionManager
+	})
+
 	called := false
 	next := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		called = true
