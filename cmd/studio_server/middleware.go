@@ -3,14 +3,12 @@ package main
 import (
 	"clustta/internal/constants"
 	"clustta/internal/server/api_token_service"
-	"clustta/internal/server/user_service"
 	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -21,142 +19,127 @@ type contextKey string
 const apiTokenContextKey contextKey = "api_token"
 const apiUserContextKey contextKey = "api_user"
 
-// tokenCacheEntry stores a validated user resolved from the global server.
-type tokenCacheEntry struct {
-	user      UserInfo
-	expiresAt time.Time
-}
-
-var (
-	tokenCache   = map[string]tokenCacheEntry{}
-	tokenCacheMu sync.RWMutex
-	cacheTTL     = 5 * time.Minute
-)
-
-var publicPaths = map[string]bool{
-	"/ping":        true,
-	"/version":     true,
-	"/studio-key":  true,
-	"/studio-info": true,
-}
-
-// ApiTokenMiddleware authenticates incoming requests via Bearer token.
-// It first attempts to validate the token against the local api_token table
-// (used in private mode where users register directly with the studio).
-// If local validation fails and the studio is non-private (discoverable),
-// it falls back to resolveGlobalToken which validates the token against the
-// global Clustta server and caches the resolved user identity for subsequent requests.
-// If no Bearer token is present, the request passes through for cookie-based auth.
 func ApiTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if publicPaths[r.URL.Path] {
+		r.Header.Del("UserData")
+		r.Header.Del("UserId")
+
+		if isPublicRequest(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		authHeader := r.Header.Get("Authorization")
-		if strings.HasPrefix(authHeader, "Bearer ") {
-			rawToken := strings.TrimPrefix(authHeader, "Bearer ")
-			if rawToken != "" {
-				db, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
-				if err != nil {
-					http.Error(w, `{"error": "Internal server error"}`, http.StatusInternalServerError)
-					return
-				}
-
-				userId, err := api_token_service.ValidateToken(db, rawToken)
-				if err != nil {
-					db.Close()
-					if !CONFIG.Private {
-						if user, ok := resolveGlobalToken(rawToken); ok {
-							userBytes, _ := json.Marshal(user)
-							r.Header.Set("UserData", string(userBytes))
-							r.Header.Set("UserId", user.Id)
-							ctx := context.WithValue(r.Context(), apiUserContextKey, userBytes)
-							next.ServeHTTP(w, r.WithContext(ctx))
-							return
-						}
-					}
-					http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
-					return
-				}
-
-				tx, err := db.Beginx()
-				if err != nil {
-					db.Close()
-					http.Error(w, `{"error": "Internal server error"}`, http.StatusInternalServerError)
-					return
-				}
-
-				user, err := user_service.GetUser(tx, userId)
-				tx.Rollback()
-				db.Close()
-				if err != nil {
-					http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
-					return
-				}
-
-				userInfo := UserInfo{
-					Id:        user.Id,
-					FirstName: user.FirstName,
-					LastName:  user.LastName,
-					Username:  user.UserName,
-					Email:     user.Email,
-				}
-
-				// Inject UserData/UserId headers so downstream handlers work transparently
-				userBytes, _ := json.Marshal(userInfo)
-				r.Header.Set("UserData", string(userBytes))
-				r.Header.Set("UserId", userInfo.Id)
-
-				ctx := context.WithValue(r.Context(), apiUserContextKey, userBytes)
-				ctx = context.WithValue(ctx, apiTokenContextKey, rawToken)
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
-			}
+		user, rawToken, ok := authenticateRequest(r)
+		if !ok {
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+			return
 		}
-		next.ServeHTTP(w, r)
+
+		ctx := context.WithValue(r.Context(), apiUserContextKey, user)
+		if rawToken != "" {
+			ctx = context.WithValue(ctx, apiTokenContextKey, rawToken)
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// getAuthUser extracts the authenticated user from context.
-// Checks API token context first, then falls back to SCS session.
-func getAuthUser(r *http.Request) (UserInfo, bool) {
-	// Check API token context first
-	if userBytes, ok := r.Context().Value(apiUserContextKey).([]byte); ok {
-		var user UserInfo
-		if err := json.Unmarshal(userBytes, &user); err == nil {
-			return user, true
-		}
+func isPublicRequest(r *http.Request) bool {
+	if r.Method == http.MethodOptions {
+		return true
 	}
-
-	// Fall back to session
-	userData := sessionManager.Get(r.Context(), "user")
-	if userData != nil {
-		if userBytes, ok := userData.([]byte); ok {
-			var user UserInfo
-			if err := json.Unmarshal(userBytes, &user); err == nil {
-				return user, true
-			}
-		}
+	if r.Method == http.MethodPost && (r.URL.Path == "/auth/register" || r.URL.Path == "/auth/login") {
+		return true
 	}
-
-	return UserInfo{}, false
+	if r.Method != http.MethodGet {
+		return false
+	}
+	if r.URL.Path == "/ping" || r.URL.Path == "/version" || r.URL.Path == "/studio-key" || r.URL.Path == "/studio-info" {
+		return true
+	}
+	return strings.HasPrefix(r.URL.Path, "/auth/email-exists/") ||
+		strings.HasPrefix(r.URL.Path, "/auth/username-exists/")
 }
 
-// resolveGlobalToken validates a Bearer token against the global server
-// and caches the result. Returns the user if the token is valid.
-func resolveGlobalToken(token string) (UserInfo, bool) {
-	// Check cache first
-	tokenCacheMu.RLock()
-	if entry, ok := tokenCache[token]; ok && time.Now().Before(entry.expiresAt) {
-		tokenCacheMu.RUnlock()
-		return entry.user, true
+func authenticateRequest(r *http.Request) (UserInfo, string, bool) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader != "" {
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			return UserInfo{}, "", false
+		}
+		rawToken := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+		if rawToken == "" {
+			return UserInfo{}, "", false
+		}
+		user, ok := authenticateBearerToken(rawToken)
+		return user, rawToken, ok
 	}
-	tokenCacheMu.RUnlock()
 
-	// Validate against global server
-	req, err := http.NewRequest("GET", constants.HOST+"/auth/authenticated", nil)
+	user, ok := authenticateLocalSession(r)
+	return user, "", ok
+}
+
+func authenticateBearerToken(rawToken string) (UserInfo, bool) {
+	db, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
+	if err != nil {
+		return UserInfo{}, false
+	}
+	defer db.Close()
+
+	userId, err := api_token_service.ValidateToken(db, rawToken)
+	if err == nil {
+		return loadActiveLocalUser(db, userId)
+	}
+	if CONFIG.Private {
+		return UserInfo{}, false
+	}
+	user, ok := resolveGlobalToken(rawToken)
+	if !ok {
+		return UserInfo{}, false
+	}
+	_, exists, err := getStudioUser(user.Id)
+	if err != nil || !exists {
+		return UserInfo{}, false
+	}
+	return user, true
+}
+
+func authenticateLocalSession(r *http.Request) (UserInfo, bool) {
+	userData := sessionManager.Get(r.Context(), "user")
+	userBytes, ok := userData.([]byte)
+	if !ok {
+		return UserInfo{}, false
+	}
+
+	var sessionUser UserInfo
+	if err := json.Unmarshal(userBytes, &sessionUser); err != nil || sessionUser.Id == "" {
+		return UserInfo{}, false
+	}
+
+	db, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
+	if err != nil {
+		return UserInfo{}, false
+	}
+	defer db.Close()
+	return loadActiveLocalUser(db, sessionUser.Id)
+}
+
+func loadActiveLocalUser(db *sqlx.DB, userId string) (UserInfo, bool) {
+	var user UserInfo
+	err := db.QueryRow(`
+		SELECT id, first_name, last_name, username, email
+		FROM user
+		WHERE id = ? AND active = 1 AND is_deleted = 0
+	`, userId).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Username, &user.Email)
+	return user, err == nil
+}
+
+func getAuthUser(r *http.Request) (UserInfo, bool) {
+	user, ok := r.Context().Value(apiUserContextKey).(UserInfo)
+	return user, ok && user.Id != ""
+}
+
+func resolveGlobalToken(token string) (UserInfo, bool) {
+	req, err := http.NewRequest(http.MethodGet, constants.HOST+"/auth/authenticated", nil)
 	if err != nil {
 		return UserInfo{}, false
 	}
@@ -165,7 +148,7 @@ func resolveGlobalToken(token string) (UserInfo, bool) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Legacy auth: global server request failed: %v", err)
+		log.Printf("Global authentication failed: %v", err)
 		return UserInfo{}, false
 	}
 	defer resp.Body.Close()
@@ -180,31 +163,11 @@ func resolveGlobalToken(token string) (UserInfo, bool) {
 	}
 
 	var result struct {
-		Authenticated bool `json:"authenticated"`
-		User          struct {
-			Id        string `json:"id"`
-			FirstName string `json:"first_name"`
-			LastName  string `json:"last_name"`
-			Username  string `json:"username"`
-			Email     string `json:"email"`
-		} `json:"user"`
+		Authenticated bool     `json:"authenticated"`
+		User          UserInfo `json:"user"`
 	}
-	if err := json.Unmarshal(body, &result); err != nil || !result.Authenticated {
+	if err := json.Unmarshal(body, &result); err != nil || !result.Authenticated || result.User.Id == "" {
 		return UserInfo{}, false
 	}
-
-	user := UserInfo{
-		Id:        result.User.Id,
-		FirstName: result.User.FirstName,
-		LastName:  result.User.LastName,
-		Username:  result.User.Username,
-		Email:     result.User.Email,
-	}
-
-	// Cache the result
-	tokenCacheMu.Lock()
-	tokenCache[token] = tokenCacheEntry{user: user, expiresAt: time.Now().Add(cacheTTL)}
-	tokenCacheMu.Unlock()
-
-	return user, true
+	return result.User, true
 }

@@ -26,7 +26,11 @@ func requireStudioAdmin(w http.ResponseWriter, r *http.Request) bool {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return false
 	}
-	serverUser, exists := Users[user.Id]
+	serverUser, exists, err := getStudioUser(user.Id)
+	if err != nil {
+		SendErrorResponse(w, "Error checking studio membership", http.StatusInternalServerError)
+		return false
+	}
 	if !exists || serverUser.RoleName != studioAdminRole {
 		SendErrorResponse(w, "Only admins can manage project storage", http.StatusForbidden)
 		return false

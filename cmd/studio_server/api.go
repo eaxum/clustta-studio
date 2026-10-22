@@ -228,15 +228,15 @@ func (s *APIServer) Run() error {
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 		ExposedHeaders:   []string{compatibility.APIVersionHeader},
-		AllowedHeaders:   []string{compatibility.APIVersionHeader, "Content-Type", "Authorization", "Clustta-Agent", "UserId", "UserData", "Cookie"},
+		AllowedHeaders:   []string{compatibility.APIVersionHeader, "Content-Type", "Authorization", "Clustta-Agent", "Cookie"},
 		AllowCredentials: true,
 	})
 
 	// Wrap with session manager for auth endpoints
 	handlerWithStorage := ProjectStorageMiddleware(c.Handler(router))
-	handlerWithSession := sessionManager.LoadAndSave(handlerWithStorage)
-	handlerWithApiToken := ApiTokenMiddleware(handlerWithSession)
-	handlerWithRecovery := RecoveryMiddleware(handlerWithApiToken)
+	handlerWithAuthentication := ApiTokenMiddleware(handlerWithStorage)
+	handlerWithSession := sessionManager.LoadAndSave(handlerWithAuthentication)
+	handlerWithRecovery := RecoveryMiddleware(handlerWithSession)
 	handlerWithLogging := RequestLoggerMiddleware(handlerWithRecovery)
 
 	server := http.Server{

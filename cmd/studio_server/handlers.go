@@ -55,9 +55,38 @@ func removeProjectDatabaseFiles(projectPath string) {
 	}
 }
 
-type dataStruct struct {
-	UserId string `json:"user_id"`
+func authenticatedRepositoryUser(w http.ResponseWriter, r *http.Request) (auth_service.User, bool) {
+	principal, ok := getAuthUser(r)
+	if !ok {
+		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+		return auth_service.User{}, false
+	}
+	return auth_service.User{
+		Id:        principal.Id,
+		Email:     principal.Email,
+		Username:  principal.Username,
+		FirstName: principal.FirstName,
+		LastName:  principal.LastName,
+	}, true
 }
+
+func requireAdminUser(w http.ResponseWriter, r *http.Request, message string) (auth_service.User, bool) {
+	user, ok := authenticatedRepositoryUser(w, r)
+	if !ok {
+		return auth_service.User{}, false
+	}
+	studioUser, exists, err := getStudioUser(user.Id)
+	if err != nil {
+		SendErrorResponse(w, "Error checking studio membership", http.StatusInternalServerError)
+		return auth_service.User{}, false
+	}
+	if !exists || studioUser.RoleName != studioAdminRole {
+		SendErrorResponse(w, message, http.StatusForbidden)
+		return auth_service.User{}, false
+	}
+	return user, true
+}
+
 type PingResponse struct {
 	Status string `json:"status"`
 }
@@ -107,20 +136,7 @@ func GetUsageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
-		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	var requestingUser UserInfo
-	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
-		SendErrorResponse(w, "Invalid user data", http.StatusBadRequest)
-		return
-	}
-	serverUser := Users[requestingUser.Id]
-	if serverUser.RoleName != "admin" {
-		SendErrorResponse(w, "Only admins can view studio usage", http.StatusForbidden)
+	if _, ok := requireAdminUser(w, r, "Only admins can view studio usage"); !ok {
 		return
 	}
 
@@ -306,20 +322,7 @@ func UpdateStudioInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
-		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	var requestingUser UserInfo
-	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
-		SendErrorResponse(w, "Invalid user data", http.StatusBadRequest)
-		return
-	}
-	serverUser := Users[requestingUser.Id]
-	if serverUser.RoleName != "admin" {
-		SendErrorResponse(w, "Only admins can update studio info", http.StatusForbidden)
+	if _, ok := requireAdminUser(w, r, "Only admins can update studio info"); !ok {
 		return
 	}
 
@@ -418,9 +421,7 @@ func GetStudioUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
-		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
+	if _, ok := authenticatedRepositoryUser(w, r); !ok {
 		return
 	}
 
@@ -446,21 +447,7 @@ func ChangeStudioUserRoleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
-		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	// Check the requesting user is admin
-	var requestingUser UserInfo
-	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
-		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
-		return
-	}
-	serverUser := Users[requestingUser.Id]
-	if serverUser.RoleName != "admin" {
-		SendErrorResponse(w, "Only admins can change user roles", http.StatusForbidden)
+	if _, ok := requireAdminUser(w, r, "Only admins can change user roles"); !ok {
 		return
 	}
 
@@ -526,21 +513,8 @@ func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
-		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	// Check the requesting user is admin
-	var requestingUser UserInfo
-	if err := json.Unmarshal([]byte(UserData), &requestingUser); err != nil {
-		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
-		return
-	}
-	serverUser := Users[requestingUser.Id]
-	if serverUser.RoleName != "admin" {
-		SendErrorResponse(w, "Only admins can remove users", http.StatusForbidden)
+	requestingUser, ok := requireAdminUser(w, r, "Only admins can remove users")
+	if !ok {
 		return
 	}
 
@@ -564,8 +538,14 @@ func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	// Soft-delete the user
-	result, err := db.Exec("UPDATE user SET is_deleted = 1, active = 0 WHERE id = ?", userId)
+	tx, err := db.Beginx()
+	if err != nil {
+		SendErrorResponse(w, "Error removing user", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec("UPDATE user SET is_deleted = 1, active = 0 WHERE id = ?", userId)
 	if err != nil {
 		log.Printf("Error removing user: %v", err)
 		SendErrorResponse(w, "Error removing user", http.StatusInternalServerError)
@@ -575,6 +555,15 @@ func RemoveStudioUserHandler(w http.ResponseWriter, r *http.Request) {
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
 		SendErrorResponse(w, "User not found", http.StatusNotFound)
+		return
+	}
+	if _, err := tx.Exec("DELETE FROM api_token WHERE user_id = ?", userId); err != nil {
+		log.Printf("Error revoking user tokens: %v", err)
+		SendErrorResponse(w, "Error removing user", http.StatusInternalServerError)
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		SendErrorResponse(w, "Error removing user", http.StatusInternalServerError)
 		return
 	}
 
@@ -622,26 +611,9 @@ func PostProjectHandler(
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
+	user, ok := requireAdminUser(w, r, "You have no permission to create a project")
+	if !ok {
 		return
-	}
-	serverUser := Users[user.Id]
-	if serverUser.RoleName != "admin" {
-		http.Error(w, "You have no permission to create a project", 400)
-		return
-	}
-	user = auth_service.User{
-		Id:        user.Id,
-		Email:     serverUser.Email,
-		Username:  serverUser.UserName,
-		FirstName: serverUser.FirstName,
-		LastName:  serverUser.LastName,
 	}
 
 	projectInfo, err := repository.CreateProject(projectPath, "", "", "No Template", "", user)
@@ -706,22 +678,12 @@ func RenameProjectHandler(
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
-		return
-	}
-	serverUser := Users[user.Id]
-	if serverUser.RoleName != "admin" {
-		http.Error(w, "You have no permission to rename a project", 400)
+	user, ok := requireAdminUser(w, r, "You have no permission to rename a project")
+	if !ok {
 		return
 	}
 
-	err = repository.RenameProject(projectPath, "", newProjectName, user)
+	err := repository.RenameProject(projectPath, "", newProjectName, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -756,19 +718,8 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
-		return
-	}
-
-	serverUser := Users[user.Id]
-	if serverUser.RoleName != "admin" {
-		http.Error(w, "You have no permission to delete this project", 403)
+	_, ok := requireAdminUser(w, r, "You have no permission to delete this project")
+	if !ok {
 		return
 	}
 
@@ -825,22 +776,12 @@ func ToggleProjectCloseHandler(
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
-		return
-	}
-	serverUser := Users[user.Id]
-	if serverUser.RoleName != "admin" {
-		http.Error(w, "You have no permission to rename a project", 400)
+	user, ok := requireAdminUser(w, r, "You have no permission to update this project")
+	if !ok {
 		return
 	}
 
-	err = repository.ToggleCloseProject(projectPath, "", user)
+	err := repository.ToggleCloseProject(projectPath, "", user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -880,22 +821,12 @@ func SetProjectIconHandler(
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
-		return
-	}
-	serverUser := Users[user.Id]
-	if serverUser.RoleName != "admin" {
-		http.Error(w, "You have no permission to rename a project", 400)
+	user, ok := requireAdminUser(w, r, "You have no permission to update this project")
+	if !ok {
 		return
 	}
 
-	err = repository.SetIcon(projectPath, "", newProjectIcon, user)
+	err := repository.SetIcon(projectPath, "", newProjectIcon, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -930,22 +861,12 @@ func SetProjectIgnoreListHandler(
 		return
 	}
 
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
-		return
-	}
-	serverUser := Users[user.Id]
-	if serverUser.RoleName != "admin" {
-		http.Error(w, "You have no permission to rename a project", 400)
+	user, ok := requireAdminUser(w, r, "You have no permission to update this project")
+	if !ok {
 		return
 	}
 
-	err = repository.SetIgnoreList(projectPath, "", ignoreList, user)
+	err := repository.SetIgnoreList(projectPath, "", ignoreList, user)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -978,18 +899,12 @@ func GetProjectHandler(
 		return
 	}
 
-	UserId := r.Header.Get("UserId")
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
+	user, ok := authenticatedRepositoryUser(w, r)
+	if !ok {
 		return
 	}
 
-	userInProject, err := repository.UserInProject(projectPath, UserId)
+	userInProject, err := repository.UserInProject(projectPath, user.Id)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -1019,18 +934,12 @@ func GetProjectSyncTokenHandler(
 		return
 	}
 
-	UserId := r.Header.Get("UserId")
-	UserData := r.Header.Get("UserData")
-
-	user := auth_service.User{}
-	err := json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
+	user, ok := authenticatedRepositoryUser(w, r)
+	if !ok {
 		return
 	}
 
-	userInProject, err := repository.UserInProject(projectPath, UserId)
+	userInProject, err := repository.UserInProject(projectPath, user.Id)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 400)
@@ -1089,17 +998,10 @@ func GetProjectsHandler(
 		return
 	}
 
-	// UserId := r.Header.Get("UserId")
-	UserData := r.Header.Get("UserData")
-	user := auth_service.User{}
-	err = json.Unmarshal([]byte(UserData), &user)
-	if err != nil {
-		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
+	user, ok := authenticatedRepositoryUser(w, r)
+	if !ok {
 		return
 	}
-
-	println("UserId", user.Id)
 
 	// Iterate over the directory entries
 	for _, entry := range entries {
@@ -1150,8 +1052,8 @@ func GetProjectsHandler(
 
 func GetDataHandler(
 	w http.ResponseWriter, r *http.Request) {
-	if _, ok := getAuthUser(r); !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	user, ok := authenticatedRepositoryUser(w, r)
+	if !ok {
 		return
 	}
 	project := r.PathValue("project")
@@ -1180,15 +1082,17 @@ func GetDataHandler(
 	}
 	defer tx.Rollback()
 
-	decoder := json.NewDecoder(r.Body)
-	var data dataStruct
-	err = decoder.Decode(&data)
+	userInProject, err := repository.UserInProject(projectPath, user.Id)
 	if err != nil {
 		log.Printf("Request error: %v", err)
-		http.Error(w, "Internal server error", 400)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	userData, err := sync_service.LoadUserDataPb(tx, data.UserId)
+	if !userInProject {
+		http.Error(w, "user not in project", http.StatusForbidden)
+		return
+	}
+	userData, err := sync_service.LoadUserDataPb(tx, user.Id)
 	if err != nil {
 		log.Printf("Request error: %v", err)
 		http.Error(w, "Internal server error", 500)

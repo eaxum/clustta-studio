@@ -48,7 +48,10 @@ func ValidateToken(db *sqlx.DB, rawToken string) (string, error) {
 	var userId string
 	var expiresAt int64
 	err := db.QueryRow(
-		"SELECT user_id, expires_at FROM api_token WHERE token_hash = ?", tokenHash,
+		`SELECT api_token.user_id, api_token.expires_at
+		 FROM api_token
+		 JOIN user ON user.id = api_token.user_id
+		 WHERE api_token.token_hash = ? AND user.active = 1 AND user.is_deleted = 0`, tokenHash,
 	).Scan(&userId, &expiresAt)
 	if err != nil {
 		return "", fmt.Errorf("invalid token")

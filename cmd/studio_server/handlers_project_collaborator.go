@@ -86,7 +86,11 @@ func AddProjectCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Verify user is a studio member
-		serverUser, exists := Users[userId]
+		serverUser, exists, lookupErr := getStudioUser(userId)
+		if lookupErr != nil {
+			results = append(results, addResult{UserId: userId, Status: "error", Message: "Failed to check studio membership"})
+			continue
+		}
 		if !exists {
 			results = append(results, addResult{UserId: userId, Status: "error", Message: "User is not a studio member"})
 			continue

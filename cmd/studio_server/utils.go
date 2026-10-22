@@ -104,6 +104,19 @@ func GetStudioUsers() ([]models.StudioUserInfo, error) {
 	return getRemoteStudioUsers()
 }
 
+func getStudioUser(userId string) (models.StudioUserInfo, bool, error) {
+	users, err := GetStudioUsers()
+	if err != nil {
+		return models.StudioUserInfo{}, false, err
+	}
+	for _, user := range users {
+		if user.Id == userId {
+			return user, true, nil
+		}
+	}
+	return models.StudioUserInfo{}, false, nil
+}
+
 // getLocalStudioUsers fetches users from the local studio_users.db with role info.
 // Follows the same pattern as the global server: query users, load roles, build struct manually.
 func getLocalStudioUsers() ([]models.StudioUserInfo, error) {
@@ -117,7 +130,7 @@ func getLocalStudioUsers() ([]models.StudioUserInfo, error) {
 
 	// Query active users
 	var users []models.User
-	err = db.Select(&users, "SELECT * FROM user WHERE active = 1")
+	err = db.Select(&users, "SELECT * FROM user WHERE active = 1 AND is_deleted = 0")
 	if err != nil {
 		return studioUserInfos, fmt.Errorf("failed to query users: %w", err)
 	}

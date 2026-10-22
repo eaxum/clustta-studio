@@ -60,7 +60,7 @@ func TestPostDataHandlerAcceptsImportedUserOutsideStudioDirectory(t *testing.T) 
 
 	request := httptest.NewRequest(http.MethodPost, "/upload/data", bytes.NewReader(compressed))
 	request.SetPathValue("project", "upload")
-	request = request.WithContext(context.WithValue(request.Context(), apiUserContextKey, []byte(`{"id":"admin"}`)))
+	request = request.WithContext(context.WithValue(request.Context(), apiUserContextKey, UserInfo{Id: "admin"}))
 	request = request.WithContext(compatibility.WithAPIContext(request.Context(), compatibility.APIContext{Version: compatibility.CurrentAPIVersion}))
 	response := httptest.NewRecorder()
 

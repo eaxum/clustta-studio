@@ -94,7 +94,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
@@ -102,7 +102,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
-	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -111,7 +111,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	exists, err := user_service.EmailExists(tx, email)
 	if err != nil {
 		log.Printf("Error checking email: %v", err)
-	SendErrorResponse(w, "Error checking email", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error checking email", http.StatusInternalServerError)
 		return
 	}
 	if exists {
@@ -123,7 +123,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	exists, err = user_service.UsernameExists(tx, username)
 	if err != nil {
 		log.Printf("Error checking username: %v", err)
-	SendErrorResponse(w, "Error checking username", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error checking username", http.StatusInternalServerError)
 		return
 	}
 	if exists {
@@ -135,7 +135,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	createdUser, err := user_service.CreateUser(tx, "", firstName, lastName, username, email, password)
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
-	SendErrorResponse(w, "Error creating user", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
 
@@ -143,7 +143,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	err = user_service.ActivateUser(tx, createdUser.Id)
 	if err != nil {
 		log.Printf("Error activating user: %v", err)
-	SendErrorResponse(w, "Error activating user", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error activating user", http.StatusInternalServerError)
 		return
 	}
 
@@ -162,7 +162,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 			_, err = tx.Exec("UPDATE user SET role_id = ? WHERE id = ?", roleId, createdUser.Id)
 			if err != nil {
 				log.Printf("Error assigning role: %v", err)
-	SendErrorResponse(w, "Error assigning role", http.StatusInternalServerError)
+				SendErrorResponse(w, "Error assigning role", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -171,7 +171,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 	err = tx.Commit()
 	if err != nil {
 		log.Printf("Error committing transaction: %v", err)
-	SendErrorResponse(w, "Error committing transaction", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error committing transaction", http.StatusInternalServerError)
 		return
 	}
 
@@ -210,7 +210,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
@@ -218,19 +218,30 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
-	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
-	authUser, authenticated, err := user_service.AuthenticateUser(tx, emailOrUsername, password)
+	isDeleted, err := user_service.IsUserDeleted(tx, emailOrUsername)
 	if err != nil {
-		log.Printf("Error during authentication: %v", err)
-	SendErrorResponse(w, "Error during authentication", http.StatusInternalServerError)
+		log.Printf("Error checking user state: %v", err)
+		SendErrorResponse(w, "Error during authentication", http.StatusInternalServerError)
+		return
+	}
+	if isDeleted {
+		SendErrorResponse(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	if !authenticated {
+	authUser, authenticated, err := user_service.AuthenticateUser(tx, emailOrUsername, password)
+	if err != nil {
+		log.Printf("Error during authentication: %v", err)
+		SendErrorResponse(w, "Error during authentication", http.StatusInternalServerError)
+		return
+	}
+
+	if !authenticated || !authUser.Active {
 		SendErrorResponse(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -243,14 +254,14 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	err = user_service.UpdateUser(tx, authUser.Id, params)
 	if err != nil {
 		log.Printf("Error updating user: %v", err)
-	SendErrorResponse(w, "Error updating user", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error updating user", http.StatusInternalServerError)
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Printf("Error committing transaction: %v", err)
-	SendErrorResponse(w, "Error committing transaction", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error committing transaction", http.StatusInternalServerError)
 		return
 	}
 
@@ -265,7 +276,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	userData, err := json.Marshal(userInfo)
 	if err != nil {
 		log.Printf("Error marshaling user data: %v", err)
-	SendErrorResponse(w, "Error marshaling user data", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error marshaling user data", http.StatusInternalServerError)
 		return
 	}
 
@@ -274,7 +285,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		tokenDb, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
 		if err != nil {
 			log.Printf("Error creating token: %v", err)
-	SendErrorResponse(w, "Error creating token", http.StatusInternalServerError)
+			SendErrorResponse(w, "Error creating token", http.StatusInternalServerError)
 			return
 		}
 		defer tokenDb.Close()
@@ -282,7 +293,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		apiToken, err := api_token_service.CreateToken(tokenDb, authUser.Id)
 		if err != nil {
 			log.Printf("Error creating token: %v", err)
-	SendErrorResponse(w, "Error creating token", http.StatusInternalServerError)
+			SendErrorResponse(w, "Error creating token", http.StatusInternalServerError)
 			return
 		}
 
@@ -303,7 +314,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	err = sessionManager.RenewToken(r.Context())
 	if err != nil {
 		log.Printf("Error creating session: %v", err)
-	SendErrorResponse(w, "Error creating session", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error creating session", http.StatusInternalServerError)
 		return
 	}
 
@@ -322,10 +333,18 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // LogoutUserHandler handles user logout
 func LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
+	if rawToken, ok := r.Context().Value(apiTokenContextKey).(string); ok {
+		db, err := sqlx.Open("sqlite3", constants.StudioUsersDBPath)
+		if err == nil {
+			_ = api_token_service.DeleteToken(db, rawToken)
+			db.Close()
+		}
+	}
+
 	err := sessionManager.Destroy(r.Context())
 	if err != nil {
 		log.Printf("Error destroying session: %v", err)
-	SendErrorResponse(w, "Error destroying session", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error destroying session", http.StatusInternalServerError)
 		return
 	}
 
@@ -338,15 +357,9 @@ func LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // UserAuthenticatedHandler checks if the current session is valid
 func UserAuthenticatedHandler(w http.ResponseWriter, r *http.Request) {
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
+	userInfo, ok := getAuthUser(r)
+	if !ok {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	var userInfo UserInfo
-	if err := json.Unmarshal([]byte(UserData), &userInfo); err != nil {
-		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
 		return
 	}
 
@@ -369,7 +382,7 @@ func CheckEmailExistHandler(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
@@ -377,7 +390,7 @@ func CheckEmailExistHandler(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
-	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -385,7 +398,7 @@ func CheckEmailExistHandler(w http.ResponseWriter, r *http.Request) {
 	exists, err := user_service.EmailExists(tx, email)
 	if err != nil {
 		log.Printf("Error checking email: %v", err)
-	SendErrorResponse(w, "Error checking email", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error checking email", http.StatusInternalServerError)
 		return
 	}
 
@@ -405,7 +418,7 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
@@ -413,7 +426,7 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Beginx()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
-	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
@@ -421,7 +434,7 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 	exists, err := user_service.UsernameExists(tx, username)
 	if err != nil {
 		log.Printf("Error checking username: %v", err)
-	SendErrorResponse(w, "Error checking username", http.StatusInternalServerError)
+		SendErrorResponse(w, "Error checking username", http.StatusInternalServerError)
 		return
 	}
 
@@ -432,51 +445,13 @@ func CheckUsernameExistHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetCurrentUserHandler returns the current authenticated user's info
 func GetCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
-	UserData := r.Header.Get("UserData")
-	if UserData == "" {
+	userInfo, ok := getAuthUser(r)
+	if !ok {
 		SendErrorResponse(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
 
-	var userInfo UserInfo
-	if err := json.Unmarshal([]byte(UserData), &userInfo); err != nil {
-		SendErrorResponse(w, "Invalid user data", http.StatusInternalServerError)
-		return
-	}
-
-	// Get full user details from database
-	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
-	if err != nil {
-		log.Printf("Error connecting to database: %v", err)
-	SendErrorResponse(w, "Error connecting to database", http.StatusInternalServerError)
-		return
-	}
-	defer db.Close()
-
-	tx, err := db.Beginx()
-	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
-	SendErrorResponse(w, "Error starting transaction", http.StatusInternalServerError)
-		return
-	}
-	defer tx.Rollback()
-
-	user, err := user_service.GetUser(tx, userInfo.Id)
-	if err != nil {
-		log.Printf("Error getting user: %v", err)
-	SendErrorResponse(w, "Error getting user", http.StatusInternalServerError)
-		return
-	}
-
-	fullUserInfo := UserInfo{
-		Id:        user.Id,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.UserName,
-		Email:     user.Email,
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(fullUserInfo)
+	json.NewEncoder(w).Encode(userInfo)
 }

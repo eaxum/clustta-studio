@@ -76,8 +76,12 @@ func resolveIntegrationAccess(w http.ResponseWriter, r *http.Request) (db *sqlx.
 		SendErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
 		return nil, "", false
 	}
-	serverUser := Users[authUser.Id]
-	if serverUser.RoleName != "admin" {
+	serverUser, exists, err := getStudioUser(authUser.Id)
+	if err != nil {
+		SendErrorResponse(w, "Error checking studio membership", http.StatusInternalServerError)
+		return nil, "", false
+	}
+	if !exists || serverUser.RoleName != studioAdminRole {
 		SendErrorResponse(w, "Only admins can manage integrations", http.StatusForbidden)
 		return nil, "", false
 	}
@@ -92,7 +96,7 @@ func resolveIntegrationAccess(w http.ResponseWriter, r *http.Request) (db *sqlx.
 		return nil, "", false
 	}
 
-	db, err := sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
+	db, err = sqlx.Open("sqlite3", CONFIG.StudioUsersDB)
 	if err != nil {
 		SendErrorResponse(w, "Internal server error", http.StatusInternalServerError)
 		return nil, "", false
