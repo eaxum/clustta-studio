@@ -45,11 +45,11 @@ else
 endif
 
 # Create/overwrite a git tag and push to trigger CI
-# Usage: make tag V=0.4.24-alpha
+# Usage: make tag V=0.4.42-beta
 .PHONY: tag
 tag:
 ifndef V
-	$(error Usage: make tag V=0.4.24-alpha)
+	$(error Usage: make tag V=0.4.42-beta-1)
 endif
 	git tag -f v$(V)
 	git push origin -f v$(V)
